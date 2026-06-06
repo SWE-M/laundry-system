@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Outstanding Customers List | تقرير التحصيل</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <style>
+        body { font-family: 'Inter', 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        /* 🖨️ إعدادات الطباعة المطابقة للملف اللي أرسلته 🖨️ */
+        @media print {
+            body > *:not(#printArea) { display: none !important; }
+            body { background-color: white; }
+            #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+            .print-table { border-collapse: collapse; width: 100%; font-size: 11px; }
+            .print-table th, .print-table td { border: 2px solid #000 !important; padding: 6px 8px; text-align: left; }
+            .print-table th { background-color: #f3f4f6 !important; font-weight: 900; -webkit-print-color-adjust: exact; }
+            .pill-credit { background-color: #dbeafe !important; color: #1e3a8a !important; padding: 2px 8px; border-radius: 9999px; font-weight: bold; font-size: 9px; -webkit-print-color-adjust: exact; }
+            .text-red-print { color: #dc2626 !important; font-weight: bold; -webkit-print-color-adjust: exact; }
+            @page { size: A4; margin: 15mm; }
+        }
+    </style>
+</head>
+<body class="text-[#0f172a] h-screen overflow-hidden flex flex-col">
+
+    <div class="flex-1 overflow-y-auto p-8 scrollbar-hide">
+        <div class="flex justify-between items-center mb-8 gap-4">
+            <h1 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                Outstanding Customers 
+                <span class="text-lg text-slate-400 font-medium">| تقرير التحصيل</span>
+            </h1>
+            
+            <div class="flex items-center gap-3">
+                <div class="relative w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">📅</span>
+                    <input type="text" id="asOfDate" class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:border-blue-500 outline-none cursor-pointer bg-white font-bold text-slate-700" placeholder="Select Date | اختر التاريخ" readonly>
+                </div>
+                <div class="relative w-72">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">🔍</span>
+                    <input type="text" id="searchFilter" placeholder="Search customer | ابحث عن عميل..." class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:border-blue-500 outline-none">
+                </div>
+                <button onclick="exportExcel()" class="border border-slate-300 bg-white text-slate-700 px-5 py-2 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+                    📥 Export <span class="text-[10px] text-slate-400 font-normal">تصدير</span>
+                </button>
+                <button onclick="window.print()" class="border border-slate-300 bg-white text-slate-700 px-5 py-2 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+                    🖨️ Print <span class="text-[10px] text-slate-400 font-normal">طباعة</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-5 mb-8">
+            
+            <div class="bg-white border border-[#cce3f0] rounded-2xl p-5 shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-[15px] text-slate-700 font-medium">
+                        Total Outstanding Amount 
+                        <span class="text-xs text-slate-400 ml-1 font-normal">(إجمالي الديون)</span>
+                    </p>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <h3 class="text-[28px] font-bold text-red-600 leading-none">QAR <span id="kpi-total">0.00</span></h3>
+            </div>
+            
+            <div class="bg-white border border-[#cce3f0] rounded-2xl p-5 shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-[15px] text-slate-700 font-medium">
+                        Total Debtors
+                        <span class="text-xs text-slate-400 ml-1 font-normal">(إجمالي العملاء المدينين)</span>
+                    </p>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <h3 class="text-[28px] font-bold text-slate-800 leading-none"><span id="kpi-count">0</span></h3>
+                    <p class="text-[13px] text-slate-500 font-medium">Customers with pending payments | <span class="font-normal">عملاء عليهم مستحقات</span></p>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="bg-white border border-slate-200 shadow-sm overflow-hidden rounded-xl">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-[#f8fafc] text-slate-600 font-black border-b border-slate-200 text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3">Name <span class="block text-[10px] font-medium text-slate-400 mt-0.5">الاسم</span></th>
+                        <th class="px-6 py-3">File Number <span class="block text-[10px] font-medium text-slate-400 mt-0.5">رقم الملف</span></th>
+                        <th class="px-6 py-3">Phone Number <span class="block text-[10px] font-medium text-slate-400 mt-0.5">رقم الجوال</span></th>
+                        <th class="px-6 py-3">Address <span class="block text-[10px] font-medium text-slate-400 mt-0.5">العنوان</span></th>
+                        <th class="px-6 py-3">Category <span class="block text-[10px] font-medium text-slate-400 mt-0.5">الفئة</span></th>
+                        <th class="px-6 py-3 text-center">Type <span class="block text-[10px] font-medium text-slate-400 mt-0.5">النوع</span></th>
+                        <th class="px-6 py-3 text-right">Outstanding Amount <span class="block text-[10px] font-medium text-slate-400 mt-0.5">المبلغ المستحق</span></th>
+                    </tr>
+                </thead>
+                <tbody id="reportTbody" class="divide-y divide-slate-100">
+                    <tr><td colspan="7" class="p-10 text-center text-slate-500 font-bold">Loading data... | جاري تحميل البيانات...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="printArea" class="hidden text-black font-sans bg-white p-8">
+        
+        <div class="flex justify-between items-start border-b-2 border-black pb-2 mb-4">
+            <div class="text-left flex flex-col gap-0">
+                <img src="/static/images/logo.png" alt="Al Marona Logo" class="h-10 object-contain mb-1 w-max">
+                <h1 class="text-lg font-black text-black uppercase tracking-wide">AL MARONA LAUNDRY</h1>
+                <h2 class="text-base font-black text-black">مغسلة المرونة</h2>
+                <p class="text-[11px] text-black font-bold mt-0.5">Al Duhail, Doha, Qatar</p>
+                <p class="text-[11px] text-black font-bold">Tel: +974 5188 8455</p>
+            </div>
+            <div class="text-right text-[9px] font-bold text-gray-500 flex flex-col items-end gap-0.5 mt-2">
+                <span>مغسلة المرونة | Al Marona Laundry</span>
+            </div>
+        </div>
+
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-black text-black tracking-wide">Outstanding Customers List</h1>
+            <p class="text-xs text-gray-600 mt-2" id="p-gen-date">Generated on ---</p>
+            <p class="text-sm font-black text-red-600 mt-2" id="p-tot-amt">Total Outstanding Amount: QAR 0.00</p>
+        </div>
+
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th class="w-48">Name</th>
+                    <th class="w-16">File<br>Number</th>
+                    <th class="w-24">Phone<br>Number</th>
+                    <th class="w-24">Address</th>
+                    <th class="w-28">Customer<br>Category</th>
+                    <th class="w-20 text-center">Customer<br>Type</th>
+                    <th class="w-28 text-right">Outstanding<br>Amount</th>
+                </tr>
+            </thead>
+            <tbody id="printTbody"></tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="6" class="text-right font-black border-2 border-black p-2">Total Outstanding:</td>
+                    <td class="text-right font-black text-red-print border-2 border-black p-2" id="p-table-tot">QAR 0.00</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <script>
+        let allData = [];
+
+        flatpickr("#asOfDate", {
+            defaultDate: "today",
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) { fetchData(dateStr); }
+        });
+
+        document.getElementById('searchFilter').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            const filtered = allData.filter(d => 
+                d.name.toLowerCase().includes(term) || 
+                d.file_no.includes(term) || 
+                d.phone.includes(term)
+            );
+            renderTables(filtered);
+        });
+
+        async function fetchData(dateStr = null) {
+            const date = dateStr || document.getElementById('asOfDate').value;
+            const url = `{% url 'api_collection_report_data' %}?date=${date}`;
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                allData = data.table; 
+                
+                document.getElementById('kpi-total').innerText = parseFloat(data.kpis.total_outstanding).toFixed(2);
+                document.getElementById('kpi-count').innerText = data.kpis.total_debtors;
+
+                const now = new Date();
+                document.getElementById('p-gen-date').innerText = `Generated on ${data.as_of_date} by Admin`;
+                document.getElementById('p-tot-amt').innerText = `Total Outstanding Amount: QAR ${parseFloat(data.kpis.total_outstanding).toFixed(2)}`;
+                document.getElementById('p-table-tot').innerText = `QAR ${parseFloat(data.kpis.total_outstanding).toFixed(2)}`;
+
+                renderTables(allData);
+            } catch(e) { console.error(e); }
+        }
+
+        function renderTables(dataList) {
+            const tbody = document.getElementById('reportTbody');
+            const ptbody = document.getElementById('printTbody');
+            let html = '', phtml = '';
+
+            if(dataList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-slate-500 font-bold">No outstanding customers found. | لا يوجد عملاء مدينين للفترة المحددة.</td></tr>`;
+                ptbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center font-bold">No records.</td></tr>`;
+                return;
+            }
+
+            dataList.forEach(d => {
+                html += `
+                    <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                        <td class="px-6 py-4 font-bold text-slate-800">${d.name}</td>
+                        <td class="px-6 py-4 font-mono text-slate-500">${d.file_no}</td>
+                        <td class="px-6 py-4 text-slate-600">${d.phone}</td>
+                        <td class="px-6 py-4 text-slate-500">${d.address}</td>
+                        <td class="px-6 py-4 text-slate-600">${d.category}</td>
+                        <td class="px-6 py-4 text-center"><span class="bg-blue-100 text-blue-800 text-[10px] px-2.5 py-1 rounded-full font-bold">${d.type}</span></td>
+                        <td class="px-6 py-4 text-right font-black text-red-600">QAR ${parseFloat(d.amount).toFixed(2)}</td>
+                    </tr>`;
+                
+                phtml += `
+                    <tr>
+                        <td class="font-bold">${d.name}</td>
+                        <td class="text-blue-600 font-bold">${d.file_no}</td>
+                        <td>${d.phone}</td>
+                        <td>${d.address}</td>
+                        <td>${d.category}</td>
+                        <td class="text-center"><span class="pill-credit">${d.type}</span></td>
+                        <td class="text-right text-red-print">QAR ${parseFloat(d.amount).toFixed(2)}</td>
+                    </tr>`;
+            });
+            
+            tbody.innerHTML = html;
+            ptbody.innerHTML = phtml;
+        }
+
+        function exportExcel() {
+            const date = document.getElementById('asOfDate').value;
+            window.location.href = `{% url 'export_collection_excel' %}?date=${date}`;
+        }
+
+        window.onload = () => fetchData();
+    </script>
+</body>
+</html>

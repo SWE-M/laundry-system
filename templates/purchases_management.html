@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المشتريات - مغسلة المرونة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 50; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        /* 🌟 إعدادات الطباعة للفاتورة 🌟 */
+        @media print {
+            body * { visibility: hidden; }
+            .active-print, .active-print * { visibility: visible; }
+            .active-print { 
+                display: block !important; 
+                position: absolute; 
+                left: 0; top: 0; width: 80mm; padding: 0; margin: 0; 
+            }
+        }
+    </style>
+</head>
+<body class="flex h-screen text-gray-800 overflow-hidden">
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
+            <h2 class="text-xl font-black text-gray-800">إدارة المشتريات (Purchases)</h2>
+            <button onclick="toggleLanguage()" class="bg-gray-100 text-gray-700 px-4 py-1.5 rounded-lg font-bold hover:bg-gray-200 transition">🌐 <span id="lang-btn-text">English</span></button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 bg-[#f8fafc]">
+            
+            <div class="flex justify-between items-center mb-6 gap-4">
+                <div class="flex gap-3 flex-1">
+                    <div class="relative w-72">
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">🔍</span>
+                        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="ابحث في المشتريات..." class="w-full border border-gray-200 rounded-lg pr-10 pl-4 py-2 text-sm outline-none focus:border-blue-500 shadow-sm">
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="openModal('addLocationModal')" class="bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-lg font-bold shadow-sm hover:bg-gray-50 transition text-sm flex items-center gap-2">📍 إضافة موقع</button>
+                    <button onclick="openModal('addCategoryModal')" class="bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-lg font-bold shadow-sm hover:bg-gray-50 transition text-sm flex items-center gap-2">🏷️ إضافة فئة</button>
+                    <button onclick="openNewPurchaseModal()" class="bg-[#007ec5] text-white px-6 py-2.5 rounded-lg font-bold shadow-md hover:bg-blue-700 transition text-sm flex items-center gap-2">➕ مشتريات جديدة</button>
+                </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-right whitespace-nowrap">
+                        <thead class="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold">
+                            <tr>
+                                <th class="px-6 py-4">رقم الفاتورة #</th>
+                                <th class="px-6 py-4">التاريخ</th>
+                                <th class="px-6 py-4">الوصف / المورد</th>
+                                <th class="px-6 py-4">الفئة والموقع</th>
+                                <th class="px-6 py-4">الإجمالي</th>
+                                <th class="px-6 py-4">المدفوع</th>
+                                <th class="px-6 py-4">المتبقي</th>
+                                <th class="px-6 py-4 text-center">الحالة</th>
+                                <th class="px-6 py-4 text-center">الإجراءات</th> </tr>
+                        </thead>
+                        <tbody id="purchasesTableBody" class="divide-y divide-gray-50">
+                            <tr><td colspan="9" class="px-6 py-10 text-center text-gray-400 font-bold">جاري تحميل البيانات...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="purchaseModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[100]">
+        <div class="bg-white rounded-2xl shadow-2xl w-[600px] overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 id="modalTitle" class="font-black text-gray-800 text-lg flex items-center gap-2">🛒 إضافة مشتريات جديدة</h3>
+                <button onclick="closeModal('purchaseModal')" class="text-gray-400 hover:text-red-500 text-2xl font-bold transition">&times;</button>
+            </div>
+            <div class="p-6 grid grid-cols-2 gap-4">
+                <div class="col-span-1"><label class="block text-xs font-bold text-gray-600 mb-1">التاريخ</label><input type="date" id="pDate" class="w-full border border-gray-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500"></div>
+                <div class="col-span-1"><label class="block text-xs font-bold text-gray-600 mb-1">المورد / الوصف</label><input type="text" id="pDesc" class="w-full border border-gray-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500" placeholder="اسم المورد أو وصف المشتريات"></div>
+                
+                <div class="col-span-1">
+                    <label class="block text-xs font-bold text-gray-600 mb-1">الفئة (Category)</label>
+                    <select id="pCategory" class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-white outline-none focus:border-blue-500"><option value="">اختر الفئة...</option></select>
+                </div>
+                <div class="col-span-1">
+                    <label class="block text-xs font-bold text-gray-600 mb-1">الموقع (Location)</label>
+                    <select id="pLocation" class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-white outline-none focus:border-blue-500"><option value="">اختر الموقع...</option></select>
+                </div>
+
+                <div class="col-span-1"><label class="block text-xs font-bold text-gray-600 mb-1">الإجمالي (Total)</label><input type="number" id="pTotal" class="w-full border border-gray-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500" value="0.00"></div>
+                <div class="col-span-1"><label class="block text-xs font-bold text-gray-600 mb-1">المدفوع (Paid)</label><input type="number" id="pPaid" class="w-full border border-gray-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500" value="0.00"></div>
+                
+                <div class="col-span-2"><label class="block text-xs font-bold text-gray-600 mb-1">طريقة الدفع</label>
+                    <select id="pMethod" class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-white outline-none focus:border-blue-500"><option value="CASH">كاش (Cash)</option><option value="CARD">شبكة (Card)</option><option value="BANK_TRANSFER">تحويل بنكي</option></select>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 border-t flex justify-end gap-2">
+                <button onclick="closeModal('purchaseModal')" class="px-6 py-2 border border-gray-200 rounded-lg font-bold text-gray-600 text-sm hover:bg-gray-100 transition">إلغاء</button>
+                <button onclick="savePurchase()" class="px-6 py-2 bg-[#007ec5] text-white rounded-lg font-bold shadow-md hover:bg-blue-700 text-sm transition">حفظ الفاتورة</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addCategoryModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[200]">
+        <div class="bg-white rounded-2xl shadow-2xl w-[400px] overflow-hidden flex flex-col">
+            <div class="p-8 text-center">
+                <h3 class="font-black text-gray-800 text-2xl mb-2 flex items-center justify-center gap-2">إضافة فئة جديدة 🏷️</h3>
+                <input type="text" id="newCatName" class="w-full border-2 border-gray-200 focus:border-[#2563eb] rounded-xl p-3 text-center font-bold outline-none transition text-lg mt-4" placeholder="اسم الفئة...">
+            </div>
+            <div class="flex border-t border-gray-200">
+                <button onclick="saveCategory()" class="flex-1 bg-[#2563eb] hover:bg-blue-700 text-white font-bold py-4 text-lg transition">حفظ الفئة</button>
+                <button onclick="closeModal('addCategoryModal')" class="flex-1 bg-white hover:bg-gray-50 text-gray-500 font-bold py-4 text-lg transition border-r border-gray-200">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addLocationModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[200]">
+        <div class="bg-white rounded-2xl shadow-2xl w-[400px] overflow-hidden flex flex-col">
+            <div class="p-8 text-center">
+                <h3 class="font-black text-gray-800 text-2xl mb-2 flex items-center justify-center gap-2">إضافة موقع جديد 📍</h3>
+                <input type="text" id="newLocName" class="w-full border-2 border-gray-200 focus:border-[#10b981] rounded-xl p-3 text-center font-bold outline-none transition text-lg mt-4" placeholder="اسم الموقع...">
+            </div>
+            <div class="flex border-t border-gray-200">
+                <button onclick="saveLocation()" class="flex-1 bg-[#10b981] hover:bg-emerald-600 text-white font-bold py-4 text-lg transition">حفظ الموقع</button>
+                <button onclick="closeModal('addLocationModal')" class="flex-1 bg-white hover:bg-gray-50 text-gray-500 font-bold py-4 text-lg transition border-r border-gray-200">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printableInvoice" class="hidden text-black font-sans text-[13px] p-4 w-[80mm] mx-auto bg-white">
+        <div class="text-center mb-3">
+            <h2 class="font-black text-xl tracking-wide">EXPENSE VOUCHER</h2>
+            <h3 class="font-bold text-lg mt-1" style="font-family: 'Tajawal', sans-serif;">سند صرف</h3>
+            <p class="font-bold text-lg mt-1 tracking-widest" id="print-exp-id">EXP000000</p>
+        </div>
+        <div class="text-center mb-3">
+            <h2 class="font-bold text-xl mb-1">Al Marona Laundry</h2>
+            <p class="text-xs font-bold" id="print-exp-branch">Main Branch</p>
+        </div>
+        <div class="border-t border-b border-black py-2 mb-3 space-y-1.5 text-xs">
+            <div class="flex justify-between"><span>Date / التاريخ</span><span id="print-exp-date" class="font-bold">---</span></div>
+            <div class="flex justify-between"><span>Supplier / المورد</span><span id="print-exp-vendor" class="font-bold">---</span></div>
+            <div class="mt-2"><span class="font-bold block mb-0.5">Description / الوصف:</span><div id="print-exp-desc" class="pl-2">---</div></div>
+        </div>
+        <div class="text-center border-t-2 border-b-2 border-dashed border-black py-3 my-3 bg-gray-50">
+            <p class="text-[11px] font-bold mb-1">المبلغ / AMOUNT</p>
+            <p class="text-2xl font-black tracking-wider" id="print-exp-amount">QR 0.00</p>
+        </div>
+        <div class="text-xs space-y-2 mb-4">
+            <div class="flex justify-between"><span>Payment / الدفع</span><span id="print-exp-method" class="font-bold">---</span></div>
+            <div class="flex justify-between"><span>Paid / المدفوع</span><span id="print-exp-paid">QR 0.00</span></div>
+            <div class="flex justify-between"><span>Remaining / المتبقي</span><span id="print-exp-rem">QR 0.00</span></div>
+            <div class="flex justify-between mt-2 pt-2 border-t border-dashed border-gray-400 font-bold"><span>Status / الحالة</span><span id="print-exp-status">---</span></div>
+        </div>
+    </div>
+
+    <script>
+    let globalPurchases = []; // لتخزين البيانات للبحث والتعديل
+    let editingExpenseId = null; // متغير يحدد إذا كنا في وضع "تعديل"
+
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async function loadDropdowns() {
+        const ts = new Date().getTime();
+        try {
+            const catRes = await fetch(`/api/reports/categories/?_=${ts}`);
+            if (catRes.ok) {
+                const categories = await catRes.json();
+                const catData = Array.isArray(categories) ? categories : (categories.results || []);
+                const catSelect = document.getElementById('pCategory');
+                catSelect.innerHTML = '<option value="">اختر الفئة...</option>';
+                catData.forEach(c => catSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            }
+            const locRes = await fetch(`/api/branches/?_=${ts}`);
+            if (locRes.ok) {
+                const locations = await locRes.json();
+                const locData = Array.isArray(locations) ? locations : (locations.results || []);
+                const locSelect = document.getElementById('pLocation');
+                locSelect.innerHTML = '<option value="">اختر الموقع...</option>';
+                locData.forEach(l => locSelect.innerHTML += `<option value="${l.id}">${l.name}</option>`);
+            }
+        } catch (e) { console.error("Dropdown error", e); }
+    }
+
+    async function loadPurchases() {
+        const tbody = document.getElementById('purchasesTableBody');
+        try {
+            const res = await fetch('/api/reports/expenses/?_ts=' + new Date().getTime());
+            if (res.ok) {
+                const data = await res.json();
+                globalPurchases = Array.isArray(data) ? data : (data.results || []);
+                renderTable(globalPurchases);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center p-8 text-red-500 font-bold">خطأ في جلب البيانات.</td></tr>';
+            }
+        } catch (e) { tbody.innerHTML = '<tr><td colspan="9" class="text-center p-8">فشل الاتصال بالسيرفر.</td></tr>'; }
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('purchasesTableBody');
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center p-8">لم يتم العثور على مشتريات.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.map(p => `
+            <tr class="border-b hover:bg-blue-50 transition">
+                <td class="px-6 py-4 font-bold text-gray-800">EXP${String(p.id).padStart(5, '0')}</td>
+                <td class="px-6 py-4 text-gray-500">${p.date || '---'}</td>
+                <td class="px-6 py-4 font-bold">${p.description || '---'}</td>
+                <td class="px-6 py-4 text-gray-500">${p.category_name || '---'} - ${p.location_name || '---'}</td>
+                <td class="px-6 py-4 font-black text-gray-800">${parseFloat(p.total_amount).toFixed(2)} QAR</td>
+                <td class="px-6 py-4 text-emerald-600 font-bold">${parseFloat(p.paid_amount).toFixed(2)} QAR</td>
+                <td class="px-6 py-4 font-bold text-red-500">${(p.total_amount - p.paid_amount).toFixed(2)} QAR</td>
+                <td class="px-6 py-4 text-center">${(p.total_amount - p.paid_amount) > 0 ? '<span class="bg-orange-100 text-orange-600 px-2 py-1 rounded">مستحق</span>' : '<span class="bg-emerald-100 text-emerald-600 px-2 py-1 rounded">مدفوع</span>'}</td>
+                
+                <td class="px-6 py-4 text-center flex justify-center gap-2">
+                    <button onclick="printExpense(${p.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-1.5 rounded-lg transition" title="طباعة">🖨️</button>
+                    <button onclick="editExpense(${p.id})" class="text-amber-500 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1.5 rounded-lg transition" title="تعديل">✏️</button>
+                    <button onclick="deleteExpense(${p.id})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1.5 rounded-lg transition" title="حذف">🗑️</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function filterTable() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = globalPurchases.filter(p => 
+            (p.description && p.description.toLowerCase().includes(term)) ||
+            (p.category_name && p.category_name.toLowerCase().includes(term)) ||
+            String(p.id).includes(term)
+        );
+        renderTable(filtered);
+    }
+
+    // 🌟 تجهيز النافذة لإضافة جديدة 🌟
+    function openNewPurchaseModal() {
+        editingExpenseId = null;
+        document.getElementById('modalTitle').innerHTML = '🛒 إضافة مشتريات جديدة';
+        document.getElementById('pDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('pDesc').value = '';
+        document.getElementById('pCategory').value = '';
+        document.getElementById('pLocation').value = '';
+        document.getElementById('pTotal').value = '0.00';
+        document.getElementById('pPaid').value = '0.00';
+        document.getElementById('pMethod').value = 'CASH';
+        openModal('purchaseModal');
+    }
+
+    // 🌟 تجهيز النافذة للتعديل 🌟
+    function editExpense(id) {
+        const p = globalPurchases.find(x => x.id === id);
+        if(!p) return;
+        
+        editingExpenseId = id; // حفظ ID الفاتورة المراد تعديلها
+        document.getElementById('modalTitle').innerHTML = '✏️ تعديل الفاتورة (EXP' + id + ')';
+        
+        document.getElementById('pDate').value = p.date;
+        document.getElementById('pDesc').value = p.description;
+        document.getElementById('pCategory').value = p.category_id;
+        document.getElementById('pLocation').value = p.location_id;
+        document.getElementById('pTotal').value = p.total_amount;
+        document.getElementById('pPaid').value = p.paid_amount;
+        document.getElementById('pMethod').value = p.payment_method;
+        
+        openModal('purchaseModal');
+    }
+
+    // 🌟 دالة الحفظ الذكية (تميز بين إضافة جديدة وتعديل) 🌟
+    async function savePurchase() {
+        const date = document.getElementById('pDate').value;
+        const description = document.getElementById('pDesc').value.trim();
+        const category = document.getElementById('pCategory').value;
+        const location = document.getElementById('pLocation').value;
+        const total_amount = parseFloat(document.getElementById('pTotal').value) || 0;
+        const paid_amount = parseFloat(document.getElementById('pPaid').value) || 0;
+        const payment_method = document.getElementById('pMethod').value;
+
+        if (!date || !description || !category || !location || total_amount <= 0) {
+            return alert('يرجى تعبئة جميع الحقول الإجبارية والتأكد من الإجمالي.');
+        }
+
+        const btn = document.querySelector('button[onclick="savePurchase()"]');
+        const originalText = btn.innerText;
+        btn.innerText = "جاري الحفظ..."; btn.disabled = true;
+
+        // إذا كان هناك editingExpenseId نرسل PUT للرابط الجديد، غير ذلك نرسل POST للرابط العادي
+        const url = editingExpenseId ? `/api/reports/expenses/${editingExpenseId}/` : '/api/reports/save-expense/';
+        const methodType = editingExpenseId ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method: methodType,
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({ date, description, category, location, total_amount, paid_amount, payment_method })
+            });
+
+            if (res.ok) {
+                alert(editingExpenseId ? '✅ تم التعديل بنجاح!' : '✅ تم إضافة الفاتورة بنجاح!');
+                closeModal('purchaseModal');
+                await loadPurchases(); // تحديث الجدول فوراً
+            } else {
+                const errData = await res.json();
+                alert('❌ فشل الحفظ:\n' + JSON.stringify(errData));
+            }
+        } catch (e) {
+            alert('خطأ في الاتصال بالسيرفر');
+        } finally {
+            btn.innerText = originalText; btn.disabled = false;
+        }
+    }
+
+    // 🌟 دالة الحذف 🌟
+    async function deleteExpense(id) {
+        if(!confirm('⚠️ هل أنت متأكد من حذف هذه الفاتورة؟\nلا يمكن التراجع عن هذا الإجراء!')) return;
+        
+        try {
+            const res = await fetch(`/api/reports/expenses/${id}/`, {
+                method: 'DELETE',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            });
+            if(res.ok) {
+                alert('✅ تم حذف الفاتورة بنجاح!');
+                await loadPurchases(); // تحديث الجدول
+            } else {
+                alert('❌ فشل الحذف!');
+            }
+        } catch(e) {
+            alert('خطأ في الاتصال بالسيرفر');
+        }
+    }
+
+    // 🌟 دالة الطباعة (تعبئ التصميم المخفي وتطبع) 🌟
+    function printExpense(id) {
+        const p = globalPurchases.find(x => x.id === id);
+        if(!p) return;
+        
+       document.getElementById('print-exp-id').innerText = `EXP${String(p.id).padStart(5, '0')}`;
+        document.getElementById('print-exp-date').innerText = p.date;
+        
+        // 🌟 فصل اسم المورد عن الوصف (لأننا حفظناه بين أقواس مربعة [اسم المورد] - الوصف)
+        let vendorName = 'بدون مورد (Cash)';
+        let pureDesc = p.description || '---';
+        if (pureDesc.startsWith('[')) {
+            const endIndex = pureDesc.indexOf(']');
+            if (endIndex !== -1) {
+                vendorName = pureDesc.substring(1, endIndex);
+                pureDesc = pureDesc.substring(endIndex + 3).trim(); // إزالة الأقواس والشرطة
+            }
+        }
+
+        // تعبئة البيانات المفصولة
+        if(document.getElementById('print-exp-vendor')) document.getElementById('print-exp-vendor').innerText = vendorName;
+        document.getElementById('print-exp-branch').innerText = p.location_name;
+        document.getElementById('print-exp-desc').innerText = pureDesc;
+        document.getElementById('print-exp-amount').innerText = `QR ${parseFloat(p.total_amount).toFixed(2)}`;
+        
+        let methodTxt = p.payment_method === 'CASH' ? 'Cash / نقداً' : (p.payment_method === 'CARD' ? 'Card / شبكة' : p.payment_method);
+        document.getElementById('print-exp-method').innerText = methodTxt;
+        
+        document.getElementById('print-exp-paid').innerText = `QR ${parseFloat(p.paid_amount).toFixed(2)}`;
+        
+        const rem = p.total_amount - p.paid_amount;
+        document.getElementById('print-exp-rem').innerText = `QR ${rem.toFixed(2)}`;
+        document.getElementById('print-exp-status').innerText = rem > 0 ? 'مستحق / Due' : 'مدفوع / Paid';
+
+        const printDiv = document.getElementById('printableInvoice');
+        printDiv.classList.add('active-print');
+        window.print();
+        
+        // إخفاء التصميم بعد الطباعة
+        setTimeout(() => printDiv.classList.remove('active-print'), 1000);
+    }
+
+    // دوال حفظ الفئات والمواقع (كما هي)
+    async function saveCategory() {
+        const name = document.getElementById('newCatName').value.trim();
+        if (!name) return alert('يرجى إدخال اسم الفئة');
+        try {
+            const res = await fetch('/api/reports/categories/', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }, body: JSON.stringify({ name: name, name_en: name }) 
+            });
+            if (res.ok) { alert('✅ تم الإضافة بنجاح!'); closeModal('addCategoryModal'); document.getElementById('newCatName').value = ''; await loadDropdowns(); }
+        } catch (e) { alert('خطأ'); }
+    }
+
+    async function saveLocation() {
+        const name = document.getElementById('newLocName').value.trim();
+        if (!name) return alert('يرجى إدخال اسم الموقع');
+        try {
+            const res = await fetch('/api/branches/', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }, body: JSON.stringify({ name: name, location: name, phone: "00000000", is_active: true }) 
+            });
+            if (res.ok) { alert('✅ تم الإضافة بنجاح!'); closeModal('addLocationModal'); document.getElementById('newLocName').value = ''; await loadDropdowns(); }
+        } catch (e) { alert('خطأ'); }
+    }
+
+    window.onload = () => { loadDropdowns(); loadPurchases(); };
+    </script>
+</body>
+</html>

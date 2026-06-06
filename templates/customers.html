@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <title>Customers Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 50; }
+        .payment-modal { width: 1050px; max-height: 90vh; background: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .btn-active { border-color: #10b981 !important; background-color: #ecfdf5 !important; color: #059669 !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-row { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-[#f0f4f8]">
+
+    <header class="bg-white border-b shadow-sm z-10 flex-shrink-0">
+        <div class="flex items-center justify-between px-6 py-3">
+            <div class="flex gap-2 flex-1">
+                <a href="/cashier/" class="bg-white text-gray-500 border px-10 py-2 rounded-md font-bold text-sm hover:bg-gray-50 transition flex items-center justify-center" data-i18n="tabItems">ITEMS</a>
+                
+                <a href="/customers/" class="bg-[#007ec5] text-white px-10 py-2 rounded-md font-bold text-sm tracking-wide shadow-inner flex items-center justify-center" data-i18n="tabCustomers">CUSTOMERS</a>
+                
+               <a href="/orders/management/" class="bg-white text-gray-500 border px-10 py-2 rounded-md font-bold text-sm hover:bg-gray-50 transition flex items-center justify-center" data-i18n="tabOrders">ORDERS</a>
+                
+                </div>
+            
+            <div class="flex items-center gap-3">
+                <button onclick="openModal('clearDataModal')" class="w-[42px] h-[38px] flex items-center justify-center bg-white border-2 border-[#81bbf5] text-[#007ec5] rounded-xl hover:bg-blue-50 transition shadow-sm" title="Clear Cache">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                </button>
+                <button onclick="openModal('exitModal')" class="w-[42px] h-[38px] flex items-center justify-center bg-white border-2 border-[#fca5a5] text-[#ef4444] rounded-xl hover:bg-red-50 transition shadow-sm" title="Exit / Logout">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                </button>
+                <button onclick="toggleLanguage()" class="bg-gray-800 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition flex items-center gap-2">
+                    🌐 <span id="lang-btn-text">عربي</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-1 flex gap-4 p-4 overflow-hidden">
+        <div class="flex-1 bg-white border border-gray-200 rounded shadow-sm flex flex-col overflow-hidden">
+            <div class="p-4 flex gap-4 bg-white border-b border-gray-100">
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+                   <input type="text" id="searchInput" onkeyup="filterTable()" data-i18n-placeholder="searchPlaceholder" placeholder="Search by name, phone or file number..." class="w-full border border-gray-200 rounded-md pl-10 pr-4 py-2 text-sm outline-none">
+                </div>
+                <select id="filterCategory" class="border border-gray-200 rounded-md px-4 py-2 text-sm text-gray-600 outline-none"><option value="">All Categories</option></select>
+            </div>
+
+            <div class="grid grid-cols-8 gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200 text-[13px] font-bold text-gray-500 uppercase">
+                <div class="col-span-1" data-i18n="colName">Name</div>
+                <div class="col-span-1" data-i18n="colPhone">Phone</div>
+                <div class="col-span-1 text-center" data-i18n="colFile">File #</div>
+                <div class="col-span-1 text-center" data-i18n="colCategory">Category</div>
+                <div class="col-span-1 text-center" data-i18n="colFold">Fold</div>
+                <div class="col-span-1 text-center" data-i18n="colBalance">Balance</div>
+                <div class="col-span-2 text-center" data-i18n="colActions">Actions</div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto" id="customersTableBody">
+                <div class="p-20 text-center text-gray-400">Loading your customers...</div>
+            </div>
+
+            <div class="p-3 border-t border-gray-200 bg-white flex justify-between items-center text-xs text-gray-500">
+                <div>Page <span class="font-bold text-gray-700">1</span> • Total <span id="total-cust-count" class="font-bold text-gray-700">0</span> customers</div>
+            </div>
+        </div>
+
+        <div class="w-[380px] bg-white border border-gray-200 rounded shadow-sm flex flex-col overflow-hidden flex-shrink-0">
+            <div class="p-4 border-b border-gray-100 flex items-center gap-2 text-[#2d9a8a]">
+                <span class="text-xl">👤+</span>
+                <div class="flex flex-col"><h2 id="formTitle" class="font-bold text-gray-800 text-[16px]" data-i18n="newCustomerTitle">New Customer</h2><span class="text-[11px] text-gray-400" data-i18n="newCustomerSub">Add a new customer to your database</span></div>
+            </div>
+            <div class="p-5 flex-1 overflow-y-auto sidebar-scroll space-y-4">
+                <div><label class="block text-[13px] font-bold text-gray-600 mb-1" data-i18n="lblName">Name *</label><input type="text" id="custName" class="w-full bg-[#f8fafc] border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none"></div>
+                <div><label class="block text-[13px] font-bold text-gray-600 mb-1" data-i18n="lblFile">File Number</label><input type="text" id="custFile" class="w-full bg-[#f8fafc] border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none"></div>
+                <div><label class="block text-[13px] font-bold text-gray-600 mb-1" data-i18n="lblPhone">Phone Number *</label><input type="text" id="custPhone" class="w-full bg-[#f8fafc] border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none"></div>
+                
+                
+                <div>
+                    <label class="block text-[13px] font-bold text-gray-600 mb-1">Customer Category</label>
+                    <div class="flex gap-2">
+                        <select id="custCategory" class="flex-1 bg-[#f8fafc] border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 transition">
+                            <option value="Uncategorized" disabled selected>Select category (optional)</option>
+                            <option value="Uncategorized">Uncategorized</option>
+                        </select>
+                        <button type="button" onclick="openModal('categoryModal')" class="w-[38px] flex items-center justify-center border border-blue-200 text-blue-500 rounded-lg hover:bg-blue-50 transition bg-white text-lg font-bold shadow-sm" title="Add New Category">+</button>
+                    </div>
+                </div>
+                <div><label class="block text-[13px] font-bold text-gray-600 mb-1" data-i18n="lblFold">Fold Type</label><select id="custFold" class="w-full bg-[#f8fafc] border border-gray-200 rounded-lg px-3 py-2 text-sm"><option value="Folded">Folded</option><option value="Hanged">Hanged</option></select></div>
+                <div><label class="block text-[13px] font-bold text-gray-600 mb-1" data-i18n="lblAddress">Address</label><textarea id="custAddress" rows="2" class="w-full bg-[#f8fafc] border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none resize-none"></textarea></div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t border-gray-100">
+                <button id="saveBtn" onclick="saveNewCustomer()" class="w-full bg-[#0085c3] text-white py-3 rounded-lg font-bold text-sm shadow-md hover:bg-blue-600 transition" data-i18n="btnSave">Save Customer</button>
+                <button id="cancelEditBtn" onclick="resetForm()" class="hidden w-full mt-2 bg-gray-200 text-gray-600 py-2 rounded-lg font-bold text-xs" data-i18n="btnCancel">Cancel Edit</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="paymentModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center">
+        <div class="payment-modal flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white shadow-sm">
+                <h3 class="text-[#0085c3] font-bold flex items-center gap-2 text-lg">
+                    <span class="p-1.5 bg-blue-50 rounded-lg text-blue-500">💵</span> Create Payment Receipt
+                </h3>
+                <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold transition">&times;</button>
+            </div>
+
+            <div class="flex-1 p-6 flex gap-6 overflow-y-auto bg-[#f8fafc]">
+                <div class="w-[480px] space-y-4">
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h4 class="text-[11px] font-bold text-gray-400 mb-4 flex items-center gap-2 uppercase tracking-wider">👤 Customer Information</h4>
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-blue-50 text-blue-400 rounded-full flex items-center justify-center text-2xl border border-blue-100">👤</div>
+                            <div class="flex-1">
+                                <p id="modalCustName" class="font-bold text-gray-800 text-xl">---</p>
+                                <div class="flex flex-col gap-1 mt-1">
+                                    <span class="text-xs text-gray-500 font-medium">📂 File #: <span id="modalCustFile" class="text-gray-800">---</span></span>
+                                    <span class="text-xs text-gray-500 font-medium">📞 Phone: <span id="modalCustPhone" class="text-gray-800">---</span></span>
+                                </div>
+                            </div>
+                            <div class="bg-emerald-50 p-3 rounded-xl text-center border border-emerald-100 min-w-[110px]">
+                                <span class="block text-[9px] text-emerald-600 font-bold uppercase mb-1">Account Balance</span>
+                                <span id="modalCustBalance" class="text-2xl font-black text-emerald-600">0 QAR</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h4 class="text-[11px] font-bold text-gray-400 mb-4 uppercase tracking-wider">💳 Select Payment Method *</h4>
+                        
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <button id="btnPayCash" onclick="setPaymentMethod('CASH')" class="flex items-center justify-center gap-2 py-2 border-2 btn-active font-bold rounded-xl transition text-sm">💵 Cash</button>
+                            <button id="btnPayCard" onclick="setPaymentMethod('CARD')" class="flex items-center justify-center gap-2 py-2 border-2 border-gray-100 text-gray-400 font-bold rounded-xl hover:bg-gray-50 transition text-sm">💳 Card</button>
+                            <button id="btnPayWallet" onclick="setPaymentMethod('WALLET')" class="flex items-center justify-center gap-2 py-2 border-2 border-gray-100 text-gray-400 font-bold rounded-xl hover:bg-gray-50 transition text-sm">✨ Wallet</button>
+                            <button id="btnPayGiftCard" onclick="setPaymentMethod('GIFT_CARD')" class="flex items-center justify-center gap-2 py-2 border-2 border-gray-100 text-gray-400 font-bold rounded-xl hover:bg-gray-50 transition text-sm">🎁 Gift Card</button>
+                        </div>
+                        
+                        <div id="giftCardSection" class="hidden pt-3 border-t border-gray-50">
+                            <label class="block text-[11px] font-bold text-gray-400 mb-2 uppercase tracking-wider">Gift Card Number *</label>
+                            <div class="flex gap-2 mb-2">
+                                <input type="text" id="paymentGiftCardNumber" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-bold tracking-widest text-center focus:outline-none focus:border-pink-500" placeholder="e.g. 10001">
+                                <button onclick="checkGiftCardBalance()" class="bg-gray-100 border border-gray-300 px-3 rounded-lg font-bold text-gray-700 hover:bg-gray-200 text-sm">Check</button>
+                            </div>
+                            <div id="gift-card-balance-info" class="hidden bg-pink-50 border border-pink-100 rounded-lg p-2 text-xs">
+                                <p class="text-gray-600 flex justify-between">Owner: <span id="gc-owner" class="font-bold text-gray-800">---</span></p>
+                                <p class="text-gray-600 flex justify-between mt-1">Balance: <span id="gc-balance" class="font-bold text-green-600">0.00</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
+                        <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">📝 Additional Details</h4>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Payment Amount</label>
+                            <div class="relative">
+                                <input type="number" id="payAmountInput" readonly value="0" class="w-full bg-emerald-50/50 border border-emerald-100 rounded-xl pl-4 pr-12 py-3 font-black text-emerald-600 outline-none text-xl">
+                                <span class="absolute right-4 top-4 text-xs text-emerald-400 font-bold uppercase">QAR</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Commission Amount</label>
+                            <div class="relative">
+                                <input type="number" id="commAmount" oninput="calculateTotal()" value="0" class="w-full bg-[#f8fafc] border border-gray-200 rounded-xl px-4 py-3 outline-none font-bold text-gray-700">
+                                <span class="absolute right-4 top-3.5 text-xs text-gray-400 font-bold uppercase">QAR</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Notes & Comments</label>
+                            <textarea id="payNotes" placeholder="Add any additional notes for this receipt..." rows="2" class="w-full bg-[#f8fafc] border border-gray-200 rounded-xl p-3 text-sm outline-none resize-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex flex-col space-y-4">
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col flex-1">
+                        <div class="flex justify-between items-center mb-5">
+                            <h4 class="text-sm font-bold text-gray-700 flex items-center gap-2">🛒 Order Selection</h4>
+                            <div class="flex gap-2">
+                                <button onclick="selectAllOrders()" class="text-xs font-bold text-gray-500 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-1.5">✅ Select All</button>
+                                <button onclick="addOrderRow()" class="text-xs font-bold text-blue-600 border border-blue-100 bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 flex items-center gap-1.5">+ Add Order</button>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 mr-2 shadow-sm">
+                        <span class="text-blue-500 text-lg">🧑‍💼</span>
+                        <span class="font-black text-blue-700 text-sm capitalize">{{ request.user.username|default:"Admin" }}</span>
+                    </div>
+                        <div id="summaryBox" class="flex flex-col items-center justify-center border-2 border-dashed border-blue-100 rounded-xl p-6 bg-blue-50/20 mb-6">
+                            <div class="flex items-center gap-6">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-blue-100 text-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">📄</div>
+                                    <div><p id="pendingCount" class="text-blue-600 font-bold text-sm">0 pending orders</p><p class="text-gray-400 text-[10px]">Ready for payment</p></div>
+                                </div>
+                                <div class="w-[1px] h-10 bg-blue-100"></div>
+                                <div class="text-center">
+                                    <span class="text-[9px] text-gray-400 font-bold uppercase block">Total Pending</span>
+                                    <span id="pendingTotal" class="text-xl font-black text-gray-800">0.00 QAR</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 overflow-y-auto sidebar-scroll">
+                            <div class="grid grid-cols-5 text-[11px] font-bold text-gray-400 uppercase mb-3 px-2">
+                                <div class="col-span-3">Order Details</div><div class="col-span-2 text-right pr-12">Payment Amount</div>
+                            </div>
+                            <div id="orderRowsContainer" class="space-y-3 px-1">
+                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-white border-t border-gray-100 flex justify-between items-center">
+                <div class="flex items-center gap-8">
+                    <div class="flex gap-4 items-center">
+                        <div class="p-3 bg-[#e7f6f2] text-[#2d9a8a] rounded-xl text-2xl">💸</div>
+                        <div>
+                            <span class="block text-[10px] text-gray-400 font-bold uppercase">Total Payment Amount</span>
+                            <span id="footerTotal" class="text-3xl font-black text-[#2d9a8a]">0 QAR</span>
+                        </div>
+                    </div>
+                    <div id="statusIndicator" class="hidden items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full border border-emerald-100">
+                        <span class="w-2 h-2 bg-[#2d9a8a] rounded-full animate-pulse"></span>
+                        <span class="text-[#2d9a8a] text-[11px] font-bold uppercase">Ready to submit</span>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closePaymentModal()" class="px-10 py-3.5 border border-gray-200 rounded-xl text-gray-500 font-bold hover:bg-gray-50 transition">Cancel</button>
+                    <button onclick="confirmCreateReceipt()" class="px-10 py-3.5 bg-[#008f7a] text-white rounded-xl font-bold shadow-lg hover:bg-emerald-700 transition">📄 Create Receipt</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // دوال فتح وإغلاق النوافذ والخروج
+        function executeExit() { window.location.href = '/logout/'; }
+        function openModal(modalId) { document.getElementById(modalId).classList.remove('hidden'); }
+        function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+
+        let allCustomers = [];
+        let editingCustomerId = null;
+        let selectedPaymentMethod = 'CASH';
+        let activePaymentCustomerId = null;
+        let currentGiftCardNumber = ""; 
+        let currentCustomerPendingOrders = [];
+
+        async function checkGiftCardBalance() {
+            const cardInput = document.getElementById('paymentGiftCardNumber').value.trim();
+            if(!cardInput) return alert("الرجاء إدخال رقم البطاقة.");
+            try {
+                const response = await fetch(`/api/orders/giftcards/check-balance/?card_number=${cardInput}`);
+                const data = await response.json();
+                if(response.ok) {
+                    document.getElementById('gc-owner').innerText = data.customer_name;
+                    document.getElementById('gc-balance').innerText = `${data.balance} QAR`;
+                    document.getElementById('gift-card-balance-info').classList.remove('hidden');
+                    currentGiftCardNumber = data.card_number;
+                } else { 
+                    alert(data.error || "البطاقة غير موجودة!"); 
+                    document.getElementById('gift-card-balance-info').classList.add('hidden');
+                    currentGiftCardNumber = "";
+                }
+            } catch(e) { alert("Network error"); }
+        }
+
+        // دالة طباعة إيصال سداد الديون المركزية الجديدة
+        function printDebtReceipt(orders, totalAmount, method, customer) {
+            // حفظ بيانات الدفع مؤقتاً في المتصفح لكي يقرأها ملف الطباعة
+            const debtData = {
+                orders: orders,
+                totalAmount: totalAmount,
+                method: method,
+                customer: customer
+            };
+            localStorage.setItem('lastDebtReceipt', JSON.stringify(debtData));
+            
+            // فتح صفحة الطباعة الجديدة
+            window.open('/debt-receipt/', '_blank', 'width=400,height=600');
+        }
+
+        async function confirmCreateReceipt() {
+            if (!activePaymentCustomerId) return alert("خطأ: لم يتم تحديد العميل!");
+
+            const totalAmount = parseFloat(document.getElementById('payAmountInput').value || 0);
+            if (totalAmount <= 0) return alert("الرجاء اختيار فاتورة واحدة على الأقل للسداد.");
+
+            if (selectedPaymentMethod === 'GIFT_CARD' && !currentGiftCardNumber) {
+                return alert("الرجاء التحقق من بطاقة الهدية أولاً!");
+            }
+
+            const ordersToPay = [];
+            const rows = document.querySelectorAll('#orderRowsContainer .grid');
+            rows.forEach(row => {
+                const selectEl = row.querySelector('.order-select');
+                const amountEl = row.querySelector('.order-amount');
+                if (selectEl && amountEl && selectEl.value) {
+                    const displayId = selectEl.options[selectEl.selectedIndex].text.split(' ')[0];
+                    ordersToPay.push({ order_id: selectEl.value, amount: parseFloat(amountEl.value || 0), display_id: displayId });
+                }
+            });
+
+            if (ordersToPay.length === 0) return alert("لم يتم اختيار أي طلب للسداد.");
+
+            const payload = {
+                customer_id: activePaymentCustomerId,
+                payment_method: selectedPaymentMethod,
+                gift_card_number: selectedPaymentMethod === 'GIFT_CARD' ? currentGiftCardNumber : null,
+                commission: parseFloat(document.getElementById('commAmount').value || 0),
+                notes: document.getElementById('payNotes').value,
+                orders: ordersToPay
+            };
+
+            const btn = document.querySelector('button[onclick="confirmCreateReceipt()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "⏳ Processing..."; btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/orders/checkout/pay-receipt/', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }, body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const customer = allCustomers.find(c => c.id === activePaymentCustomerId);
+                    closePaymentModal();
+                    fetchCustomers(); 
+                    printDebtReceipt(ordersToPay, totalAmount, selectedPaymentMethod, customer);
+                } else {
+                    const err = await response.json();
+                    alert("خطأ: " + (err.error || JSON.stringify(err)));
+                }
+            } catch (error) { alert("Network Error!"); } 
+            finally { btn.innerHTML = originalText; btn.disabled = false; }
+        }
+        // --- 1. دالة حذف العميل ---
+        async function deleteCustomer(id) {
+            if (!confirm("هل أنت متأكد من حذف هذا العميل؟ لن يمكنك التراجع عن هذا الإجراء.")) return;
+            try {
+                const response = await fetch(`/api/accounts/search/${id}/`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                });
+                if (response.ok || response.status === 204) {
+                    alert("تم حذف العميل بنجاح.");
+                    fetchCustomers(); // تحديث الجدول
+                } else {
+                    alert("لا يمكن حذف العميل. قد يكون مرتبطاً بفواتير سابقة.");
+                }
+            } catch (error) { alert("Network Error!"); }
+        }
+
+        // --- 2. دوال سجل المشتريات (History) ---
+        async function openHistoryModal(customerId) {
+            document.getElementById('historyModal').classList.remove('hidden');
+            const container = document.getElementById('historyRowsContainer');
+            container.innerHTML = `<div class="text-center text-gray-400 py-10">Fetching orders...</div>`;
+
+            try {
+                // نطلب كل فواتير العميل من الباك اند
+                const response = await fetch(`/api/orders/checkout/?customer=${customerId}`);
+                const data = await response.json();
+                const orders = Array.isArray(data) ? data : (data.results || []);
+
+                if (orders.length === 0) {
+                    container.innerHTML = `<div class="text-center text-gray-400 py-10">No past orders found. / لا يوجد سجل مبيعات.</div>`;
+                    return;
+                }
+
+                container.innerHTML = orders.map(o => {
+                    const displayId = `OR-${String(o.id).padStart(6, '0')}`;
+                    const dateObj = new Date(o.created_at || Date.now());
+                    const dateStr = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                    const amt = parseFloat(o.total_amount).toFixed(2);
+                    
+                    return `
+                    <div class="grid grid-cols-5 items-center p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-purple-50 transition">
+                        <div class="col-span-1 font-bold text-gray-800">${displayId}</div>
+                        <div class="col-span-2 text-xs text-gray-500">${dateStr}</div>
+                        <div class="col-span-1 text-center font-bold text-emerald-600">${amt} QAR</div>
+                        <div class="col-span-1 flex justify-center">
+                            <button onclick="alert('لإعادة طباعة هذه الفاتورة، يرجى التوجه لشاشة الطلبات')" class="px-3 py-1 bg-white border border-purple-200 text-purple-600 rounded-md text-xs font-bold hover:bg-purple-600 hover:text-white transition shadow-sm">
+                                View
+                            </button>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = `<div class="text-center text-red-400 py-10">Error loading history.</div>`;
+            }
+        }
+        // --- إعدادات الترجمة ---
+        let currentLang = 'en';
+
+        const i18n = {
+            en: {
+                tabItems: "ITEMS", tabCustomers: "CUSTOMERS", tabOrders: "ORDERS",
+                searchPlaceholder: "Search by name, phone or file number...",
+                colName: "Name", colPhone: "Phone", colFile: "File #", colCategory: "Category", colFold: "Fold", colBalance: "Balance", colActions: "Actions",
+                newCustomerTitle: "New Customer", newCustomerSub: "Add a new customer to your database",
+                lblName: "Name *", lblFile: "File Number", lblPhone: "Phone Number *", lblFold: "Fold Type", lblAddress: "Address",
+                btnSave: "Save Customer", btnCancel: "Cancel Edit", btnUpdate: "Update Info"
+            },
+            ar: {
+                tabItems: "الملابس", tabCustomers: "العملاء", tabOrders: "الطلبات",
+                searchPlaceholder: "ابحث بالاسم، الجوال أو رقم الملف...",
+                colName: "الاسم", colPhone: "الجوال", colFile: "رقم الملف", colCategory: "الفئة", colFold: "الطي", colBalance: "الرصيد", colActions: "إجراءات",
+                newCustomerTitle: "عميل جديد", newCustomerSub: "إضافة عميل جديد لقاعدة البيانات",
+                lblName: "الاسم *", lblFile: "رقم الملف", lblPhone: "رقم الجوال *", lblFold: "طريقة الطي", lblAddress: "العنوان",
+                btnSave: "حفظ العميل", btnCancel: "إلغاء التعديل", btnUpdate: "تحديث البيانات"
+            }
+        };
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'ar' : 'en';
+            
+            // تغيير اتجاه الصفحة
+            const root = document.getElementById('html-root');
+            root.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            root.lang = currentLang;
+
+            // تحديث نص زر اللغة
+            document.getElementById('lang-btn-text').innerText = currentLang === 'en' ? 'عربي' : 'English';
+
+            // تطبيق الترجمة على العناصر الثابتة
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if(i18n[currentLang][key]) el.innerText = i18n[currentLang][key];
+            });
+
+            // تطبيق الترجمة على الـ Placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if(i18n[currentLang][key]) el.placeholder = i18n[currentLang][key];
+            });
+
+            // تحديث الجدول إذا كان هناك بيانات
+            if(allCustomers.length > 0) renderTable(allCustomers);
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        async function fetchCustomers() {
+            try {
+                const response = await fetch('/api/accounts/search/');
+                let baseCustomers = await response.json();
+                
+                // جلب حالة الديون لكل عميل لكي نتحكم في ألوان الأزرار وظهورها
+                const customersWithDebtInfo = await Promise.all(baseCustomers.map(async (c) => {
+                    try {
+                        const debtRes = await fetch(`/api/orders/checkout/pending/?customer=${c.id}`);
+                        if (debtRes.ok) {
+                            const pendingData = await debtRes.json();
+                            const pendingList = Array.isArray(pendingData) ? pendingData : (pendingData.results || []);
+                            c.has_debt = pendingList.length > 0;
+                        } else {
+                            c.has_debt = false;
+                        }
+                    } catch(e) { c.has_debt = false; }
+                    return c;
+                }));
+                
+                allCustomers = customersWithDebtInfo;
+                document.getElementById('total-cust-count').innerText = allCustomers.length;
+                renderTable(allCustomers);
+            } catch (error) { 
+                document.getElementById('customersTableBody').innerHTML = `<div class="p-8 text-center text-red-500">Failed to load data.</div>`;
+            }
+        }
+
+        function renderTable(customers) {
+            const tbody = document.getElementById('customersTableBody');
+            if (customers.length === 0) {
+                tbody.innerHTML = `<div class="p-20 text-center text-gray-400">No customers found.</div>`;
+                return;
+            }
+
+            tbody.innerHTML = customers.map(c => `
+                <div class="grid grid-cols-8 gap-4 px-4 py-3 border-b border-gray-50 hover:bg-blue-50 transition items-center text-[13px] animate-row">
+                    <div class="col-span-1 font-bold text-gray-800">${c.name || '---'}</div>
+                    <div class="col-span-1 text-gray-600">${c.phone || '---'}</div>
+                    <div class="col-span-1 text-center text-gray-500 font-bold">${c.file_number || '-'}</div>
+                    <div class="col-span-1 text-center text-gray-500">${c.customer_category || '-'}</div>
+                    <div class="col-span-1 text-center text-gray-500">${c.fold_type || 'Folded'}</div>
+                    <div class="col-span-1 text-center font-bold text-[#2d9a8a]">${parseFloat(c.wallet_balance || 0).toFixed(0)} QAR</div>
+                    <div class="col-span-2 flex items-center justify-center gap-2">
+                        
+                        <button onclick="fillFormForEdit(${c.id})" class="p-1.5 border border-blue-100 rounded-lg bg-blue-50 text-[#0085c3] hover:bg-[#0085c3] hover:text-white transition" title="Edit Profile">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                        </button>
+                        
+                        <button onclick="openHistoryModal(${c.id})" class="p-1.5 border border-purple-200 rounded-lg bg-white text-purple-500 hover:bg-purple-50 transition" title="Order History">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        </button>
+                      <button onclick="showCustomerInfo('${c.name}', '${(c.address || '').replace(/'/g, "\\'")}')" class="p-1.5 border border-amber-100 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition shadow-sm" title="Customer Address"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                        <button ${c.has_debt ? `onclick="openPaymentModal(${c.id})"` : `disabled`} class="p-1.5 border rounded-lg transition ${c.has_debt ? 'border-indigo-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white cursor-pointer' : 'border-gray-200 bg-gray-100 text-gray-400 opacity-40 cursor-not-allowed'}" title="Pay Debt">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        </button>
+
+                        <button onclick="deleteCustomer(${c.id})" class="p-1.5 border border-red-200 rounded-lg bg-white text-red-500 hover:bg-red-50 transition ${c.has_debt ? 'hidden' : ''}" title="Delete Customer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+// --- نظام الدفع المطور (الربط الحقيقي مع قاعدة البيانات) ---
+        
+
+        async function openPaymentModal(id) {
+            activePaymentCustomerId = id;
+            const customer = allCustomers.find(c => c.id === id);
+            if (!customer) return;
+
+            // تعبئة بيانات العميل في النافذة
+            document.getElementById('modalCustName').innerText = customer.name;
+            document.getElementById('modalCustPhone').innerText = customer.phone;
+            document.getElementById('modalCustFile').innerText = customer.file_number || '---';
+            document.getElementById('modalCustBalance').innerText = `${parseFloat(customer.wallet_balance || 0).toFixed(0)} QAR`;
+            
+            // تصفير المحتويات السابقة
+            document.getElementById('orderRowsContainer').innerHTML = '';
+            document.getElementById('pendingCount').innerText = "Loading...";
+            document.getElementById('pendingTotal').innerText = "0.00 QAR";
+            document.getElementById('commAmount').value = 0;
+            document.getElementById('payNotes').value = '';
+            setPaymentMethod('CASH');
+
+            try {
+                const response = await fetch(`/api/orders/checkout/pending/?customer=${id}`);
+                
+                // إذا رد السيرفر بخطأ 500 سيظهر تنبيه هنا بدلاً من التجمد
+                if (!response.ok) {
+                    const err = await response.json();
+                    console.error("Backend Error:", err);
+                    document.getElementById('pendingCount').innerText = "Server Error";
+                    return;
+                }
+
+                const data = await response.json();
+                currentCustomerPendingOrders = Array.isArray(data) ? data : (data.results || []);
+                
+                // باقي الكود كما هو عندك...
+                
+                if (currentCustomerPendingOrders.length === 0) {
+                    document.getElementById('pendingCount').innerText = "0 pending orders";
+                    document.getElementById('pendingTotal').innerText = "0.00 QAR";
+                } else {
+                    const totalPending = currentCustomerPendingOrders.reduce((sum, o) => {
+                        const amt = parseFloat(o.total_amount) || parseFloat(o.total) || 0;
+                        return sum + amt;
+                    }, 0);
+                    document.getElementById('pendingCount').innerText = `${currentCustomerPendingOrders.length} pending orders`;
+                    document.getElementById('pendingTotal').innerText = `${totalPending.toFixed(2)} QAR`;
+                }
+            } catch (error) {
+                console.error("Fetch error:", error);
+                document.getElementById('pendingCount').innerText = "Connection Error";
+            }
+            calculateTotal();
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+
+        function setPaymentMethod(method) {
+            selectedPaymentMethod = method;
+            document.getElementById('btnPayCash').classList.toggle('btn-active', method === 'CASH');
+            document.getElementById('btnPayCard').classList.toggle('btn-active', method === 'CARD');
+            document.getElementById('btnPayWallet').classList.toggle('btn-active', method === 'WALLET');
+            document.getElementById('btnPayGiftCard').classList.toggle('btn-active', method === 'GIFT_CARD');
+            
+            document.getElementById('giftCardSection').classList.toggle('hidden', method !== 'GIFT_CARD');
+        }
+
+        function addOrderRow(orderId = '', amount = 0) {
+            const container = document.getElementById('orderRowsContainer');
+            if (currentCustomerPendingOrders.length === 0 && orderId === '') return alert("No pending orders found.");
+
+            const rowId = 'row_' + Date.now() + Math.random().toString(36).substr(2, 5);
+            
+            // بناء قائمة الخيارات ديناميكياً
+            let optionsHTML = '';
+            currentCustomerPendingOrders.forEach(o => {
+                const displayId = `OR-${String(o.id).padStart(6, '0')}`;
+                const itemAmount = parseFloat(o.total_amount).toFixed(2);
+                const isSelected = (orderId == o.id) ? 'selected' : '';
+                optionsHTML += `<option value="${o.id}" data-amount="${itemAmount}" ${isSelected}>${displayId} (${itemAmount} QAR)</option>`;
+            });
+
+            const html = `
+                <div id="${rowId}" class="grid grid-cols-5 gap-3 items-center animate-row bg-white p-2 rounded-xl border border-gray-100 shadow-sm mb-2">
+                    <div class="col-span-3">
+                        <select onchange="updateRowAmount(this, '${rowId}')" class="order-select w-full bg-[#f8fafc] border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none">
+                            <option value="">Select pending order...</option>
+                            ${optionsHTML}
+                        </select>
+                    </div>
+                    <div class="col-span-2 flex items-center gap-2">
+                        <input type="number" oninput="calculateTotal()" value="${amount}" class="order-amount w-full bg-[#f8fafc] border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-center font-bold">
+                        <button onclick="removeOrderRow('${rowId}')" class="text-gray-300 hover:text-red-500 text-xl px-2">&times;</button>
+                    </div>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+            calculateTotal();
+        }
+
+        function updateRowAmount(selectEl, rowId) {
+            const selectedOption = selectEl.options[selectEl.selectedIndex];
+            if(selectedOption && selectedOption.value) {
+                const amount = selectedOption.getAttribute('data-amount') || 0;
+                const input = document.querySelector(`#${rowId} .order-amount`);
+                if (input) input.value = amount;
+                calculateTotal();
+            }
+        }
+
+        function removeOrderRow(id) { 
+            const row = document.getElementById(id);
+            if(row) row.remove(); 
+            calculateTotal(); 
+        }
+
+        function selectAllOrders() {
+            document.getElementById('orderRowsContainer').innerHTML = ''; 
+            if (currentCustomerPendingOrders.length === 0) return alert("No pending orders found.");
+            currentCustomerPendingOrders.forEach(o => addOrderRow(o.id, o.total_amount));
+        }
+
+        function calculateTotal() {
+            let total = 0;
+            document.querySelectorAll('.order-amount').forEach(inp => total += parseFloat(inp.value || 0));
+            
+            document.getElementById('payAmountInput').value = total.toFixed(2);
+            document.getElementById('footerTotal').innerText = `${total.toFixed(0)} QAR`;
+            const indicator = document.getElementById('statusIndicator');
+            if (total > 0) { indicator.classList.remove('hidden'); indicator.classList.add('flex'); }
+            else { indicator.classList.add('hidden'); indicator.classList.remove('flex'); }
+        }
+
+        function closePaymentModal() { document.getElementById('paymentModal').classList.add('hidden'); }
+       // --- وظائف العميل وتحديث الفئات ---
+        function fillFormForEdit(id) {
+            const customer = allCustomers.find(c => c.id === id);
+            if (!customer) return;
+            editingCustomerId = id;
+            document.getElementById('custName').value = customer.name;
+            document.getElementById('custPhone').value = customer.phone;
+            document.getElementById('custFile').value = customer.file_number || '';
+            document.getElementById('custFold').value = customer.fold_type || 'Folded';
+            document.getElementById('custAddress').value = customer.address || '';
+            if(document.getElementById('custCategory')) document.getElementById('custCategory').value = customer.customer_category || 'Uncategorized';
+            document.getElementById('formTitle').innerText = "Edit Customer";
+            document.getElementById('saveBtn').innerText = "Update Info";
+            document.getElementById('saveBtn').classList.replace('bg-[#0085c3]', 'bg-orange-500');
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+        }
+
+        function resetForm() {
+            editingCustomerId = null;
+            document.getElementById('custName').value = '';
+            document.getElementById('custPhone').value = '';
+            document.getElementById('custFile').value = '';
+            document.getElementById('custAddress').value = '';
+            if(document.getElementById('custCategory')) document.getElementById('custCategory').value = 'Uncategorized';
+            document.getElementById('formTitle').innerText = "New Customer";
+            document.getElementById('saveBtn').innerText = "Save Customer";
+            document.getElementById('saveBtn').classList.replace('bg-orange-500', 'bg-[#0085c3]');
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+        }
+
+        async function saveNewCustomer() {
+            const name = document.getElementById('custName').value.trim();
+            const phone = document.getElementById('custPhone').value.trim();
+            if(!name || !phone) return alert("Fill required fields!");
+
+            const payload = { 
+                name, 
+                phone, 
+                file_number: document.getElementById('custFile').value, 
+                fold_type: document.getElementById('custFold').value, 
+                customer_category: document.getElementById('custCategory') ? document.getElementById('custCategory').value : 'Uncategorized',
+                address: document.getElementById('custAddress').value 
+            };
+            const method = editingCustomerId ? 'PUT' : 'POST';
+            const url = editingCustomerId ? `/api/accounts/search/${editingCustomerId}/` : '/api/accounts/search/';
+
+            try {
+                const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }, body: JSON.stringify(payload) });
+                if (response.ok) { resetForm(); fetchCustomers(); }
+            } catch(e) { alert("Network error!"); }
+        }
+        function showCustomerInfo(name, address) {
+            alert("🏠 Customer: " + name + "\n\n📍 Registered Address:\n" + (address || 'No address registered'));
+        }
+
+        // --- دوال إدارة الفئات (Categories) ---
+       // --- دوال إدارة الفئات (Categories) النهائية والنظيفة ---
+       async function fetchCategories() {
+            try {
+                const response = await fetch('/api/accounts/categories/');
+                if (response.ok) {
+                    const data = await response.json();
+                    const categories = Array.isArray(data) ? data : (data.results || []);
+                    
+                    const selectEl = document.getElementById('custCategory');
+                    const filterEl = document.getElementById('filterCategory');
+
+                    if(selectEl) {
+                        let optionsHTML = `<option value="Uncategorized" disabled selected>Select category (optional)</option>`;
+                        optionsHTML += `<option value="Uncategorized">Uncategorized</option>`;
+                        categories.forEach(cat => { optionsHTML += `<option value="${cat.name}">${cat.name}</option>`; });
+                        selectEl.innerHTML = optionsHTML;
+                    }
+                    
+                    if(filterEl) {
+                        let filterHTML = `<option value="">All Categories</option>`;
+                        categories.forEach(cat => { filterHTML += `<option value="${cat.name}">${cat.name}</option>`; });
+                        filterEl.innerHTML = filterHTML;
+                    }
+                }
+            } catch (error) { console.error("Error loading categories:", error); }
+        }
+
+        async function saveNewCategoryAPI() {
+            const catName = document.getElementById('newCategoryName').value.trim();
+            if (!catName) return alert("الرجاء إدخال اسم الفئة!");
+            
+            const btn = document.querySelector('button[onclick="saveNewCategoryAPI()"]');
+            const originalText = btn.innerText; 
+            btn.innerText = "Saving..."; 
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/accounts/categories/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ name: catName })
+                });
+
+                if (response.ok) {
+                    document.getElementById('newCategoryName').value = ''; 
+                    closeModal('categoryModal'); 
+                    await fetchCategories(); 
+                    if(document.getElementById('custCategory')) {
+                        document.getElementById('custCategory').value = catName; 
+                    }
+                } else {
+                    alert("خطأ: قد تكون الفئة موجودة مسبقاً.");
+                }
+            } catch (error) { alert("Network Error!"); }
+            finally { btn.innerText = originalText; btn.disabled = false; }
+        }
+
+        function filterTable() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const cat = document.getElementById('filterCategory').value;
+            
+            const filtered = allCustomers.filter(c => {
+                const matchQuery = (c.name || '').toLowerCase().includes(q) || 
+                                   (c.phone || '').includes(q) || 
+                                   (c.file_number && String(c.file_number).includes(q));
+                const matchCat = cat === "" || (c.customer_category === cat);
+                return matchQuery && matchCat;
+            });
+            renderTable(filtered);
+        }
+
+        // تشغيل الدوال فور تحميل الصفحة
+        window.onload = function() {
+            fetchCustomers();
+            fetchCategories(); 
+        };
+    </script>
+    
+
+    <div id="historyModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[60]">
+        <div class="bg-white rounded-xl shadow-2xl w-[600px] max-h-[80vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-[#f8fafc]">
+                <h3 class="text-purple-600 font-bold flex items-center gap-2 text-lg">
+                    <span class="text-xl">📜</span> Order History / سجل المشتريات
+                </h3>
+                <button onclick="closeModal('historyModal')" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-white">
+                <div class="grid grid-cols-5 text-[11px] font-bold text-gray-400 uppercase mb-3 px-2 border-b pb-2">
+                    <div class="col-span-1">Order #</div>
+                    <div class="col-span-2">Date</div>
+                    <div class="col-span-1 text-center">Total</div>
+                    <div class="col-span-1 text-center">Action</div>
+                </div>
+                <div id="historyRowsContainer" class="space-y-2">
+                    <div class="text-center text-gray-400 py-10">Loading history...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="categoryModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[70]">
+        <div class="bg-white rounded-xl shadow-2xl w-[400px] flex flex-col overflow-hidden">
+            <div class="px-5 py-4 flex justify-between items-center border-b border-gray-100">
+                <div>
+                    <h3 class="text-gray-800 font-bold text-lg">Create Customer Category</h3>
+                    <p class="text-xs text-gray-400 mt-1">Add a reusable customer category to classify your clients.</p>
+                </div>
+                <button onclick="closeModal('categoryModal')" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="p-5">
+                <label class="block text-xs font-bold text-gray-600 mb-1.5">Category Name</label>
+                <input type="text" id="newCategoryName" class="w-full border-2 border-blue-400 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-100" placeholder="e.g., Corporate Clients">
+            </div>
+            <div class="px-5 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+                <button onclick="closeModal('categoryModal')" class="px-5 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-100 transition">Cancel</button>
+                <button onclick="saveNewCategoryAPI()" class="px-5 py-2 bg-[#0085c3] text-white rounded-lg text-sm font-bold shadow-md hover:bg-blue-700 transition">Save</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        async function enforcePermissions() {
+            try {
+                const res = await fetch('/api/accounts/my-permissions/');
+                const perms = await res.json();
+
+                if (perms.is_superuser === true) return;
+
+                // 1. منع الدخول بالكامل إذا لم يكن لديه صلاحية العملاء (النظام الذكي والرحيم)
+                if (perms.can_access_customers === false || perms.error) {
+                    
+                    let fallbackUrl = '/logout/';
+                    let fallbackText = 'تسجيل الخروج';
+                    
+                    if (perms.can_access_pos) { fallbackUrl = '/cashier/'; fallbackText = 'العودة للكاشير'; }
+                    else if (perms.can_access_orders) { fallbackUrl = '/orders/management/'; fallbackText = 'العودة للطلبات'; }
+
+                    document.body.innerHTML = `
+                        <div class="h-screen w-full flex flex-col items-center justify-center bg-gray-50">
+                            <span class="text-6xl mb-4">🛑</span>
+                            <h1 class="text-3xl font-black text-red-600 mb-2">Access Denied! (غير مصرح لك)</h1>
+                            <p class="text-gray-500 font-bold mb-6">عفواً، ليس لديك الصلاحية لدخول شاشة العملاء.</p>
+                            <div class="flex gap-4 mt-4">
+    <button onclick="window.history.back()" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-gray-300 transition">⬅ رجوع</button>
+    <a href="${fallbackUrl}" class="bg-[#007ec5] text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 transition">🏠 ${fallbackText}</a>
+    <a href="/logout/" class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-red-600 transition">🚪 خروج للتبديل</a>
+</div>
+                        </div>`;
+                    return;
+                }
+
+                // 2. إخفاء الأزرار الممنوعة بحقن CSS ذكي
+                let cssToInject = '';
+                
+                if (!perms.can_access_pos) cssToInject += 'a[href="/cashier/"] { display: none !important; } ';
+                if (!perms.can_access_orders) cssToInject += 'a[href="/orders/management/"] { display: none !important; } ';
+
+                if (!perms.can_edit_customer) cssToInject += 'button[title="Edit Profile"], #saveBtn { display: none !important; } ';
+                if (!perms.can_delete_customer) cssToInject += 'button[title="Delete Customer"] { display: none !important; } ';
+                if (!perms.can_pay_debt) cssToInject += 'button[title="Pay Debt"] { display: none !important; } ';
+                if (!perms.can_view_history) cssToInject += 'button[title="Order History"] { display: none !important; } ';
+                if (!perms.can_add_category) cssToInject += 'button[onclick*="categoryModal"] { display: none !important; } ';
+
+                if (cssToInject !== '') {
+                    const style = document.createElement('style');
+                    style.innerHTML = cssToInject;
+                    document.head.appendChild(style);
+                }
+
+            } catch (e) {
+                console.error("Permission check failed", e);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', enforcePermissions);
+    </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Debt Settlement Receipt</title>
+    <style>
+        @page { margin: 0; size: 80mm auto; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            width: 72mm; 
+            margin: 0 auto; 
+            padding: 2mm 4mm; 
+            font-size: 12px; 
+            line-height: 1.4; 
+            color: #000;
+            font-weight: bold;
+        }
+        .text-center { text-align: center; }
+        .flex-between { display: flex; justify-content: space-between; margin-bottom: 3px; }
+        .separator-dashed { border-top: 1px dashed #000; margin: 6px 0; padding-top: 4px; }
+        .separator-solid { border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 6px 0; margin: 8px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11px; font-weight: bold; }
+        th, td { border: 1px solid #000; padding: 5px 3px; text-align: center; }
+        th { background-color: #f8f8f8; }
+        td.item-name { text-align: left; line-height: 1.3; }
+        .barcode-container { text-align: center; margin-top: 15px; display: flex; justify-content: center; }
+        .footer-terms { text-align: center; font-size: 10px; font-weight: bold; margin-bottom: 10px; line-height: 1.3; }
+        .footer-terms p { margin: 2px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="text-center">
+        <img src="{% static 'images/logo.png' %}" style="width: 80px; height: auto; margin: 0 auto 5px auto; display: block;" alt="Al Marona Logo">
+        <div style="font-size: 18px; font-weight: 900;">AL MARONA LAUNDRY</div>
+        <div style="font-size: 16px; font-weight: bold; font-family: tahoma, sans-serif;">مغسلة المرونة</div>
+        <div style="font-size: 10px; font-weight: normal;">Al Duhail, Doha, Qatar | Tel: +974 5188 8455</div>
+    </div>
+
+    <div class="separator-dashed" id="receipt-header" style="font-size: 11px;">
+        </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="item-name">الفاتورة / Invoice</th>
+                <th style="width: 15%;">Qty</th>
+                <th style="width: 20%;">Paid<br>المسدد</th>
+            </tr>
+        </thead>
+        <tbody id="receipt-body">
+             </tbody>
+    </table>
+
+    <div style="font-size: 12px;" id="receipt-totals">
+         </div>
+
+    <div class="separator-dashed" style="font-size: 14px; text-align: left;">
+        <div>☑ Debt Settlement / سداد مديونية</div>
+    </div>
+
+    <div class="text-center separator-solid" style="font-size: 24px; font-weight: 900; letter-spacing: 2px;">
+        SETTLED
+    </div>
+
+    <div class="footer-terms">
+        <p>لن تكون المغسلة مسؤولة عن الملابس التي لم<br>يطالب بها أصحابها خلال 3 شهور.</p>
+        <p>المغسلة غير مسؤولة عن أي انكماش أو بهتان للألوان.<br>يرجى التأكد من صحة الملابس قبل إيداعها المغسلة<br>وعند استلامها.</p>
+        <br>
+        <p style="font-family: Arial, sans-serif;">The Laundry Will Not Be Responsible For<br>Bundles Not Claimed Within 3 Months.</p>
+        <p style="font-family: Arial, sans-serif;">The Laundry Is Not Responsible For Shrinkage,<br>Damage Or Non-Fastness Of Colours. Please Be<br>Sure Of The Number Of Your Article Prior To<br>Depositing And Collection.</p>
+    </div>
+
+    <div class="barcode-container">
+        <svg id="barcode"></svg>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <script>
+        window.onload = function() {
+            // استرجاع البيانات التي أرسلتها شاشة العملاء
+            const dataStr = localStorage.getItem('lastDebtReceipt');
+            if(!dataStr) { document.body.innerHTML = "No data found"; return; }
+            
+            const data = JSON.parse(dataStr);
+            const dateStr = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+            
+            // بناء الترويسة
+            document.getElementById('receipt-header').innerHTML = `
+                <div class="flex-between"><span style="font-weight:900;">Type / النوع:</span> <span>Debt Settlement</span></div>
+                <div class="flex-between"><span>Date / التاريخ:</span> <span>${dateStr}</span></div>
+                <div class="flex-between"><span>Status / الحالة:</span> <span>COMPLETED</span></div>
+                <div class="flex-between"><span>Invoices / فواتير:</span> <span>${data.orders.length}</span></div>
+                <div class="separator-dashed mt-2"></div>
+                <div class="flex-between"><span>العميل / Customer:</span> <span>${data.customer.name}</span></div>
+                <div class="flex-between"><span>الهاتف / Phone:</span> <span>${data.customer.phone}</span></div>
+            `;
+
+            // بناء الجدول
+            let tbodyHTML = '';
+            data.orders.forEach(o => {
+                tbodyHTML += `
+                    <tr>
+                        <td class="item-name">${o.display_id}</td>
+                        <td>1</td>
+                        <td>${parseFloat(o.amount).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('receipt-body').innerHTML = tbodyHTML;
+
+            // بناء المجاميع
+            const methodDisplay = data.method.replace('_', ' ');
+            document.getElementById('receipt-totals').innerHTML = `
+                <div class="flex-between"><span>المجموع الجزئي / Subtotal:</span> <span>${parseFloat(data.totalAmount).toFixed(2)} QAR</span></div>
+                <div class="flex-between mt-1 separator-dashed" style="font-size: 14px; font-weight: 900;">
+                    <span>المسدد / TOTAL PAID:</span> 
+                    <span>PAID (${methodDisplay})</span>
+                </div>
+            `;
+
+            // الباركود
+            let barcodeValue = data.customer.file_number || data.customer.phone || '0000';
+            JsBarcode("#barcode", barcodeValue, {
+                format: "CODE128", 
+                width: 1.6, 
+                height: 45, 
+                displayValue: true, 
+                fontSize: 14, 
+                fontOptions: "bold",
+                margin: 0
+            });
+
+            // مسح البيانات المؤقتة وطباعة الفاتورة
+            localStorage.removeItem('lastDebtReceipt');
+            setTimeout(() => { window.print(); window.close(); }, 500);
+        };
+    </script>
+</body>
+</html>

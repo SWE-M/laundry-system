@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Wallet Balance Statement</title>
+    <style>
+        @page { margin: 0; size: 80mm auto; }
+        body { font-family: 'Arial', sans-serif; width: 72mm; margin: 0 auto; padding: 5mm; font-size: 14px; text-align: center; font-weight: bold; color: #000; }
+        .logo { width: 85px; height: auto; margin-bottom: 10px; }
+        .title { font-size: 18px; font-weight: 900; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 6px 0; margin: 15px 0; }
+        .statement-text { font-size: 13px; margin: 15px 0; line-height: 1.5; }
+        .balance-box { background: #000; color: #fff; padding: 15px; margin: 15px 0; border-radius: 4px; }
+        .balance-value { font-size: 30px; font-weight: 900; }
+        .info-box { text-align: left; font-size: 12px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <img src="">
+    <div style="font-size: 16px;">LAUNDRY System</div>
+    <div class="title">BALANCE STATEMENT / كشف رصيد</div>
+
+    <div class="info-box">
+        <div>Customer / العميل: <span id="name"></span></div>
+        <div>Phone / الهاتف: <span id="phone"></span></div>
+        <div>File / الملف: <span id="file"></span></div>
+    </div>
+
+    <div class="statement-text">
+        يرجى العلم بأن رصيدك الحالي المتوفر في المحفظة هو:
+        <br>
+        Please note that your current available wallet balance is:
+    </div>
+
+    <div class="balance-box">
+        <div class="balance-value"><span id="balance"></span> QAR</div>
+    </div>
+
+    <div style="margin-top: 20px; font-size: 11px;">
+        تم استخراج هذا البيان بناءً على طلبكم.
+        <br>
+        Statement generated upon your request.
+    </div>
+
+    <script>
+        window.onload = function() {
+            const data = JSON.parse(localStorage.getItem('printBalance'));
+            if(!data) return;
+            document.getElementById('name').innerText = data.name;
+            document.getElementById('phone').innerText = data.phone;
+            document.getElementById('file').innerText = data.file;
+            document.getElementById('balance').innerText = parseFloat(data.balance).toFixed(2);
+            setTimeout(() => { window.print(); window.close(); }, 500);
+        };
+    </script>
+</body>
+</html>

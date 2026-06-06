@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Laundry Revenue Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .daterangepicker { font-family: 'Inter', sans-serif !important; border-radius: 0.75rem !important; }
+        .daterangepicker .ranges li.active { background-color: #0ea5e9; }
+        .daterangepicker td.active { background-color: #0ea5e9 !important; }
+        
+        @media print {
+            body > *:not(#printArea) { display: none !important; }
+            body { background-color: white; }
+            #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+            .print-table th, .print-table td { border: 2px solid #000 !important; padding: 8px; }
+            @page { size: A4; margin: 10mm; }
+        }
+    </style>
+</head>
+<body class="text-[#0f172a] h-screen overflow-hidden flex flex-col">
+
+    <div class="flex-1 overflow-y-auto p-8 scrollbar-hide">
+        
+        <div class="flex justify-between items-center mb-8 gap-4">
+            <div class="flex gap-3">
+                <div class="relative w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">📅</span>
+                    <input type="text" id="reportDateRange" class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:border-blue-500 outline-none cursor-pointer bg-white font-medium" readonly>
+                </div>
+                <div class="relative w-56">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+                    <input type="text" id="searchFilter" placeholder="Search receipts..." class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:border-blue-500 outline-none">
+                </div>
+                <select id="methodFilter" class="border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-sm font-semibold outline-none cursor-pointer text-gray-700">
+                    <option value="all">All Payments</option>
+                    <option value="cash">Cash</option>
+                    <option value="bank">Bank</option>
+                </select>
+                <select id="catFilter" class="border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-sm font-semibold outline-none cursor-pointer text-gray-700">
+                    <option value="all">All Categories</option>
+                </select>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="exportExcel()" class="border border-gray-300 bg-white text-gray-700 px-5 py-2 text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition shadow-sm rounded">
+                    📥 Export
+                </button>
+                <button onclick="window.print()" class="border border-gray-300 bg-white text-gray-700 px-5 py-2 text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition shadow-sm rounded">
+                    🖨️ Print
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-6 mb-8">
+            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm relative">
+                <p class="text-xs font-bold text-gray-500 mb-2">Total Collections <span class="absolute right-4 top-4 text-gray-400 text-lg">💲</span></p>
+                <h3 class="text-2xl font-black text-gray-800">QAR <span id="kpi-total">0.00</span></h3>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm relative">
+                <p class="text-xs font-bold text-gray-500 mb-2">Cash Receipts <span class="absolute right-4 top-4 text-gray-400 text-lg">💵</span></p>
+                <h3 class="text-2xl font-black text-gray-800">QAR <span id="kpi-cash">0.00</span></h3>
+                <p class="text-[10px] text-gray-400 mt-1 font-bold">(<span id="kpi-cash-cnt">0</span> receipts)</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm relative">
+                <p class="text-xs font-bold text-gray-500 mb-2">Bank Receipts <span class="absolute right-4 top-4 text-gray-400 text-lg">💳</span></p>
+                <h3 class="text-2xl font-black text-gray-800">QAR <span id="kpi-bank">0.00</span></h3>
+                <p class="text-[10px] text-gray-400 mt-1 font-bold">(<span id="kpi-bank-cnt">0</span> receipts)</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm relative">
+                <p class="text-xs font-bold text-gray-500 mb-2">Total Commission <span class="absolute right-4 top-4 text-gray-400 text-lg">📈</span></p>
+                <h3 class="text-2xl font-black text-gray-800">QAR 0.00</h3>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 shadow-sm overflow-hidden rounded-t">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-[#f0f9ff] text-slate-600 font-bold border-b border-blue-100 text-[11px] uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-4">Date</th>
+                        <th class="px-6 py-4">Receipt #</th>
+                        <th class="px-6 py-4">Order Items</th>
+                        <th class="px-6 py-4">Customer</th>
+                        <th class="px-6 py-4 text-center">Payment Method</th>
+                        <th class="px-6 py-4 text-right">Amount</th>
+                        <th class="px-6 py-4 text-right">Commission</th>
+                        <th class="px-6 py-4 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTbody" class="divide-y divide-gray-100">
+                    <tr><td colspan="8" class="p-10 text-center text-gray-500 font-bold">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="printArea" class="hidden text-black font-sans bg-white p-8">
+        
+        <div class="flex justify-between items-start border-b-2 border-black pb-2 mb-3">
+            <div class="text-left flex flex-col gap-0">
+                <img src="/static/images/logo.png" alt="Al Marona Logo" class="h-10 object-contain mb-1 w-max">
+                <h1 class="text-lg font-black text-black uppercase tracking-wide">AL MARONA LAUNDRY</h1>
+                <h2 class="text-base font-black text-black">مغسلة المرونة</h2>
+                <p class="text-[11px] text-black font-bold mt-0.5">Al Duhail, Doha, Qatar</p>
+                <p class="text-[11px] text-black font-bold">Tel: +974 5188 8455</p>
+                <p class="text-[11px] text-black font-bold">C.R. No.: 201365</p>
+            </div>
+            
+            <div class="text-right text-[9px] font-bold text-gray-500 flex flex-col items-end gap-0.5 mt-2">
+                <span id="print-top-date">---</span>
+                <span>مغسلة المرونة | Al Marona Laundry</span>
+            </div>
+        </div>
+
+        <div class="text-center mb-4 mt-1">
+            <h2 class="text-lg font-black text-black tracking-wide decoration-2 underline underline-offset-4">Collections Report</h2>
+            <p class="text-[11px] text-gray-600 mt-1 font-bold" id="print-date-range">---</p>
+        </div>
+        <h3 class="text-lg font-black mb-3">Summary Overview</h3>
+        <table class="w-full text-sm text-left mb-8 border-t border-b-2 border-black">
+            <tr class="border-b border-gray-200"><td class="py-2 text-gray-600">Total Collections</td><td class="py-2 font-black text-right" id="p-tot">QAR 0.00</td></tr>
+            <tr class="border-b border-gray-200"><td class="py-2 text-gray-600">Cash Receipts</td><td class="py-2 font-bold text-right"><span id="p-c-cnt" class="mr-4">0</span> <span id="p-c-amt">QAR 0.00</span></td></tr>
+            <tr class="border-b border-gray-200"><td class="py-2 text-gray-600">Bank Receipts</td><td class="py-2 font-bold text-right"><span id="p-b-cnt" class="mr-4">0</span> <span id="p-b-amt">QAR 0.00</span></td></tr>
+        </table>
+        <h3 class="text-lg font-black mb-3">Receipt Details</h3>
+        <table class="w-full text-xs text-left border-collapse print-table">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="font-black w-20">Date</th>
+                    <th class="font-black w-20">Receipt #</th>
+                    <th class="font-black">Order #</th>
+                    <th class="font-black">Customer</th>
+                    <th class="font-black text-center">Payment Method</th>
+                    <th class="font-black text-right w-20">Amount</th>
+                </tr>
+            </thead>
+            <tbody id="printTbody"></tbody>
+            <tfoot class="font-black bg-gray-50">
+                <tr>
+                    <td colspan="5" class="p-2 border-2 border-black">Total</td>
+                    <td class="text-right p-2 border-2 border-black" id="p-table-tot">QAR 0.00</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <script>
+        let startDate = moment().startOf('month').format('YYYY-MM-DD');
+        let endDate = moment().endOf('month').format('YYYY-MM-DD');
+
+        $(function() {
+            $('#reportDateRange').daterangepicker({
+                startDate: moment().startOf('month'),
+                endDate: moment().endOf('month'),
+                ranges: {
+                   'Today': [moment(), moment()],
+                   'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                   'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                   'This Month': [moment().startOf('month'), moment().endOf('month')],
+                },
+                locale: { format: 'MMM D, YYYY' }
+            }, function(start, end) {
+                startDate = start.format('YYYY-MM-DD');
+                endDate = end.format('YYYY-MM-DD');
+                document.getElementById('print-date-range').innerText = start.format('DD Mar YYYY') + ' - ' + end.format('DD Mar YYYY');
+                fetchData();
+            });
+        });
+
+        document.getElementById('methodFilter').addEventListener('change', fetchData);
+        document.getElementById('searchFilter').addEventListener('keyup', (e) => { if(e.key === 'Enter') fetchData(); });
+
+        async function fetchData() {
+            const method = document.getElementById('methodFilter').value;
+            const search = document.getElementById('searchFilter').value;
+            const url = `{% url 'api_revenue_report_data' %}?start=${startDate}&end=${endDate}&method=${method}&search=${search}`;
+            const tbody = document.getElementById('reportTbody');
+            
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Network response was not ok');
+                const data = await res.json();
+                updateUI(data);
+            } catch(e) { 
+                console.error(e);
+                tbody.innerHTML = `<tr><td colspan="8" class="p-10 text-center text-red-500 font-bold bg-red-50 border border-red-200">❌ Error Loading Data.</td></tr>`;
+            }
+        }
+
+        function updateUI(data) {
+            // KPIs
+            document.getElementById('kpi-total').innerText = parseFloat(data.kpis.total_collections).toFixed(2);
+            document.getElementById('kpi-cash').innerText = parseFloat(data.kpis.cash_total).toFixed(2);
+            document.getElementById('kpi-cash-cnt').innerText = data.kpis.cash_count;
+            document.getElementById('kpi-bank').innerText = parseFloat(data.kpis.bank_total).toFixed(2);
+            document.getElementById('kpi-bank-cnt').innerText = data.kpis.bank_count;
+
+            // A4 Print variables
+            document.getElementById('p-tot').innerText = `QAR ${parseFloat(data.kpis.total_collections).toFixed(2)}`;
+            document.getElementById('p-c-amt').innerText = `QAR ${parseFloat(data.kpis.cash_total).toFixed(2)}`;
+            document.getElementById('p-c-cnt').innerText = data.kpis.cash_count;
+            document.getElementById('p-b-amt').innerText = `QAR ${parseFloat(data.kpis.bank_total).toFixed(2)}`;
+            document.getElementById('p-b-cnt').innerText = data.kpis.bank_count;
+            document.getElementById('p-table-tot').innerText = `QAR ${parseFloat(data.kpis.total_collections).toFixed(2)}`;
+
+            const tbody = document.getElementById('reportTbody');
+            const ptbody = document.getElementById('printTbody');
+            
+            if(data.table.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-10 text-center text-gray-500 font-bold">No receipts found for this period.</td></tr>`;
+                ptbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center">No records.</td></tr>`;
+                return;
+            }
+
+            // Base URL for individual prints
+            let printBaseUrl = "";
+try { printBaseUrl = "{% url 'print_order_receipt' 999999 %}".replace('999999/', ''); } catch(e) {}
+            let html = '';
+            let phtml = '';
+            
+            data.table.forEach(r => {
+                // 1. لستة الطلبات (طابعة صغيرة + رقم الطلب بخط صغير ومرتب مسنتر)
+                // 🌟 هنا السر: خلينا رقم الطلب كامل قابل للضغط كأنه رابط 🌟
+                const ordersList = r.orders.map(o => `
+                    <div class="flex items-center gap-1.5 text-slate-500 hover:text-blue-600 transition mb-1 w-max">
+                        <a href="${printBaseUrl}${o.id}/" target="_blank" title="Print Original Order" class="flex items-center gap-1.5 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400 hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                            <span class="font-mono text-[11.5px] font-bold tracking-tight hover:underline">${o.display}</span>
+                        </a>
+                    </div>
+                `).join('');
+
+                // 2. تصميم الباج الخاص بطريقة الدفع (مربع صغير وألوان دقيقة)
+                let tagClass = "bg-slate-100 text-slate-600 border border-slate-200"; // Default Bank
+                let methodIcon = "💳";
+                if(r.method === 'CASH') {
+                    tagClass = "bg-blue-50 text-blue-600 border border-blue-200";
+                    methodIcon = "💵";
+                }
+
+                // 3. رابط زر السند المجمع (الرول الحراري)
+                const orderIds = r.orders.map(o => o.id).join(',');
+                const groupedPrintUrl = `{% url 'print_grouped_receipt' %}?orders=${orderIds}&method=${r.method}&receipt_no=${r.receipt_no}`;
+
+                // 🌟 التركيز هنا على (align-middle) لكل الأعمدة 🌟
+                html += `
+                    <tr class="hover:bg-slate-50 transition border-b border-gray-100 group">
+                        <td class="px-6 py-4 align-middle text-slate-500 text-xs">${r.date}</td>
+                        <td class="px-6 py-4 align-middle text-[13px] font-medium text-slate-700">${r.receipt_no}</td>
+                        <td class="px-6 py-3 align-middle">
+                            <div class="flex flex-col gap-1.5 justify-center">${ordersList}</div>
+                        </td>
+                        <td class="px-6 py-4 align-middle">
+                            <div class="flex flex-col justify-center">
+                                <span class="font-bold text-slate-800 text-[13px] mb-0.5">${r.customer}</span>
+                                <span class="text-[11px] text-slate-400">File No: ${r.customer_file}</span>
+                                <span class="text-[11px] text-slate-400">Phone: ${r.customer_phone}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 align-middle text-center">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded ${tagClass}">
+                                ${methodIcon} ${r.method}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 align-middle text-right text-slate-600 font-mono text-[13px]">QAR ${parseFloat(r.amount).toFixed(2)}</td>
+                        <td class="px-6 py-4 align-middle text-right text-slate-400 font-mono text-[13px]">QAR 0.00</td>
+                        <td class="px-6 py-4 align-middle text-center">
+                            <a href="${groupedPrintUrl}" target="_blank" title="Print Grouped Receipt" class="inline-flex items-center justify-center w-8 h-8 border border-gray-200 rounded text-gray-400 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition bg-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                            </a>
+                        </td>
+                    </tr>`;
+
+                // إضافة للطباعة A4
+                const printOrdersList = r.orders.map(o => o.display).join(', ');
+                phtml += `
+                    <tr>
+                        <td class="p-2 border border-black align-top">${r.date}</td>
+                        <td class="p-2 border border-black align-top font-bold">${r.receipt_no}</td>
+                        <td class="p-2 border border-black align-top text-[10px]">${printOrdersList}</td>
+                        <td class="p-2 border border-black align-top text-[10px]">
+                            <b>${r.customer}</b><br>Ph: ${r.customer_phone}
+                        </td>
+                        <td class="p-2 border border-black align-top text-center text-[10px] font-bold">${r.method}</td>
+                        <td class="p-2 border border-black align-top text-right font-bold">QAR ${parseFloat(r.amount).toFixed(2)}</td>
+                    </tr>`;
+            });
+            
+            tbody.innerHTML = html;
+            ptbody.innerHTML = phtml;
+
+            const now = new Date();
+            document.getElementById('print-top-date').innerText = now.toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'}) + ' ' + now.toLocaleDateString('en-GB');
+        }
+
+        function exportExcel() {
+            const method = document.getElementById('methodFilter').value;
+            const search = document.getElementById('searchFilter').value;
+            window.location.href = `{% url 'export_revenue_excel' %}?start=${startDate}&end=${endDate}&method=${method}&search=${search}`;
+        }
+
+        window.onload = () => {
+            document.getElementById('print-date-range').innerText = moment().startOf('month').format('DD Mar YYYY') + ' - ' + moment().endOf('month').format('DD Mar YYYY');
+            fetchData();
+        };
+    </script>
+</body>
+</html>

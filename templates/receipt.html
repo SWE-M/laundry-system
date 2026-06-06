@@ -1,0 +1,252 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt {{ order.id|stringformat:"04d" }}</title>
+    <style>
+        /* إعدادات ورق الطابعة الحرارية 80mm */
+        @page { margin: 0; size: 80mm auto; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            width: 72mm; 
+            margin: 0 auto; 
+            padding: 2mm 4mm; 
+            font-size: 12px; 
+            line-height: 1.4; 
+            color: #000;
+            font-weight: bold;
+        }
+        .text-center { text-align: center; }
+        .flex-between { display: flex; justify-content: space-between; margin-bottom: 3px; }
+        
+        .separator-dashed { border-top: 1px dashed #000; margin: 6px 0; padding-top: 4px; }
+        .separator-solid { border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 6px 0; margin: 8px 0; }
+
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11px; font-weight: bold; }
+        th, td { border: 1px solid #000; padding: 5px 3px; text-align: center; }
+        th { background-color: #f8f8f8; }
+        td.item-name { text-align: left; line-height: 1.3; }
+
+        /* تنسيق الخطوط المنقطة */
+        .dotted-row {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 5px;
+            font-size: 12px;
+            font-weight: 900;
+        }
+        .dotted-row .label { white-space: nowrap; }
+        .dotted-row .dots {
+            flex-grow: 1;
+            border-bottom: 2px dotted #000;
+            margin: 0 4px;
+            position: relative;
+            top: -4px;
+        }
+        .dotted-row .value { white-space: nowrap; }
+        .total-pay-row { font-size: 14px; margin-top: 8px; }
+
+        .big-options { font-size: 12px; line-height: 1.6; margin: 10px 0; display: flex; flex-wrap: wrap; justify-content: space-between; }
+        .big-options div { width: 48%; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+
+        /* الأشكال الهندسية */
+        .shapes-container { display: flex; justify-content: space-between; align-items: center; margin: 15px 5px; padding: 5px 0; border-top: 2px solid #000; border-bottom: 2px solid #000;}
+        .shapes-container svg { width: 35px; height: 35px; }
+
+        /* أحرف S M F */
+        .smf-container { display: flex; justify-content: center; gap: 25px; font-size: 20px; font-weight: 900; margin: 15px 0; font-family: monospace;}
+        .smf-box { display: flex; align-items: center; gap: 6px; }
+        .smf-square { display: inline-block; width: 22px; height: 22px; border: 2.5px solid #000; }
+
+        .barcode-container { text-align: center; margin-top: 5px; display: flex; justify-content: center; }
+        
+        .footer-terms { text-align: center; font-size: 10px; font-weight: bold; margin-bottom: 10px; line-height: 1.3; }
+        .footer-terms p { margin: 2px 0; }
+        
+        .big-order-number { font-size: 38px; font-weight: 900; letter-spacing: 2px; text-align: center; margin-top: 5px; font-family: Arial, sans-serif; border-top: 1px dashed #000; padding-top: 10px;}
+    </style>
+</head>
+<body>
+
+    <div class="text-center">
+        <!--<img src="" style="width: 80px; height: auto; margin: 0 auto 5px auto; display: block;" alt="Al Marona Logo"-->
+        <div style="font-size: 18px; font-weight: 900;">LAUNDRY System</div>
+        <div style="font-size: 16px; font-weight: bold; font-family: tahoma, sans-serif;"></div>
+        <div style="font-size: 10px; font-weight: normal;"></div>
+    </div>
+
+    <div class="separator-dashed" style="font-size: 11px;">
+        <div class="flex-between"><span># طلب / Order:</span> <span>{{ order.id|stringformat:"04d" }}</span></div>
+        <div class="flex-between"><span>التاريخ / Date:</span> <span>{{ order.created_at|date:"M d, Y, h:i A" }}</span></div>
+        <div class="flex-between"><span>الحالة / Status:</span> <span>{% if is_paid %}PAID / مدفوع{% else %}PENDING / قيد الانتظار{% endif %}</span></div>
+        <div class="flex-between"><span>الرمز / Code:</span> <span>{{ order.customer.file_number|default:"---" }}</span></div>
+        <div class="flex-between">
+            <span>المستلم / Prepared:</span> 
+            <span style="text-transform: capitalize;">
+                {% if request.user.is_authenticated %}
+                    {{ request.user.username }}
+                {% else %}
+                    Cashier
+                {% endif %}
+            </span>
+        </div>
+        
+        <div class="separator-dashed mt-2"></div>
+        
+        <div class="flex-between"><span>العميل / Customer:</span> <span>{{ order.customer.name|default:"Cash Customer" }}</span></div>
+        <div class="flex-between"><span>الهاتف / Phone:</span> <span>{{ order.customer.phone|default:"---" }}</span></div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="item-name">العنصر / Item</th>
+                <th style="width: 15%;">Qty<br>الكمية</th>
+                <th style="width: 20%;">Price<br>السعر</th>
+                <th style="width: 20%;">Total<br>المجموع</th>
+            </tr>
+        </thead>
+        <tbody>
+    {% for item in order.items.all %}
+    <tr>
+        <td class="item-name">
+            {% if item.item.name_en %}{{ item.item.name_en }}<br>{% endif %}
+            {{ item.item.name }}
+            {% if item.is_express %}<br><span style="font-size:9px; font-weight: normal;">(Express)</span>{% endif %}
+        </td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.price }}</td>
+        <td></td> </tr>
+    {% endfor %}
+</tbody>
+</table>
+
+    </table> <div class="receipt-totals">
+        <div class="dotted-row">
+            <span class="label">Total Quantity عدد القطع</span>
+            <span class="dots"></span>
+            <span class="value">{{ total_qty }}</span>
+        </div>
+        <div class="dotted-row">
+            <span class="label">Total Bill Amnt مبلغ الفاتورة</span>
+            <span class="dots"></span>
+            <span class="value" id="calc-subtotal">QR 0.00</span>
+        </div>
+        <div class="dotted-row">
+            <span class="label">Discount خصم</span>
+            <span class="dots"></span>
+            <span class="value" id="calc-discount">0.00</span>
+        </div>
+        <div class="dotted-row">
+            <span class="label">Total Amount مبلغ</span>
+            <span class="dots"></span>
+            <span class="value" id="calc-total">QR 0.00</span>
+        </div>
+        <div class="dotted-row total-pay-row">
+            <span class="label">Total Amnt to Pay المبلغ الإجمالي للدفع</span>
+            <span class="dots"></span>
+            <span class="value" id="calc-pay">QR 0.00</span>
+        </div>
+    </div>
+
+    <div class="big-options">
+        <div>{% if order.processing_type == 'HANGER' %}☑{% else %}☐{% endif %} الملابس المعلقة / Hanger</div>
+        <div>{% if order.processing_type == 'FOLDED' %}☑{% else %}☐{% endif %} الملابس المطوية / Folded</div>
+        <div>{% if order.logistics_type == 'DELIVERY' %}☑{% else %}☐{% endif %} التوصيل / Delivery</div>
+        <div>{% if order.logistics_type == 'PICKUP' %}☑{% else %}☐{% endif %} الاستلام / Pickup</div>
+    </div>
+
+   <div class="shapes-container">
+        <svg viewBox="0 0 40 40"><rect x="4" y="4" width="32" height="32" rx="8" fill="none" stroke="black" stroke-width="2.5" stroke-dasharray="6 3"/></svg>
+        
+        <svg viewBox="0 0 40 40"><polygon points="20,4 36,36 4,36" fill="none" stroke="black" stroke-width="2.5" stroke-dasharray="6 3"/></svg>
+        
+        <svg viewBox="0 0 40 40">
+            <polygon points="20,4 36,36 4,36" fill="none" stroke="black" stroke-width="2.5" stroke-dasharray="6 3"/>
+            <line x1="20" y1="4" x2="20" y2="36" stroke="black" stroke-width="2.5"/>
+            <line x1="4" y1="33" x2="36" y2="33" stroke="black" stroke-width="2.5"/>
+        </svg>
+        
+        <svg viewBox="0 0 40 40">
+            <polygon points="20,4 36,36 4,36" fill="none" stroke="black" stroke-width="2.5" stroke-dasharray="6 3"/>
+            <line x1="4" y1="33" x2="36" y2="33" stroke="black" stroke-width="2.5"/>
+        </svg>
+    </div>
+
+    <div class="smf-container">
+        <div class="smf-box">S <span class="smf-square"></span></div>
+        <div class="smf-box">M <span class="smf-square"></span></div>
+        <div class="smf-box">F <span class="smf-square"></span></div>
+    </div>
+
+    <div class="separator-dashed" style="margin-bottom: 10px;"></div>
+
+    <div class="footer-terms">
+        <p>لن تكون المغسلة مسؤولة عن الملابس التي لم<br>يطالب بها أصحابها خلال 3 شهور.</p>
+        <p>المغسلة غير مسؤولة عن أي انكماش أو بهتان للألوان.<br>يرجى التأكد من صحة الملابس قبل إيداعها المغسلة<br>وعند استلامها.</p>
+        <br>
+        <p style="font-family: Arial, sans-serif;">The Laundry Will Not Be Responsible For<br>Bundles Not Claimed Within 3 Months.</p>
+        <p style="font-family: Arial, sans-serif;">The Laundry Is Not Responsible For Shrinkage,<br>Damage Or Non-Fastness Of Colours. Please Be<br>Sure Of The Number Of Your Article Prior To<br>Depositing And Collection.</p>
+    </div>
+
+    <div class="barcode-container">
+        <svg id="barcode"></svg>
+    </div>
+
+    <div class="big-order-number">
+        {{ order.id|stringformat:"04d" }}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <script>
+        window.onload = function() {
+            // 1. حساب الإجماليات بدقة عالية جداً من الجدول
+            let subtotal = 0;
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const tds = row.querySelectorAll('td');
+                if(tds.length >= 4) {
+                    const qty = parseInt(tds[1].innerText) || 0;
+                    // تحويل السعر لرقم صحيح حتى لو كان مسجل بفاصلة (24,00)
+                    const priceStr = tds[2].innerText.replace(',', '.');
+                    const price = parseFloat(priceStr) || 0;
+                    
+                    const rowTotal = qty * price;
+                    
+                    // طباعة المجموع في الجدول بدقة (مثال: 24.00)
+                    tds[3].innerText = rowTotal.toFixed(2); 
+                    
+                    subtotal += rowTotal;
+                }
+            });
+
+            // 2. جلب الإجمالي النهائي المدفوع من السيرفر (بعد الخصم)
+            const finalTotalStr = "{{ order.total_amount }}".replace(',', '.');
+            const finalTotal = parseFloat(finalTotalStr) || 0;
+            
+            // 3. استخراج قيمة الخصم (المبلغ الأصلي - المبلغ بعد الخصم)
+            let discount = subtotal - finalTotal;
+            if (discount < 0.01) discount = 0; // لضمان عدم ظهور كسور غريبة
+
+            // 4. تعبئة الأرقام في الفاتورة (مبلغ الفاتورة الأساسي والخصم)
+            document.getElementById('calc-subtotal').innerText = 'QR ' + subtotal.toFixed(2);
+            document.getElementById('calc-discount').innerText = discount.toFixed(2);
+            document.getElementById('calc-total').innerText = 'QR ' + finalTotal.toFixed(2);
+            document.getElementById('calc-pay').innerText = 'QR ' + finalTotal.toFixed(2);
+
+            // توليد الباركود
+            JsBarcode("#barcode", "{{ order.id|stringformat:'04d' }}", {
+                format: "CODE128", 
+                width: 1.8, 
+                height: 50, 
+                displayValue: false, 
+                margin: 0
+            });
+            
+            setTimeout(() => { window.print(); window.close(); }, 500);
+        };
+    </script>
+</body>
+</html>

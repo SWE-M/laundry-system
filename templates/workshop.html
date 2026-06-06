@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="main-html">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة تشغيل الورشة - مغسلة المرونة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #0f172a; height: 100vh; overflow: hidden; }
+        .kanban-column { flex: 1; overflow-y: auto; scrollbar-width: thin; padding-bottom: 2rem; }
+        .new-order-pulse { border: 3px solid #ef4444; animation: pulse-red 2s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        /* تحسين مظهر شريط البحث */
+        .search-focus:focus { ring: 2px; ring-color: #3b82f6; border-color: #3b82f6; outline: none; }
+    </style>
+</head>
+<body class="p-4 flex flex-col gap-4">
+
+    <header class="flex justify-between items-center bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-2xl">
+        <div class="flex items-center gap-4">
+            <span class="text-4xl">⚙️</span>
+            <div>
+                <h1 class="text-2xl font-black text-white" id="txt-main-title">لوحة مراقبة التشغيل (Workshop)</h1>
+                <p class="text-slate-400 text-xs font-bold" id="live-clock">جاري تحميل الوقت...</p>
+            </div>
+        </div>
+
+        <div class="flex-1 max-w-md mx-8 relative">
+            <span class="absolute inset-y-0 right-3 flex items-center text-slate-400">🔍</span>
+            <input type="text" id="workshop-search" onkeyup="handleSearch(this.value)" 
+                   placeholder="ابحث برقم الأوردر أو اسم العميل..." 
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pr-10 pl-4 text-white text-sm font-bold search-focus transition-all shadow-inner">
+        </div>
+
+        <div class="flex items-center gap-6">
+            <button onclick="toggleLanguage()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold transition flex items-center gap-2 shadow-lg">
+                🌐 <span id="btn-lang-text">English</span>
+            </button>
+
+            <div class="flex gap-6 border-r border-slate-700 pr-6 mr-4">
+                <div class="text-center">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase" id="txt-stat-waiting">بانتظار العمل</p>
+                    <p class="text-2xl font-black text-red-500" id="count-waiting">0</p>
+                </div>
+                <div class="text-center border-x border-slate-700 px-6">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase" id="txt-stat-processing">قيد الغسيل/الكوي</p>
+                    <p class="text-2xl font-black text-blue-400" id="count-processing">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase" id="txt-stat-ready">جاهز للتسليم</p>
+                    <p class="text-2xl font-black text-emerald-400" id="count-ready">0</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="grid grid-cols-3 gap-4 flex-1 overflow-hidden min-h-0">
+        <div class="bg-slate-900/50 rounded-2xl border border-slate-800 flex flex-col overflow-hidden h-full">
+            <div class="p-4 border-b border-red-500/30 bg-red-500/10 rounded-t-2xl">
+                <h2 class="text-lg font-black text-red-400" id="txt-col-1">📥 طلبات جديدة (انتظار)</h2>
+            </div>
+            <div id="col-waiting" class="kanban-column p-3 space-y-3"></div>
+        </div>
+
+        <div class="bg-slate-900/50 rounded-2xl border border-slate-800 flex flex-col overflow-hidden h-full">
+            <div class="p-4 border-b border-blue-500/30 bg-blue-500/10 rounded-t-2xl">
+                <h2 class="text-lg font-black text-blue-400" id="txt-col-2">💦 قيد التشغيل (غسيل/كوي)</h2>
+            </div>
+            <div id="col-processing" class="kanban-column p-3 space-y-3"></div>
+        </div>
+
+        <div class="bg-slate-900/50 rounded-2xl border border-slate-800 flex flex-col overflow-hidden h-full">
+            <div class="p-4 border-b border-emerald-500/30 bg-emerald-500/10 rounded-t-2xl">
+                <h2 class="text-lg font-black text-emerald-400" id="txt-col-3">✅ جاهز للتسليم</h2>
+            </div>
+            <div id="col-ready" class="kanban-column p-3 space-y-3"></div>
+        </div>
+    </main>
+
+    <div id="shelfModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-700 overflow-hidden">
+            <div class="p-6 text-center border-b border-slate-700 bg-slate-800/50">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">🤝</div>
+                <h3 class="font-black text-white text-xl">تأكيد تسليم الطلب</h3>
+                <p class="text-xs text-slate-400 mt-1 font-bold">يرجى تسجيل رقم الرف أو ملاحظة الاستلام</p>
+            </div>
+            <div class="p-6">
+                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase">رقم الرف / ملاحظة (Shelf No.)</label>
+                <input type="text" id="shelfInput" autofocus
+                       class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-2xl font-black text-emerald-400 text-center focus:border-emerald-500 outline-none transition-all" 
+                       placeholder="مثلاً: A1">
+                <input type="hidden" id="pendingDeliveryId">
+            </div>
+            <div class="p-6 flex gap-3 bg-slate-900/50">
+                <button onclick="closeShelfModal()" class="flex-1 py-3 text-slate-400 font-bold hover:bg-slate-800 rounded-xl transition">إلغاء</button>
+                <button onclick="submitDeliveryWithShelf()" class="flex-[2] py-3 bg-emerald-600 text-white font-black rounded-xl shadow-lg hover:bg-emerald-500 transition">تأكيد وحفظ</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const i18n = {
+            ar: {
+                mainTitle: "لوحة مراقبة التشغيل (Workshop)", clockLoading: "جاري تحميل الوقت...",
+                statWaiting: "بانتظار العمل", statProcessing: "قيد التشغيل", statReady: "جاهز للتسليم",
+                col1: "📥 طلبات جديدة (انتظار)", col2: "💦 قيد التشغيل (غسيل/كوي)", col3: "✅ جاهز للتسليم",
+                cashCust: "عميل نقدي", stageTime: "وقت المرحلة الحالي", btnStart: "بدء غسيل 💦",
+                btnReady: "جاهز للتجهيز ✅", btnDeliver: "تم التسليم 🤝", langBtn: "English", locale: 'ar-QA'
+            },
+            en: {
+                mainTitle: "Workshop Operations Control", clockLoading: "Loading time...",
+                statWaiting: "Waiting List", statProcessing: "In Progress", statReady: "Ready for Pickup",
+                col1: "📥 New Orders (Pending)", col2: "💦 Washing / Ironing", col3: "✅ Ready for Collection",
+                cashCust: "Cash Customer", stageTime: "Time in Stage", btnStart: "Start Washing 💦",
+                btnReady: "Mark Ready ✅", btnDeliver: "Delivered 🤝", langBtn: "العربية", locale: 'en-US'
+            }
+        };
+
+        let currentLang = 'ar';
+        let allOrders = [];
+        let searchQuery = ""; // 🌟 مخزن البحث الجديد 🌟
+
+        function toggleLanguage() {
+            currentLang = (currentLang === 'ar') ? 'en' : 'ar';
+            const html = document.getElementById('main-html');
+            html.lang = currentLang; html.dir = (currentLang === 'ar') ? 'rtl' : 'ltr';
+            const t = i18n[currentLang];
+            document.getElementById('txt-main-title').innerText = t.mainTitle;
+            document.querySelectorAll('[id^="txt-stat-"]').forEach(el => el.innerText = t[el.id.replace('txt-stat-','stat')]);
+            document.querySelectorAll('[id^="txt-col-"]').forEach(el => el.innerText = t[el.id.replace('txt-','').replace('col-','col')]);
+            document.getElementById('btn-lang-text').innerText = t.langBtn;
+            renderWorkshop();
+        }
+
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('live-clock').innerText = now.toLocaleString(i18n[currentLang].locale, { weekday: 'long', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }, 1000);
+
+        async function fetchWorkshopData() {
+            try {
+                const res = await fetch('/api/orders/checkout/');
+                const data = await res.json();
+                const orders = Array.isArray(data) ? data : (data.results || []);
+                allOrders = orders.filter(o => o.status === 'PENDING' || o.status === 'PROCESSING' || o.status === 'READY');
+                renderWorkshop();
+            } catch (e) { console.error("Fetch Error", e); }
+        }
+
+        // 🌟 دالة معالجة البحث (الرادار) 🌟
+        function handleSearch(val) {
+            searchQuery = val.toLowerCase();
+            renderWorkshop(); // إعادة الرسم فوراً لتصفية النتائج
+        }
+
+        function renderWorkshop() {
+            const cols = { PENDING: 'col-waiting', PROCESSING: 'col-processing', READY: 'col-ready' };
+            Object.values(cols).forEach(id => document.getElementById(id).innerHTML = '');
+
+            // 🌟 نظام البحث الاحترافي (الرادار المطور) 🌟
+            const filteredOrders = allOrders.filter(o => {
+                // 1. تجهيز الرقم الخام (مثلاً 15) والرقم المنسق (مثلاً 0015)
+                const rawId = String(o.id);
+                const formattedId = rawId.padStart(4, '0');
+                
+                // 2. التحقق من مطابقة البحث لرقم الأوردر (كامل أو جزئي)
+                const matchesId = rawId.includes(searchQuery) || formattedId.includes(searchQuery);
+                
+                // 3. التحقق من مطابقة البحث لاسم العميل
+                const matchesName = (o.customer_name || "").toLowerCase().includes(searchQuery);
+                
+                return matchesId || matchesName;
+            });
+
+            filteredOrders.forEach(o => {
+                const colId = cols[o.status];
+                if (colId) document.getElementById(colId).appendChild(createOrderCard(o));
+            });
+
+            // تحديث العدادات لتشمل فقط نتائج البحث
+            document.getElementById('count-waiting').innerText = document.getElementById('col-waiting').children.length;
+            document.getElementById('count-processing').innerText = document.getElementById('col-processing').children.length;
+            document.getElementById('count-ready').innerText = document.getElementById('col-ready').children.length;
+        }
+        function createOrderCard(order) {
+            const t = i18n[currentLang];
+            const div = document.createElement('div');
+            div.className = `bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg transition hover:scale-[1.02] ${order.status === 'PENDING' ? 'new-order-pulse' : ''}`;
+            
+            const itemsList = (order.items || []).map(i => `<span class="bg-slate-700 px-2 py-0.5 rounded text-[10px] text-slate-300">${i.quantity}x ${i.item_name}</span>`).join(' ');
+
+            let startTime = order.created_at;
+            if (order.status === 'PROCESSING' && order.processing_start_at) startTime = order.processing_start_at;
+            else if (order.status === 'READY' && order.ready_at) startTime = order.ready_at;
+
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <span class="text-2xl font-black text-white">#${String(order.id).padStart(4, '0')}</span>
+                    <span class="text-[10px] font-bold text-slate-400">${new Date(order.created_at).toLocaleTimeString(t.locale, {hour:'2-digit', minute:'2-digit'})}</span>
+                </div>
+                <p class="text-sm font-bold text-blue-300 mb-2">${order.customer_name || t.cashCust}</p>
+                <div class="flex flex-wrap gap-1 mb-4">${itemsList}</div>
+                <div class="border-t border-slate-700 pt-3 flex justify-between items-center">
+                    <div>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase">${t.stageTime}</p>
+                        <p class="text-xl font-black text-emerald-400 timer-display" data-start="${startTime}">00:00</p>
+                    </div>
+                    ${getActionBtn(order)}
+                </div>`;
+            return div;
+        }
+
+        function getActionBtn(order) {
+            const t = i18n[currentLang];
+            if (order.status === 'PENDING') 
+                return `<button onclick="updateStatus(${order.id}, 'PROCESSING')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-black text-xs transition">${t.btnStart}</button>`;
+            
+            if (order.status === 'PROCESSING')
+                return `<button onclick="updateStatus(${order.id}, 'READY')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-black text-xs transition">${t.btnReady}</button>`;
+            
+            // 🌟 التعديل: عند التسليم نفتح نافذة رقم الرف بدلاً من التحديث المباشر 🌟
+            if (order.status === 'READY')
+                return `<button onclick="openShelfModal(${order.id})" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-black text-xs transition border border-slate-500 shadow-sm">${t.btnDeliver}</button>`;
+            
+            return ``;
+        }
+
+        // 🌟 وظائف نافذة الرف الجديدة 🌟
+        function openShelfModal(orderId) {
+            document.getElementById('pendingDeliveryId').value = orderId;
+            document.getElementById('shelfInput').value = "";
+            document.getElementById('shelfModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('shelfInput').focus(), 100);
+        }
+
+        function closeShelfModal() {
+            document.getElementById('shelfModal').classList.add('hidden');
+        }
+
+        async function submitDeliveryWithShelf() {
+            const id = document.getElementById('pendingDeliveryId').value;
+            const shelf = document.getElementById('shelfInput').value.trim();
+            
+            // تحديث الحالة وحفظ رقم الرف في الملاحظات (Remarks)
+            try {
+                const res = await fetch(`/api/orders/checkout/${id}/`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ status: 'COMPLETED', remarks: `رقم الرف: ${shelf}` })
+                });
+                if (res.ok) {
+                    closeShelfModal();
+                    fetchWorkshopData();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function updateStatus(id, newStatus) {
+            try {
+                const res = await fetch(`/api/orders/checkout/${id}/`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (res.ok) fetchWorkshopData();
+            } catch (e) { console.error(e); }
+        }
+
+        function updateTimers() {
+            document.querySelectorAll('.timer-display').forEach(el => {
+                const diff = Math.floor((new Date() - new Date(el.dataset.start)) / 1000);
+                if (diff < 0) return; 
+                const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60), s = diff % 60;
+                el.innerText = `${h > 0 ? h + ':' : ''}${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                if (h >= 1) el.classList.replace('text-emerald-400', 'text-red-500');
+            });
+        }
+
+        window.onload = () => {
+            fetchWorkshopData();
+            setInterval(fetchWorkshopData, 30000);
+            setInterval(updateTimers, 1000);
+        };
+    </script>
+</body>
+</html>

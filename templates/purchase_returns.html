@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Purchase Returns</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 50; }
+        
+        /* إعدادات طابعة الفواتير 80mm */
+        @media print {
+            body * { visibility: hidden; }
+            .active-print, .active-print * { visibility: visible; }
+            .active-print { 
+                display: block !important; position: absolute; 
+                left: 0; top: 0; width: 80mm; padding: 4mm; margin: 0; 
+                background: white !important; font-family: 'Arial', sans-serif;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800 h-screen overflow-hidden flex flex-col">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+    <div class="flex-1 overflow-y-auto p-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold text-[#0f172a]">Purchase Returns</h1>
+            <div class="flex gap-4">
+                <a href="/admin-dashboard/" class="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-50 transition">Back to Dashboard</a>
+                <button onclick="openReturnModal()" class="bg-[#007ec5] text-white px-4 py-2 rounded-lg font-semibold shadow-sm hover:bg-blue-700 transition flex items-center gap-2">
+                    <span class="text-lg leading-none">+</span> New Purchase Return
+                </button>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 mb-4">
+            <div class="relative w-80">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+                <input type="text" placeholder="Search returns..." class="w-full border border-gray-300 rounded-md pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
+            </div>
+            <div class="flex-1"></div>
+            <select class="border border-gray-300 rounded-md px-4 py-2 text-sm bg-white text-gray-700 shadow-sm outline-none">
+                <option>All Statuses</option>
+                <option>Pending</option>
+                <option>Approved</option>
+            </select>
+            <div class="border border-gray-300 rounded-md px-4 py-2 text-sm bg-white text-gray-700 shadow-sm flex items-center gap-2">
+                📅 <span id="dateRangeFilter">Mar 01, 2026 - Mar 11, 2026</span>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gray-50 text-gray-500 font-semibold border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3">Return Number</th>
+                        <th class="px-6 py-3">Purchase Number</th>
+                        <th class="px-6 py-3">Date</th>
+                        <th class="px-6 py-3">Total Amount</th>
+                        <th class="px-6 py-3">Payment Method</th>
+                        <th class="px-6 py-3">Status</th>
+                        <th class="px-6 py-3 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="returnsTableBody" class="divide-y divide-gray-100">
+                    <tr><td colspan="7" class="p-16 text-center text-gray-500">Loading purchase returns...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="createReturnModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center py-6">
+        <div class="bg-white rounded-xl shadow-2xl w-[900px] flex flex-col max-h-full">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-gray-800">Create Purchase Return</h3>
+                <button onclick="closeModal('createReturnModal')" class="text-gray-400 hover:text-red-500 text-2xl font-bold transition">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1 space-y-4">
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Purchase</label>
+                        <select id="rPurchase" class="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-700 outline-none focus:border-blue-500">
+                            <option value="">Select purchase</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Status</label>
+                        <select id="rStatus" class="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-700 outline-none focus:border-blue-500">
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Date</label>
+                        <input type="date" id="rDate" class="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-700 outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Supplier Invoice Number</label>
+                        <input type="text" id="rInvoice" class="w-full border border-gray-300 rounded-md p-2 text-sm outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Payment Method</label>
+                        <select id="rPayment" class="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-700 outline-none focus:border-blue-500">
+                            <option value="Cash">Cash</option>
+                            <option value="Bank">Bank</option>
+                            <option value="Credit">Credit</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Reason</label>
+                    <textarea id="rReason" rows="3" class="w-full border border-gray-300 rounded-md p-2 text-sm outline-none focus:border-blue-500 resize-none"></textarea>
+                </div>
+
+                <div class="mt-6 border border-gray-200 rounded-md overflow-hidden">
+                    <div class="bg-gray-50 p-3 border-b flex gap-2 items-end">
+                        <div class="flex-1"><label class="text-xs font-bold text-gray-500">Item Name</label><input type="text" id="itemName" class="w-full border rounded p-1.5 text-sm outline-none"></div>
+                        <div class="w-24"><label class="text-xs font-bold text-gray-500">Code</label><input type="text" id="itemCode" class="w-full border rounded p-1.5 text-sm outline-none"></div>
+                        <div class="w-20"><label class="text-xs font-bold text-gray-500">Qty</label><input type="number" id="itemQty" value="1" min="1" class="w-full border rounded p-1.5 text-sm outline-none text-center"></div>
+                        <div class="w-24"><label class="text-xs font-bold text-gray-500">Price</label><input type="number" id="itemPrice" value="0" min="0" step="0.5" class="w-full border rounded p-1.5 text-sm outline-none text-center"></div>
+                        <button onclick="addItemRow()" class="bg-gray-800 text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-gray-700">Add</button>
+                    </div>
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-white text-gray-500 border-b">
+                            <tr>
+                                <th class="p-3">Purchase Item</th>
+                                <th class="p-3 text-center">Code</th>
+                                <th class="p-3 text-center">Quantity</th>
+                                <th class="p-3 text-right">Unit Price</th>
+                                <th class="p-3 text-right">Total</th>
+                                <th class="p-3 text-center w-10"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="returnItemsBody" class="divide-y divide-gray-100 bg-white">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                <span class="font-black text-lg text-gray-800">Total: <span id="rTotalAmount" class="text-[#007ec5]">0.00</span> QAR</span>
+                <div class="flex gap-3">
+                    <button onclick="closeModal('createReturnModal')" class="px-5 py-2 border border-gray-300 rounded-md font-semibold text-gray-600 bg-white hover:bg-gray-50 transition">Cancel</button>
+                    <button onclick="savePurchaseReturn()" class="px-6 py-2 bg-[#007ec5] text-white rounded-md font-semibold shadow-sm hover:bg-blue-700 transition">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="printReturnInvoice" class="hidden text-black font-sans text-sm p-4 mx-auto">
+        <div class="text-center mb-4">
+            <h2 class="font-black text-xl mb-1">AL MARONA LAUNDRY</h2>
+            <h3 class="font-bold text-md mb-1">PURCHASE RETURN</h3>
+            <p class="font-bold text-lg tracking-widest mt-1" id="print-ret-id">RET-0000</p>
+        </div>
+        
+        <div class="border-t border-b border-black py-2 mb-2 text-xs space-y-1">
+            <div class="flex justify-between"><span>Date:</span><span id="print-ret-date" class="font-bold">---</span></div>
+            <div class="flex justify-between"><span>Original Purchase:</span><span id="print-ret-purchase" class="font-bold">---</span></div>
+            <div class="flex justify-between"><span>Supplier Inv:</span><span id="print-ret-inv" class="font-bold">---</span></div>
+            <div class="flex justify-between"><span>Payment Method:</span><span id="print-ret-method" class="font-bold">---</span></div>
+            <div class="flex justify-between"><span>Status:</span><span id="print-ret-status" class="font-bold">---</span></div>
+        </div>
+
+        <table class="w-full text-[11px] mb-2 border-collapse border border-black">
+            <thead>
+                <tr class="border-b border-black">
+                    <th class="text-left p-1 border-r border-black">Item</th>
+                    <th class="text-center p-1 border-r border-black">Qty</th>
+                    <th class="text-center p-1 border-r border-black">Price</th>
+                    <th class="text-right p-1">Total</th>
+                </tr>
+            </thead>
+            <tbody id="print-ret-items"></tbody>
+        </table>
+
+        <div class="text-center border-t-2 border-b-2 border-dashed border-black py-3 my-3">
+            <p class="text-[11px] font-bold mb-1">TOTAL REFUND</p>
+            <p class="text-2xl font-black tracking-wider" id="print-ret-amount">QR 0.00</p>
+        </div>
+        
+        <div class="text-xs mb-4">
+            <p class="font-bold mb-1">Reason for Return:</p>
+            <p id="print-ret-reason" class="text-gray-700">---</p>
+        </div>
+    </div>
+
+    <script>
+        let returnItems = [];
+        let allReturns = [];
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function openReturnModal() {
+            document.getElementById('rDate').valueAsDate = new Date();
+            document.getElementById('rPurchase').value = '';
+            document.getElementById('rInvoice').value = '';
+            document.getElementById('rStatus').value = 'Pending';
+            document.getElementById('rPayment').value = 'Cash';
+            document.getElementById('rReason').value = '';
+            returnItems = [];
+            renderItemsTable();
+            loadPurchasesForDropdown(); 
+            openModal('createReturnModal');
+        }
+
+        async function loadPurchasesForDropdown() {
+            try {
+                const res = await fetch('/api/reports/expenses/', { headers: { 'ngrok-skip-browser-warning': 'true' } }); 
+                if(res.ok) {
+                    const data = await res.json();
+                    const purchases = Array.isArray(data) ? data : (data.results || []);
+                    const select = document.getElementById('rPurchase');
+                    select.innerHTML = '<option value="">Select purchase (EXP...)</option>';
+                    purchases.forEach(p => {
+                        select.innerHTML += `<option value="EXP${String(p.id).padStart(5, '0')}">EXP${String(p.id).padStart(5, '0')} - ${p.total_amount} QAR</option>`;
+                    });
+                }
+            } catch(e) { console.error("Error loading purchases", e); }
+        }
+
+        function addItemRow() {
+            const name = document.getElementById('itemName').value;
+            const code = document.getElementById('itemCode').value || '-';
+            const qty = parseFloat(document.getElementById('itemQty').value) || 1;
+            const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+
+            if(!name || price <= 0) return alert("Please enter valid item name and price.");
+
+            returnItems.push({ name, code, qty, price, total: qty * price });
+            
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemCode').value = '';
+            document.getElementById('itemQty').value = '1';
+            document.getElementById('itemPrice').value = '0';
+            
+            renderItemsTable();
+        }
+
+        function removeReturnItem(index) {
+            returnItems.splice(index, 1);
+            renderItemsTable();
+        }
+
+        function renderItemsTable() {
+            const tbody = document.getElementById('returnItemsBody');
+            let grandTotal = 0;
+            
+            if(returnItems.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">No items added yet.</td></tr>';
+            } else {
+                tbody.innerHTML = returnItems.map((item, index) => {
+                    grandTotal += item.total;
+                    return `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 font-bold text-gray-800">${item.name}</td>
+                        <td class="p-3 text-center text-gray-500">${item.code}</td>
+                        <td class="p-3 text-center">${item.qty}</td>
+                        <td class="p-3 text-right">${item.price.toFixed(2)}</td>
+                        <td class="p-3 text-right font-bold text-[#007ec5]">${item.total.toFixed(2)}</td>
+                        <td class="p-3 text-center"><button onclick="removeReturnItem(${index})" class="text-red-400 hover:text-red-600 font-bold">&times;</button></td>
+                    </tr>`;
+                }).join('');
+            }
+            document.getElementById('rTotalAmount').innerText = grandTotal.toFixed(2);
+        }
+
+        async function savePurchaseReturn() {
+            if(returnItems.length === 0) return alert("Please add at least one item to return.");
+            
+            const payload = {
+                purchase_reference: document.getElementById('rPurchase').value,
+                date: document.getElementById('rDate').value,
+                supplier_invoice_number: document.getElementById('rInvoice').value,
+                status: document.getElementById('rStatus').value,
+                payment_method: document.getElementById('rPayment').value,
+                reason: document.getElementById('rReason').value,
+                total_amount: returnItems.reduce((sum, i) => sum + i.total, 0),
+                items: returnItems
+            };
+
+            try {
+                const res = await fetch('/api/accounts/api/purchase-returns/', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if(res.ok) {
+                    closeModal('createReturnModal');
+                    loadReturnsList();
+                    alert("تم حفظ المرتجع بنجاح! ✅");
+                } else {
+                    const err = await res.text();
+                    alert("مشكلة في السيرفر (Error " + res.status + "):\n" + err.substring(0, 200));
+                }
+            } catch(e) { alert("خطأ في الاتصال: " + e.message); }
+        }
+
+        // 🌟 الدالة الكاشفة للأخطاء (محدثة) 🌟
+        async function loadReturnsList() {
+            const tbody = document.getElementById('returnsTableBody');
+            try {
+                const res = await fetch('/api/accounts/api/purchase-returns/', {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                
+                if (!res.ok) {
+                    const errText = await res.text();
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-red-600 font-bold bg-red-50">❌ خطأ في السيرفر (${res.status}):<br><span class="text-xs text-gray-500">${errText.substring(0, 100)}...</span></td></tr>`;
+                    return;
+                }
+
+                // قراءة الرد كنص أولاً عشان لو ما كان JSON ما يضرب الكود
+                const textResponse = await res.text();
+                try {
+                    const data = JSON.parse(textResponse);
+                    allReturns = Array.isArray(data) ? data : (data.results || []);
+                    renderMainTable();
+                } catch (parseErr) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-red-600 font-bold bg-red-50">❌ السيرفر رجع بيانات غير صحيحة (ليس JSON):<br><span class="text-xs text-gray-500">${parseErr.message}</span></td></tr>`;
+                    console.error("Invalid JSON:", textResponse);
+                }
+
+            } catch (e) { 
+                tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-red-600 font-bold bg-red-50">🔌 فشل الاتصال:<br><span class="text-gray-600 text-sm">${e.message}</span></td></tr>`;
+                console.error(e); 
+            }
+        }
+
+        function renderMainTable() {
+            const tbody = document.getElementById('returnsTableBody');
+            if(allReturns.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-gray-500">No purchase returns found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = allReturns.map(r => {
+                let statusColor = "bg-gray-100 text-gray-600";
+                if(r.status === 'Approved') statusColor = "bg-blue-100 text-blue-700";
+                if(r.status === 'Completed') statusColor = "bg-green-100 text-green-700";
+                if(r.status === 'Cancelled') statusColor = "bg-red-100 text-red-700";
+
+                return `
+                <tr class="hover:bg-gray-50 border-b transition">
+                    <td class="px-6 py-4 font-bold text-gray-900">${r.return_number}</td>
+                    <td class="px-6 py-4 text-gray-500">${r.purchase_reference || '-'}</td>
+                    <td class="px-6 py-4 text-gray-500">${r.date}</td>
+                    <td class="px-6 py-4 font-bold">${parseFloat(r.total_amount).toFixed(2)} QAR</td>
+                    <td class="px-6 py-4 text-gray-500">${r.payment_method}</td>
+                    <td class="px-6 py-4"><span class="px-2.5 py-1 rounded text-xs font-bold ${statusColor}">${r.status}</span></td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="printReturn(${r.id})" class="text-gray-500 hover:text-[#007ec5] font-bold mx-1" title="Print">🖨️</button>
+                        <button onclick="deleteReturn(${r.id})" class="text-gray-500 hover:text-red-500 font-bold mx-1" title="Delete">🗑️</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function printReturn(id) {
+            const ret = allReturns.find(x => x.id === id);
+            if(!ret) return;
+
+            document.getElementById('print-ret-id').innerText = ret.return_number;
+            document.getElementById('print-ret-date').innerText = ret.date;
+            document.getElementById('print-ret-purchase').innerText = ret.purchase_reference || 'N/A';
+            document.getElementById('print-ret-inv').innerText = ret.supplier_invoice_number || 'N/A';
+            document.getElementById('print-ret-method').innerText = ret.payment_method;
+            document.getElementById('print-ret-status').innerText = ret.status;
+            document.getElementById('print-ret-reason').innerText = ret.reason || 'No reason provided.';
+            document.getElementById('print-ret-amount').innerText = `QR ${parseFloat(ret.total_amount).toFixed(2)}`;
+
+            const itemsHtml = ret.items_data.map(item => `
+                <tr class="border-b border-gray-300">
+                    <td class="p-1 border-r border-gray-300 font-bold">${item.name}</td>
+                    <td class="text-center p-1 border-r border-gray-300">${item.qty}</td>
+                    <td class="text-center p-1 border-r border-gray-300">${item.price.toFixed(2)}</td>
+                    <td class="text-right p-1 font-bold">${item.total.toFixed(2)}</td>
+                </tr>
+            `).join('');
+            document.getElementById('print-ret-items').innerHTML = itemsHtml;
+
+            const printDiv = document.getElementById('printReturnInvoice');
+            printDiv.classList.add('active-print');
+            window.print();
+            setTimeout(() => printDiv.classList.remove('active-print'), 1000);
+        }
+
+        window.onload = () => { loadReturnsList(); };
+
+        async function deleteReturn(id) {
+            if(!confirm("⚠️ هل أنت متأكد من حذف هذا المرتجع؟\nلا يمكن التراجع عن هذا الإجراء!")) return;
+
+            try {
+                const res = await fetch(`/api/accounts/api/purchase-returns/${id}/`, {
+                    method: 'DELETE',
+                    headers: { 
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+
+                if(res.ok) {
+                    alert("تم الحذف بنجاح! 🗑️✅");
+                    loadReturnsList(); // تحديث الجدول فوراً بعد الحذف
+                } else {
+                    const err = await res.text();
+                    alert("فشل الحذف: \n" + err);
+                }
+            } catch(e) {
+                alert("خطأ في الاتصال بالشبكة!");
+            }
+        }
+    </script>
+</body>
+</html>

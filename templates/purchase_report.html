@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Purchases Report | تقرير المشتريات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { font-family: 'Inter', 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        /* 🖨️ إعدادات الطباعة المطابقة للملف مع الترويسة 🖨️ */
+        @media print {
+            body > *:not(#printArea) { display: none !important; }
+            body { background-color: white; }
+            #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #000; }
+            .print-box { border: 1px solid #000; border-radius: 8px; padding: 16px; text-align: center; }
+            .print-table { width: 100%; text-align: left; font-size: 12px; border-collapse: collapse; margin-top: 15px;}
+            .print-table th, .print-table td { border: 1px solid #000 !important; padding: 8px; }
+            .print-table th { font-weight: bold; background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; }
+            @page { size: A4; margin: 15mm; }
+        }
+        .daterangepicker .ranges li.active { background-color: #3b82f6 !important; }
+    </style>
+</head>
+<body class="text-[#0f172a] h-screen overflow-hidden flex flex-col">
+
+    <div class="flex-1 overflow-y-auto p-8 scrollbar-hide">
+        
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                Purchases Report <span class="text-lg text-slate-400 font-medium">| تقرير المشتريات</span>
+            </h1>
+            
+            <div class="flex items-center gap-3">
+                <div class="relative w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">🔍</span>
+                    <input type="text" id="searchFilter" onkeyup="if(event.key === 'Enter') fetchData()" placeholder="Search by PO number or supplier..." class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:border-blue-500 outline-none shadow-sm">
+                </div>
+                <div class="relative w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">📅</span>
+                    <input type="text" id="reportRange" class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:border-blue-500 outline-none cursor-pointer bg-white font-bold text-slate-700 shadow-sm" readonly>
+                </div>
+                <button onclick="exportCSV()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+                    📥 Export CSV <span class="text-[10px] text-slate-400 font-normal">تصدير</span>
+                </button>
+                <button onclick="window.print()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+                    🖨️ Print Report <span class="text-[10px] text-slate-400 font-normal">طباعة</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-5 mb-8">
+            <div class="bg-white border border-[#bae6fd] rounded-xl p-5 shadow-sm relative">
+                <p class="text-[13px] font-semibold text-slate-600 mb-1">Total Purchases <span class="text-[10px] text-slate-400">(إجمالي الشراء)</span></p>
+                <h3 class="text-2xl font-black text-slate-800">QAR <span id="ui-purchases">0.00</span></h3>
+                <p class="text-[11px] text-slate-500 font-medium mt-1"><span id="ui-trans">0</span> transactions</p>
+                <span class="absolute right-4 top-5 text-slate-400 font-bold">$</span>
+            </div>
+            
+            <div class="bg-white border border-[#bae6fd] rounded-xl p-5 shadow-sm relative">
+                <p class="text-[13px] font-semibold text-slate-600 mb-1">Outstanding Balance <span class="text-[10px] text-slate-400">(المتبقي للموردين)</span></p>
+                <h3 class="text-2xl font-black text-slate-800">QAR <span id="ui-out">0.00</span></h3>
+                <p class="text-[11px] text-slate-500 font-medium mt-1"><span id="ui-out-pct">0.0</span>% of total</p>
+                <span class="absolute right-4 top-5 text-slate-400">📄</span>
+            </div>
+
+            <div class="bg-white border border-[#bae6fd] rounded-xl p-5 shadow-sm relative">
+                <p class="text-[13px] font-semibold text-slate-600 mb-1">Completed PO's <span class="text-[10px] text-slate-400">(الطلبات المسددة)</span></p>
+                <h3 class="text-2xl font-black text-slate-800"><span id="ui-comp">0</span></h3>
+                <p class="text-[11px] text-slate-500 font-medium mt-1"><span id="ui-comp-pct">0.0</span>% completion rate</p>
+                <span class="absolute right-4 top-5 text-slate-400">✓</span>
+            </div>
+
+            <div class="bg-white border border-[#bae6fd] rounded-xl p-5 shadow-sm relative">
+                <p class="text-[13px] font-semibold text-slate-600 mb-1">Avg. Daily Purchases <span class="text-[10px] text-slate-400">(المتوسط اليومي)</span></p>
+                <h3 class="text-2xl font-black text-slate-800">QAR <span id="ui-avg">0.00</span></h3>
+                <p class="text-[11px] text-slate-500 font-medium mt-1"><span id="ui-days">0</span> days</p>
+                <span class="absolute right-4 top-5 text-slate-400">📊</span>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mb-8 h-[300px]">
+            <canvas id="purchaseChart"></canvas>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-[#f0f9ff] text-slate-600 font-bold text-xs uppercase border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-4">PO Number <span class="block text-[9px] text-slate-400">رقم الطلب</span></th>
+                        <th class="px-6 py-4">LPO <span class="block text-[9px] text-slate-400">رقم التعميد</span></th>
+                        <th class="px-6 py-4">Supplier <span class="block text-[9px] text-slate-400">المورد</span></th>
+                        <th class="px-6 py-4">Date <span class="block text-[9px] text-slate-400">التاريخ</span></th>
+                        <th class="px-6 py-4 text-right">Total <span class="block text-[9px] text-slate-400">الإجمالي</span></th>
+                        <th class="px-6 py-4 text-right">Paid <span class="block text-[9px] text-slate-400">المدفوع</span></th>
+                        <th class="px-6 py-4 text-right">Balance <span class="block text-[9px] text-slate-400">المتبقي</span></th>
+                        <th class="px-6 py-4 text-center">Status <span class="block text-[9px] text-slate-400">الحالة</span></th>
+                    </tr>
+                </thead>
+                <tbody id="reportTbody" class="divide-y divide-slate-100">
+                    <tr><td colspan="8" class="p-10 text-center text-slate-500 font-bold">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <div id="printArea" class="hidden">
+        <div class="flex justify-between items-start mb-6">
+            <div class="text-left flex flex-col gap-0 border-b-2 border-black pb-2 pr-10">
+                <img src="/static/images/logo.png" alt="Logo" class="h-14 object-contain mb-1 w-max">
+                <h1 class="text-xl font-black text-black uppercase tracking-widest">AL MARONA LAUNDRY</h1>
+                <h2 class="text-lg font-black text-black">مغسلة المرونة</h2>
+                <p class="text-[11px] text-black font-bold mt-1">Al Duhail, Doha, Qatar</p>
+                <p class="text-[11px] text-black font-bold">Tel: +974 5188 8455</p>
+                <p class="text-[11px] text-black font-bold">C.R. No.: 201365</p>
+            </div>
+            
+            <div class="text-right flex flex-col items-end pt-4">
+                <h1 class="text-2xl font-black text-black uppercase tracking-wider mb-2">PURCHASE ORDER REPORT</h1>
+                <p class="text-[12px] font-bold text-slate-800">Print Date: <span id="p-gen-date">---</span></p>
+                <p class="text-[12px] font-bold text-slate-800">Report Period: <span id="p-period">---</span></p>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-black mb-3">Financial Summary</h3>
+        <div class="flex justify-between gap-4 mb-8">
+            <div class="print-box flex-1">
+                <p class="text-xs text-slate-600 font-bold mb-2">Total Purchases</p>
+                <h2 class="text-xl font-black">QAR <span id="p-tot-pur">0.00</span></h2>
+            </div>
+            <div class="print-box flex-1">
+                <p class="text-xs text-slate-600 font-bold mb-2">Amount Paid</p>
+                <h2 class="text-xl font-black">QAR <span id="p-tot-paid">0.00</span></h2>
+            </div>
+            <div class="print-box flex-1">
+                <p class="text-xs text-slate-600 font-bold mb-2">Outstanding Balance</p>
+                <h2 class="text-xl font-black">QAR <span id="p-tot-bal">0.00</span></h2>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-black mb-3">Purchase Orders</h3>
+        <table class="print-table mb-8">
+            <thead>
+                <tr>
+                    <th class="w-20">PO Number</th>
+                    <th>Supplier</th>
+                    <th class="w-24">Date</th>
+                    <th class="w-24 text-right">Total (QAR)</th>
+                    <th class="w-24 text-right">Paid (QAR)</th>
+                    <th class="w-24 text-right">Balance (QAR)</th>
+                    <th class="w-20 text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody id="printTbody">
+            </tbody>
+        </table>
+        
+        <p class="text-xs font-bold mt-8">Printed by: Admin</p>
+        <p class="text-center text-xs font-bold mt-4">Confidential - Procurement Department Use Only</p>
+        
+        <div class="text-[9px] text-slate-400 mt-10 flex justify-between border-t border-slate-300 pt-2">
+            <span>https://almaronalaundry.com/admin/reports/purchase-report</span>
+            <span>1/1</span>
+        </div>
+    </div>
+
+    <script>
+        let myChart = null;
+        let startDate = moment().startOf('month');
+        let endDate = moment().endOf('month');
+
+        // 📅 التقويم الاحترافي (DateRangePicker) 📅
+        $('#reportRange').daterangepicker({
+            startDate: startDate,
+            endDate: endDate,
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Week': [moment().startOf('week'), moment().endOf('week')],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+               'Year to Date': [moment().startOf('year'), moment()]
+            },
+            showMonths: 2,
+            alwaysShowCalendars: true,
+            locale: { format: 'MMM D, YYYY' }
+        }, function(start, end, label) {
+            startDate = start;
+            endDate = end;
+            fetchData();
+        });
+
+        async function fetchData() {
+            document.getElementById('reportTbody').innerHTML = `<tr><td colspan="8" class="p-10 text-center text-slate-500 font-bold">Refreshing data... | جاري التحديث...</td></tr>`;
+            
+            const start = startDate.format('YYYY-MM-DD');
+            const end = endDate.format('YYYY-MM-DD');
+            const search = document.getElementById('searchFilter').value;
+            const url = `{% url 'api_purchase_report_data' %}?start=${start}&end=${end}&search=${search}`;
+            
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                // تحديث البطاقات
+                document.getElementById('ui-purchases').innerText = data.summary.total_purchases.toFixed(2);
+                document.getElementById('ui-trans').innerText = data.summary.transactions;
+                document.getElementById('ui-out').innerText = data.summary.outstanding_balance.toFixed(2);
+                document.getElementById('ui-out-pct').innerText = data.summary.outstanding_pct;
+                document.getElementById('ui-comp').innerText = data.summary.completed_pos;
+                document.getElementById('ui-comp-pct').innerText = data.summary.completion_rate;
+                document.getElementById('ui-avg').innerText = data.summary.avg_daily.toFixed(2);
+                document.getElementById('ui-days').innerText = data.summary.days;
+
+                // تحديث بيانات الطباعة
+                const now = new Date();
+                document.getElementById('p-gen-date').innerText = now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
+                document.getElementById('p-period').innerText = `${startDate.format('DD MMM YYYY')} - ${endDate.format('DD MMM YYYY')}`;
+                document.getElementById('p-tot-pur').innerText = data.summary.total_purchases.toFixed(2);
+                document.getElementById('p-tot-paid').innerText = data.summary.total_paid.toFixed(2);
+                document.getElementById('p-tot-bal').innerText = data.summary.outstanding_balance.toFixed(2);
+
+                // رسم الجدول
+                const tbody = document.getElementById('reportTbody');
+                const ptbody = document.getElementById('printTbody');
+                
+                if(data.table.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-10 text-center text-slate-500 font-bold">No purchases found. | لا يوجد مشتريات.</td></tr>`;
+                    ptbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center font-bold">No records.</td></tr>`;
+                } else {
+                    let html = '', phtml = '';
+                    data.table.forEach(p => {
+                        let statusColor = p.status === 'Paid' ? 'bg-green-100 text-green-800' : (p.status === 'Partial' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800');
+                        
+                        html += `
+                            <tr class="hover:bg-slate-50 transition text-slate-700">
+                                <td class="px-6 py-4 font-bold text-slate-800">${p.po_number}</td>
+                                <td class="px-6 py-4 text-slate-500">${p.lpo}</td>
+                                <td class="px-6 py-4 font-semibold text-slate-700">${p.supplier}</td>
+                                <td class="px-6 py-4 text-xs">${p.date}</td>
+                                <td class="px-6 py-4 text-right font-mono font-bold">QAR ${p.total.toFixed(2)}</td>
+                                <td class="px-6 py-4 text-right font-mono text-green-600">QAR ${p.paid.toFixed(2)}</td>
+                                <td class="px-6 py-4 text-right font-mono font-bold text-red-600">QAR ${p.balance.toFixed(2)}</td>
+                                <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${statusColor}">${p.status}</span></td>
+                            </tr>
+                        `;
+                        
+                        phtml += `
+                            <tr>
+                                <td class="font-bold">${p.po_number}</td>
+                                <td>${p.supplier}</td>
+                                <td>${p.date}</td>
+                                <td class="text-right">QAR ${p.total.toFixed(2)}</td>
+                                <td class="text-right">QAR ${p.paid.toFixed(2)}</td>
+                                <td class="text-right font-bold">QAR ${p.balance.toFixed(2)}</td>
+                                <td class="text-center">${p.status}</td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                    ptbody.innerHTML = phtml;
+                }
+
+                // رسم الشارت (Chart.js)
+                renderChart(data.chart);
+
+            } catch(e) { console.error(e); }
+        }
+
+        function renderChart(chartData) {
+            const ctx = document.getElementById('purchaseChart').getContext('2d');
+            if(myChart) myChart.destroy();
+            
+            myChart = new Chart(ctx, {
+                type: 'bar', // حولناه لأعمدة زي الصورة
+                data: {
+                    labels: chartData.labels,
+                    datasets: [
+                        {
+                            label: 'Total Purchases (QAR)',
+                            data: chartData.amounts,
+                            backgroundColor: '#3b82f6', // أزرق
+                            borderRadius: 2
+                        },
+                        {
+                            label: "Number of PO's",
+                            data: chartData.counts,
+                            backgroundColor: '#10b981', // أخضر
+                            borderRadius: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    // 🌟 هذا السطر هو السحر اللي يدمج البيانات في صندوق واحد عند التمرير 🌟
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: { 
+                        legend: { 
+                            position: 'bottom',
+                            labels: { usePointStyle: true, boxWidth: 8 } // المربعات الصغيرة تحت
+                        },
+                        // 🌟 تصميم الصندوق الأبيض اللي يظهر عند التمرير (Tooltip) 🌟
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#0f172a',
+                            bodyColor: '#475569',
+                            borderColor: '#e2e8f0',
+                            borderWidth: 1,
+                            padding: 12,
+                            boxPadding: 6,
+                            usePointStyle: true,
+                            titleFont: { size: 14 }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            grid: { color: '#f1f5f9', borderDash: [4, 4] }, // خطوط متقطعة
+                            border: { display: false }
+                        },
+                        x: { 
+                            grid: { color: '#f1f5f9', borderDash: [4, 4] }, // خطوط متقطعة
+                            border: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function exportCSV() {
+            const start = startDate.format('YYYY-MM-DD');
+            const end = endDate.format('YYYY-MM-DD');
+            const search = document.getElementById('searchFilter').value;
+            window.location.href = `{% url 'export_purchase_excel' %}?start=${start}&end=${end}&search=${search}`;
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            setTimeout(() => { fetchData(); }, 200);
+        });
+    </script>
+</body>
+</html>

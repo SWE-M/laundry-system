@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Profit and Loss Statement | الربح والخسارة</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
+    <style>
+        body { font-family: 'Inter', 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        /* 🖨️ إعدادات الطباعة المطابقة للملف 🖨️ */
+        @media print {
+            body > *:not(#printArea) { display: none !important; }
+            body { background-color: white; }
+            #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #000; }
+            .print-table { width: 100%; text-align: left; font-size: 11px; border-collapse: collapse; margin-top: 15px;}
+            .print-table th, .print-table td { border: 2px solid #000 !important; padding: 6px 8px; }
+            .print-table th { font-weight: bold; background-color: #f8fafc !important; -webkit-print-color-adjust: exact; text-align: center; }
+            .text-red-print { color: #dc2626 !important; font-weight: bold; -webkit-print-color-adjust: exact; }
+            .text-green-print { color: #16a34a !important; font-weight: bold; -webkit-print-color-adjust: exact; }
+            .bg-title { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; padding: 15px; border-radius: 4px;}
+            @page { size: A4; margin: 15mm; }
+        }
+        /* تخصيص الوان التقويم السريع */
+        .daterangepicker .ranges li.active { background-color: #3b82f6 !important; }
+    </style>
+</head>
+<body class="text-[#0f172a] h-screen overflow-hidden flex flex-col">
+
+    <div class="flex-1 overflow-y-auto p-8 scrollbar-hide">
+        
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                Profit and Loss Statement <span class="text-lg text-slate-400 font-medium">| قائمة الربح والخسارة</span>
+            </h1>
+            
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="fetchData()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+                    🔄 Refresh <span class="text-[10px] text-slate-400 font-normal">تحديث</span>
+                </button>
+                <button onclick="exportCSV()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+                    📥 Download CSV <span class="text-[10px] text-slate-400 font-normal">تصدير</span>
+                </button>
+                <button onclick="window.print()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+                    🖨️ Print <span class="text-[10px] text-slate-400 font-normal">طباعة</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <div class="relative w-72">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">📅</span>
+                <input type="text" id="reportRange" class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:border-blue-500 outline-none cursor-pointer bg-white font-bold text-slate-700 shadow-sm" readonly>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-black text-slate-800">Trading and Profit & Loss Account</h2>
+                <p class="text-sm text-slate-500 font-medium mt-1">For the period <span id="ui-period">---</span></p>
+                <p class="text-xs text-slate-400 mt-1">(Generated on <span id="ui-gen-date">---</span>)</p>
+            </div>
+
+            <table class="w-full text-sm text-left border border-slate-200">
+                <thead class="bg-[#f8fafc] text-slate-600 font-bold border-b border-slate-200 text-xs text-center">
+                    <tr>
+                        <th class="px-4 py-3 border-r border-slate-200 w-[35%]">Particulars <span class="text-[9px] text-slate-400 block">التفاصيل</span></th>
+                        <th class="px-4 py-3 border-r border-slate-200 w-[15%]">Amount <span class="text-[9px] text-slate-400 block">المبلغ</span></th>
+                        <th class="px-4 py-3 border-r border-slate-200 w-[35%]">Particulars <span class="text-[9px] text-slate-400 block">التفاصيل</span></th>
+                        <th class="px-4 py-3 w-[15%]">Amount <span class="text-[9px] text-slate-400 block">المبلغ</span></th>
+                    </tr>
+                </thead>
+                <tbody id="plTbody" class="divide-y divide-slate-200">
+                    <tr><td colspan="4" class="p-10 text-center text-slate-500 font-bold">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="printArea" class="hidden font-sans bg-white p-4">
+        
+        <div class="flex justify-between items-start mb-6">
+            <div class="text-left flex flex-col gap-0 border-b-2 border-black pb-2 pr-10">
+                <img src="/static/images/logo.png" alt="Logo" class="h-14 object-contain mb-1 w-max">
+                <h1 class="text-xl font-black text-black uppercase tracking-widest">AL MARONA LAUNDRY</h1>
+                <h2 class="text-lg font-black text-black">مغسلة المرونة</h2>
+                <p class="text-[11px] text-black font-bold mt-1">Al Duhail, Doha, Qatar</p>
+                <p class="text-[11px] text-black font-bold">Tel: +974 5188 8455</p>
+                <p class="text-[11px] text-black font-bold">C.R. No.: 201365</p>
+            </div>
+            
+            <div class="text-right flex flex-col items-end pt-4">
+                <h1 class="text-xl font-black text-black uppercase tracking-wider mb-2">PROFIT & LOSS STATEMENT</h1>
+                <p class="text-[12px] font-bold text-slate-800">Print Date: <span id="p-top-time">---</span></p>
+                <p class="text-[12px] font-bold text-slate-800">Generated: <span id="p-gen-date">---</span></p>
+            </div>
+        </div>
+
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th class="w-[35%]">Particulars</th>
+                    <th class="w-[15%]">Amount</th>
+                    <th class="w-[35%]">Particulars</th>
+                    <th class="w-[15%]">Amount</th>
+                </tr>
+            </thead>
+            <tbody id="printTbody">
+                </tbody>
+        </table>
+        
+        <div class="text-[9px] text-slate-400 mt-10 flex justify-between">
+            <span>https://almaronalaundry.com/admin/reports/profit-loss</span>
+            <span>1/1</span>
+        </div>
+    </div>
+
+    <script>
+        let startDate = moment().startOf('year');
+        let endDate = moment();
+
+        // 📅 إعداد التقويم الاحترافي (DateRangePicker) مطابق للصورة 3 📅
+        $('#reportRange').daterangepicker({
+            startDate: startDate,
+            endDate: endDate,
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+               'Year to Date': [moment().startOf('year'), moment()]
+            },
+            alwaysShowCalendars: true,
+            locale: { format: 'MMM D, YYYY' }
+        }, function(start, end, label) {
+            startDate = start;
+            endDate = end;
+            fetchData();
+        });
+
+        async function fetchData() {
+            // 🌟 هذا السطر اللي بيعطيك تأثير إن الزر شغال ويحدث 🌟
+            document.getElementById('plTbody').innerHTML = `<tr><td colspan="4" class="p-10 text-center text-slate-500 font-bold">Refreshing data... | جاري التحديث...</td></tr>`;
+            
+            const start = startDate.format('YYYY-MM-DD');
+            const end = endDate.format('YYYY-MM-DD');
+            const url = `{% url 'api_profit_loss_data' %}?start=${start}&end=${end}`;
+            
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                const now = new Date();
+                const genDateStr = `${now.getDate()} ${now.toLocaleString('default', { month: 'long' })} ${now.getFullYear()}, ${now.toLocaleTimeString('en-GB')}`;
+                
+                // ... (باقي الكود زي ما هو بدون أي تغيير)
+                
+                document.getElementById('ui-period').innerText = data.period;
+                document.getElementById('ui-gen-date').innerText = genDateStr;
+                document.getElementById('p-top-time').innerText = now.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }) + ' ' + now.toLocaleDateString();
+                document.getElementById('p-gen-date').innerText = genDateStr;
+
+                const tr = data.trading;
+                const pl = data.pl;
+
+                // بناء صفوف الجدول المدمج (واجهة المستخدم + الطباعة)
+                let rows = `
+                    <tr>
+                        <td class="px-4 py-2 font-bold text-slate-700 border-r">Opening Stock</td>
+                        <td class="px-4 py-2 text-right font-mono border-r">${tr.opening_stock.toFixed(2)}</td>
+                        <td class="px-4 py-2 border-r"></td><td class="px-4 py-2"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 font-bold text-slate-700 border-r">Purchase Account</td>
+                        <td class="px-4 py-2 text-right font-mono border-r">${tr.purchases.toFixed(2)}</td>
+                        <td class="px-4 py-2 font-bold text-slate-700 border-r">Sales Account</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-slate-900">${tr.sales.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 border-r"></td><td class="px-4 py-2 border-r"></td>
+                        <td class="px-4 py-2 pl-8 text-xs text-slate-500 border-r">INC-0001 - Sales Account</td>
+                        <td class="px-4 py-2 text-right text-xs font-mono text-slate-500">${tr.sales.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 border-r"></td><td class="px-4 py-2 border-r"></td>
+                        <td class="px-4 py-2 font-bold text-slate-700 border-r">Closing Stock</td>
+                        <td class="px-4 py-2 text-right font-mono">${tr.closing_stock.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 font-bold text-slate-700 border-r">Direct Expenses</td>
+                        <td class="px-4 py-2 text-right font-mono border-r">${tr.direct_expenses.toFixed(2)}</td>
+                        <td class="px-4 py-2 font-bold text-slate-700 border-r">Direct Income</td>
+                        <td class="px-4 py-2 text-right font-mono">${tr.direct_income.toFixed(2)}</td>
+                    </tr>
+                    <tr class="bg-slate-50">
+                        <td class="px-4 py-2 font-bold text-red-600 border-r">Total</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-red-600 border-r">${(tr.opening_stock + tr.purchases + tr.direct_expenses).toFixed(2)}</td>
+                        <td class="px-4 py-2 font-bold text-red-600 border-r">Total</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-red-600">${(tr.sales + tr.closing_stock + tr.direct_income).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 font-bold text-red-600 border-r">Gross Profit c/d</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-red-600 border-r">${tr.gross_profit.toFixed(2)}</td>
+                        <td class="px-4 py-2 font-bold text-red-600 border-r">-</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-red-600">-</td>
+                    </tr>
+                    <tr class="bg-slate-50 border-b-2 border-slate-300">
+                        <td class="px-4 py-2 font-black text-red-600 border-r">Grand Total</td>
+                        <td class="px-4 py-2 text-right font-mono font-black text-red-600 border-r">${tr.grand_total.toFixed(2)}</td>
+                        <td class="px-4 py-2 font-black text-red-600 border-r">Grand Total</td>
+                        <td class="px-4 py-2 text-right font-mono font-black text-red-600">${tr.grand_total.toFixed(2)}</td>
+                    </tr>
+
+                    <tr>
+                        <td class="px-4 py-2 font-bold text-slate-700 border-r">-</td>
+                        <td class="px-4 py-2 text-right font-mono border-r">-</td>
+                        <td class="px-4 py-2 font-bold text-slate-700 border-r">Gross Profit b/f</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-slate-900">${pl.gross_profit_bf.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 font-bold text-slate-700 border-r">Indirect Expenses</td>
+                        <td class="px-4 py-2 text-right font-mono border-r">${pl.total_indirect_expenses.toFixed(2)}</td>
+                        <td class="px-4 py-2 font-bold text-slate-700 border-r">Indirect Income</td>
+                        <td class="px-4 py-2 text-right font-mono">${pl.indirect_income.toFixed(2)}</td>
+                    </tr>
+                `;
+
+                // إضافة المصروفات بالتفصيل
+                pl.indirect_expenses.forEach(exp => {
+                    rows += `
+                    <tr>
+                        <td class="px-4 py-2 pl-8 text-xs text-slate-500 border-r">${exp.name}</td>
+                        <td class="px-4 py-2 text-right text-xs font-mono text-slate-500 border-r">${exp.amount.toFixed(2)}</td>
+                        <td class="px-4 py-2 border-r"></td><td class="px-4 py-2"></td>
+                    </tr>`;
+                });
+
+                rows += `
+                    <tr class="bg-slate-50">
+                        <td class="px-4 py-2 font-bold text-red-600 border-r">Total</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-red-600 border-r">${pl.total_indirect_expenses.toFixed(2)}</td>
+                        <td class="px-4 py-2 font-bold text-red-600 border-r">Total</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-red-600">${(pl.gross_profit_bf + pl.indirect_income).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 font-black text-green-600 border-r">Net Profit</td>
+                        <td class="px-4 py-2 text-right font-mono font-black text-green-600 border-r">${pl.net_profit.toFixed(2)}</td>
+                        <td class="px-4 py-2 font-bold text-red-600 border-r">-</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-red-600">-</td>
+                    </tr>
+                    <tr class="bg-slate-50 border-t-2 border-slate-300">
+                        <td class="px-4 py-2 font-black text-red-600 border-r">Grand Total</td>
+                        <td class="px-4 py-2 text-right font-mono font-black text-red-600 border-r">${pl.grand_total.toFixed(2)}</td>
+                        <td class="px-4 py-2 font-black text-red-600 border-r">Grand Total</td>
+                        <td class="px-4 py-2 text-right font-mono font-black text-red-600">${pl.grand_total.toFixed(2)}</td>
+                    </tr>
+                `;
+
+                document.getElementById('plTbody').innerHTML = rows;
+
+                // 🖨️ تعبئة جدول الطباعة بنفس التنسيق ولكن كلاسات مخصصة
+                document.getElementById('printTbody').innerHTML = rows.replace(/text-red-600/g, 'text-red-print').replace(/text-green-600/g, 'text-green-print');
+
+            } catch(e) { console.error(e); }
+        }
+
+        function exportCSV() {
+            const start = startDate.format('YYYY-MM-DD');
+            const end = endDate.format('YYYY-MM-DD');
+            window.location.href = `{% url 'export_profit_loss_excel' %}?start=${start}&end=${end}`;
+        }
+
+        // جلب البيانات أول مرة عند التحميل
+        document.addEventListener("DOMContentLoaded", () => {
+            setTimeout(() => { fetchData(); }, 200);
+        });
+    </script>
+</body>
+</html>

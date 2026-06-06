@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Balance Sheet | الميزانية العمومية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <style>
+        body { font-family: 'Inter', 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        @media print {
+            body > *:not(#printArea) { display: none !important; }
+            body { background-color: white; }
+            #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+            .print-box { border: 2px solid #000 !important; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+            .print-table th, .print-table td { border-bottom: 1px solid #e5e7eb; padding: 12px 8px; }
+            .print-table tr:last-child td { border-bottom: none; }
+            @page { size: A4; margin: 15mm; }
+        }
+    </style>
+</head>
+<body class="text-[#0f172a] h-screen overflow-hidden flex flex-col">
+
+    <div class="flex-1 overflow-y-auto p-8 scrollbar-hide">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-black text-slate-800">Balance Sheet <span class="text-xl text-slate-400 font-normal ml-2">الميزانية العمومية</span></h1>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="fetchData()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded">
+                    🔄 Refresh
+                </button>
+                <button onclick="exportExcel()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded">
+                    📥 Export Excel
+                </button>
+                <button onclick="window.print()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded">
+                    🖨️ Print
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mb-8">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="relative w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">📅</span>
+                    <input type="text" id="asOfDate" class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:border-blue-500 outline-none cursor-pointer bg-white font-bold text-slate-700" placeholder="Select Date" readonly>
+                </div>
+                <span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">As Of Date (حتى تاريخ)</span>
+            </div>
+            <div class="bg-[#f0f9ff] border border-blue-100 rounded-lg p-4">
+                <p class="text-sm font-medium text-slate-700">As of <span id="display-date" class="font-bold">---</span></p>
+                <p class="text-xs text-slate-500 mt-1">Generated: <span id="generate-time">---</span></p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-8 items-start">
+            <div class="flex flex-col gap-8">
+                <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                    <h2 class="text-xl font-black text-slate-800 mb-1">Liabilities</h2>
+                    <p class="text-xs text-slate-400 font-bold mb-6">الالتزامات (الخصوم)</p>
+                    <div class="flex justify-between items-center py-4 border-t border-b border-slate-100">
+                        <span class="font-bold text-slate-700">Total</span>
+                        <span class="font-mono font-black text-slate-800" id="liab-total">0.00</span>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                    <h2 class="text-xl font-black text-slate-800 mb-1">Equity</h2>
+                    <p class="text-xs text-slate-400 font-bold mb-6">حقوق الملكية</p>
+                    <div class="flex justify-between items-center py-4 border-t border-slate-100">
+                        <span class="font-medium text-slate-600">Retained Earnings <span class="text-[10px] text-slate-400 ml-1">(الأرباح المحتجزة)</span></span>
+                        <span class="font-mono text-slate-700" id="eq-retained">0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center py-4 border-t border-b border-slate-100 bg-slate-50 px-2 rounded mt-2">
+                        <span class="font-black text-slate-800">Total</span>
+                        <span class="font-mono font-black text-slate-800" id="eq-total">0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                <h2 class="text-xl font-black text-slate-800 mb-1">Assets</h2>
+                <p class="text-xs text-slate-400 font-bold mb-6">الأصول (الموجودات)</p>
+                <h3 class="text-sm font-bold text-slate-700 mb-2">Current Assets</h3>
+                <div class="border-t border-slate-200 pt-4">
+                    
+                    <div class="flex justify-between items-center py-3 border-b border-slate-100">
+                        <span class="font-medium text-slate-600">Cash in Hand <span class="text-[10px] text-slate-400 ml-1">(النقد في الصندوق)</span></span>
+                        <span class="font-mono font-bold text-green-600" id="assets-cash">0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 border-b border-slate-100">
+                        <span class="font-medium text-slate-600">Bank Balances <span class="text-[10px] text-slate-400 ml-1">(حسابات البنك)</span></span>
+                        <span class="font-mono font-bold text-blue-600" id="assets-bank">0.00</span>
+                    </div>
+
+                    <div class="flex justify-between items-center py-3 mt-2">
+                        <span class="font-medium text-slate-600">Sundry Debtors <span class="text-[10px] text-slate-400 ml-1">(الذمم المدينة)</span></span>
+                        <span class="font-mono font-bold text-slate-700" id="assets-debt-total">0.00</span>
+                    </div>
+                    
+                    <div class="pl-4 mb-4">
+                        <table class="w-full text-sm">
+                            <tbody id="debtors-list" class="divide-y divide-slate-100">
+                                <tr><td class="py-3 text-slate-400 text-center text-xs">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex justify-between items-center py-4 border-t border-b border-slate-100 bg-slate-50 px-3 rounded mt-4 shadow-inner">
+                        <span class="font-black text-slate-800">Total Assets <span class="text-[10px] text-slate-400 ml-1">(إجمالي الأصول)</span></span>
+                        <span class="font-mono font-black text-slate-800 text-lg" id="assets-total">0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="printArea" class="hidden text-black font-sans bg-white p-8">
+        
+        <div class="flex justify-between items-start border-b-2 border-black pb-2 mb-3">
+            <div class="text-left flex flex-col gap-0">
+                <img src="/static/images/logo.png" alt="Al Marona Logo" class="h-10 object-contain mb-1 w-max">
+                <h1 class="text-lg font-black text-black uppercase tracking-wide">AL MARONA LAUNDRY</h1>
+                <h2 class="text-base font-black text-black">مغسلة المرونة</h2>
+                <p class="text-[11px] text-black font-bold mt-0.5">Al Duhail, Doha, Qatar</p>
+                <p class="text-[11px] text-black font-bold">Tel: +974 5188 8455</p>
+                <p class="text-[11px] text-black font-bold">C.R. No.: 201365</p>
+            </div>
+            
+            <div class="text-right text-[9px] font-bold text-gray-500 flex flex-col items-end gap-0.5 mt-2">
+                <p id="p-gen-time">Generated: ---</p>
+                <span>مغسلة المرونة | Al Marona Laundry</span>
+            </div>
+        </div>
+
+        <div class="text-center mb-4 mt-1">
+            <h2 class="text-lg font-black text-black tracking-wide decoration-2 underline underline-offset-4">Balance Sheet</h2>
+            <p class="text-[11px] text-gray-600 mt-1 font-bold" id="p-date-header">As of ---</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-8">
+            <div class="flex flex-col gap-6">
+                <div class="print-box">
+                    <h2 class="text-lg font-black mb-4">Liabilities</h2>
+                    <table class="w-full text-sm">
+                        <tr class="border-t border-black font-black">
+                            <td class="py-2">Total</td>
+                            <td class="py-2 text-right" id="p-liab">0.00</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="print-box">
+                    <h2 class="text-lg font-black mb-4">Equity</h2>
+                    <table class="w-full text-sm">
+                        <tr class="border-t border-gray-200">
+                            <td class="py-2">Retained Earnings</td>
+                            <td class="py-2 text-right" id="p-eq-ret">0.00</td>
+                        </tr>
+                        <tr class="border-t border-black font-black">
+                            <td class="py-2">Total</td>
+                            <td class="py-2 text-right" id="p-eq-tot">0.00</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="print-box">
+                <h2 class="text-lg font-black mb-4">Assets</h2>
+                <h3 class="text-sm font-bold mb-2 border-b border-black pb-2">Current Assets</h3>
+                <table class="w-full text-sm print-table">
+                    <tr class="border-t border-gray-200">
+                        <td class="py-2">Cash in Hand</td>
+                        <td></td>
+                        <td class="py-2 text-right font-bold" id="p-ass-cash">0.00</td>
+                    </tr>
+                    <tr class="border-t border-gray-200">
+                        <td class="py-2">Bank Balances</td>
+                        <td></td>
+                        <td class="py-2 text-right font-bold" id="p-ass-bank">0.00</td>
+                    </tr>
+                    <tr class="font-bold bg-gray-50 border-t border-gray-200">
+                        <td class="py-2">Sundry Debtors</td>
+                        <td></td>
+                        <td class="py-2 text-right" id="p-ass-debt-tot">0.00</td>
+                    </tr>
+                    <tbody id="p-debtors-list"></tbody>
+                    <tr class="border-t-2 border-black font-black text-lg">
+                        <td class="py-3">Total Assets</td>
+                        <td></td>
+                        <td class="py-3 text-right" id="p-ass-tot">0.00</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        flatpickr("#asOfDate", {
+            defaultDate: "today",
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr, instance) { fetchData(dateStr); }
+        });
+
+        async function fetchData(dateStr = null) {
+            const date = dateStr || document.getElementById('asOfDate').value;
+            const url = `{% url 'api_balance_sheet_data' %}?date=${date}`;
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                updateUI(data);
+            } catch(e) { console.error(e); }
+        }
+
+        function updateUI(data) {
+            document.getElementById('display-date').innerText = data.as_of_date;
+            document.getElementById('p-date-header').innerText = "As of " + data.as_of_date;
+            
+            const now = new Date();
+            const timeString = now.toLocaleDateString('en-US') + ', ' + now.toLocaleTimeString('en-US');
+            document.getElementById('generate-time').innerText = timeString;
+            document.getElementById('p-gen-time').innerText = "Generated: " + timeString;
+
+            document.getElementById('liab-total').innerText = parseFloat(data.liabilities.total).toFixed(2);
+            document.getElementById('eq-retained').innerText = parseFloat(data.equity.retained_earnings).toFixed(2);
+            document.getElementById('eq-total').innerText = parseFloat(data.equity.total).toFixed(2);
+
+            document.getElementById('p-liab').innerText = parseFloat(data.liabilities.total).toFixed(2);
+            document.getElementById('p-eq-ret').innerText = parseFloat(data.equity.retained_earnings).toFixed(2);
+            document.getElementById('p-eq-tot').innerText = parseFloat(data.equity.total).toFixed(2);
+
+            // Assets Updates
+            document.getElementById('assets-cash').innerText = parseFloat(data.assets.cash_in_hand).toFixed(2);
+            document.getElementById('assets-bank').innerText = parseFloat(data.assets.bank_balance).toFixed(2);
+            document.getElementById('assets-debt-total').innerText = parseFloat(data.assets.sundry_debtors_total).toFixed(2);
+            document.getElementById('assets-total').innerText = parseFloat(data.assets.total_assets).toFixed(2);
+
+            document.getElementById('p-ass-cash').innerText = parseFloat(data.assets.cash_in_hand).toFixed(2);
+            document.getElementById('p-ass-bank').innerText = parseFloat(data.assets.bank_balance).toFixed(2);
+            document.getElementById('p-ass-debt-tot').innerText = parseFloat(data.assets.sundry_debtors_total).toFixed(2);
+            document.getElementById('p-ass-tot').innerText = parseFloat(data.assets.total_assets).toFixed(2);
+
+            const tbody = document.getElementById('debtors-list');
+            const ptbody = document.getElementById('p-debtors-list');
+            let html = '', phtml = '';
+
+            if(data.assets.debtors.length === 0) {
+                html = `<tr><td class="py-4 text-slate-400 text-center text-xs border-t border-slate-100">No active debtors found.</td></tr>`;
+            } else {
+                data.assets.debtors.forEach(d => {
+                    html += `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="py-3 px-2 font-mono text-xs text-slate-500 w-24">${d.code}</td>
+                            <td class="py-3 px-2 text-[13px] font-medium text-slate-700">${d.name}</td>
+                            <td class="py-3 px-2 font-mono text-right text-slate-700 font-bold">${parseFloat(d.amount).toFixed(2)}</td>
+                        </tr>`;
+                    
+                    phtml += `
+                        <tr>
+                            <td class="font-mono text-xs text-gray-500 pl-8 w-24">${d.code}</td>
+                            <td class="text-xs font-medium text-gray-700">${d.name}</td>
+                            <td class="font-mono text-right text-xs">${parseFloat(d.amount).toFixed(2)}</td>
+                        </tr>`;
+                });
+            }
+            tbody.innerHTML = html;
+            ptbody.innerHTML = phtml;
+        }
+
+        function exportExcel() {
+            const date = document.getElementById('asOfDate').value;
+            window.location.href = `{% url 'export_balance_sheet_excel' %}?date=${date}`;
+        }
+
+        window.onload = () => fetchData();
+    </script>
+</body>
+</html>

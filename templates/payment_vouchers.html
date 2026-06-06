@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Vouchers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 50; }
+        
+        /* تصميم زر التبديل (Toggle) */
+        .toggle-checkbox:checked { right: 0; border-color: #0ea5e9; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #0ea5e9; }
+        .toggle-checkbox { right: 4px; z-index: 1; transition: all 0.3s; }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="text-gray-800 h-screen overflow-hidden flex flex-col">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 flex-shrink-0">
+        <button onclick="toggleLanguage()" class="bg-gray-100 text-gray-700 px-4 py-1.5 rounded-lg font-bold hover:bg-gray-200 transition flex items-center gap-2">
+            🌐 <span id="lang-btn-text">عربي</span>
+        </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+        
+        <div class="grid grid-cols-4 gap-4 mb-8">
+            <div class="bg-[#3b82f6] text-white rounded-xl p-5 shadow-sm relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-sm font-semibold opacity-90" data-i18n="cardTotal">Total Payments</p>
+                    <h3 class="text-3xl font-black mt-1">QAR {{ total_payments|floatformat:2 }}</h3>
+                    <p class="text-xs opacity-80 mt-1">{{ total_count }} vouchers</p>
+                </div>
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 opacity-20 text-5xl">💲</div>
+            </div>
+            <div class="bg-[#10b981] text-white rounded-xl p-5 shadow-sm relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-sm font-semibold opacity-90" data-i18n="cardCash">Cash Payments</p>
+                    <h3 class="text-3xl font-black mt-1">QAR {{ cash_payments|floatformat:2 }}</h3>
+                    <p class="text-xs opacity-80 mt-1">{{ cash_count }} vouchers</p>
+                </div>
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 opacity-20 text-5xl">💵</div>
+            </div>
+            <div class="bg-[#8b5cf6] text-white rounded-xl p-5 shadow-sm relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-sm font-semibold opacity-90" data-i18n="cardBank">Bank Payments</p>
+                    <h3 class="text-3xl font-black mt-1">QAR {{ bank_payments|floatformat:2 }}</h3>
+                    <p class="text-xs opacity-80 mt-1">{{ bank_count }} vouchers</p>
+                </div>
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 opacity-20 text-5xl">💳</div>
+            </div>
+            <div class="bg-[#f97316] text-white rounded-xl p-5 shadow-sm relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-sm font-semibold opacity-90" data-i18n="cardPdc">PDC Payments</p>
+                    <h3 class="text-3xl font-black mt-1">QAR {{ pdc_payments|floatformat:2 }}</h3>
+                    <p class="text-xs opacity-80 mt-1">{{ pdc_count }} vouchers</p>
+                </div>
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 opacity-20 text-5xl">📄</div>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-[#0f172a]" data-i18n="pageTitle">Payment Vouchers</h1>
+            <div class="flex gap-3">
+                <a href="/admin-dashboard/" class="bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg font-semibold hover:bg-gray-50 transition" data-i18n="btnBack">Back to Dashboard</a>
+                <button onclick="openPaymentModal()" class="bg-[#007ec5] text-white px-5 py-2.5 rounded-lg font-bold shadow-md hover:bg-blue-700 transition flex items-center gap-2">
+                    <span class="text-lg leading-none">+</span> <span data-i18n="btnNew">New Payment</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-gray-100 flex items-center gap-3">
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+                    <input type="text" id="searchInput" onkeyup="filterTable()" data-i18n-placeholder="search" placeholder="Search payment vouchers..." class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <button onclick="resetFilters()" class="border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-semibold transition hover:text-blue-600">
+                    <span>⏳</span> All
+                </button>
+            </div>
+
+            <table class="w-full text-sm text-left rtl:text-right">
+                <thead class="bg-gray-50 text-gray-500 font-semibold border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4" data-i18n="thVoucher">Voucher Number</th>
+                        <th class="px-6 py-4" data-i18n="thSupplier">Supplier</th>
+                        <th class="px-6 py-4" data-i18n="thNotes">Notes</th>
+                        <th class="px-6 py-4" data-i18n="thDate">Date</th>
+                        <th class="px-6 py-4" data-i18n="thTotal">Total Amount</th>
+                        <th class="px-6 py-4" data-i18n="thMethod">Payment Method</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTableBody" class="divide-y divide-gray-100">
+                    {% for v in vouchers %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 font-bold text-gray-800">PAY-{{ v.id|stringformat:"04d" }}</td>
+                        <td class="px-6 py-4 font-semibold">{{ v.supplier.name }}</td>
+                        <td class="px-6 py-4 text-gray-500">{{ v.notes|default:"-" }}</td>
+                        <td class="px-6 py-4 text-gray-500">{{ v.date|date:"M d, Y" }}</td>
+                        <td class="px-6 py-4 font-bold text-[#007ec5]">{{ v.amount|floatformat:2 }} QAR</td>
+                        <td class="px-6 py-4 text-gray-600">{{ v.payment_method }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="p-10 text-center text-gray-500" data-i18n="noData">No payment vouchers found</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="newPaymentModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center py-6 z-40">
+        <div class="bg-white rounded-xl shadow-2xl w-[700px] flex flex-col max-h-full">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2">📄 <span data-i18n="modalPayTitle">New Payment Voucher</span></h3>
+                    <p class="text-xs text-[#007ec5] font-semibold mt-1" data-i18n="modalPaySub">Create a new payment voucher for outgoing payments</p>
+                </div>
+                <button onclick="closeModal('newPaymentModal')" class="text-gray-400 hover:text-red-500 text-2xl font-bold transition">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1 space-y-5">
+                <div class="grid grid-cols-2 gap-6 items-end">
+                    <div class="relative">
+                        <label class="block text-sm font-semibold text-[#007ec5] mb-1 flex items-center gap-1">👤 <span data-i18n="lblPayTo">Payment To</span></label>
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <input type="text" id="supplierSearchDisplay" data-i18n-placeholder="plhSelectSup" placeholder="Select supplier account" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 cursor-pointer bg-white" readonly onclick="toggleSupplierDropdown()">
+                                <input type="hidden" id="selectedSupplierId">
+                                
+                                <div id="supplierDropdown" class="hidden absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+                                    <div class="p-2 sticky top-0 bg-white border-b border-gray-100">
+                                        <input type="text" id="supplierRealSearch" onkeyup="filterSupplierList()" data-i18n-placeholder="plhSearchSup" placeholder="Search supplier account.." class="w-full border border-gray-300 rounded p-1.5 text-xs outline-none focus:border-[#007ec5]">
+                                    </div>
+                                    <ul id="supplierListUl" class="py-1">
+                                        </ul>
+                                </div>
+                            </div>
+                            <button onclick="openNewAccountModal()" class="border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 rounded-lg px-3 font-bold text-lg transition">+</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-[#007ec5] mb-1 flex items-center gap-1">📅 <span data-i18n="lblDate">Date</span></label>
+                        <div class="flex items-center gap-4">
+                            <input type="date" id="pDate" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            
+                            <div class="flex items-center gap-2">
+                                <div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" id="pDirect" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300"/>
+                                    <label for="pDirect" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
+                                </div>
+                                <span class="text-xs font-bold text-[#007ec5]" data-i18n="lblDirect">Direct Payment</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-[#007ec5] mb-1" data-i18n="lblTotal">Total Amount</label>
+                    <input type="number" id="pAmount" min="0" step="0.01" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" value="0">
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-[#007ec5] mb-1 flex items-center gap-1">💳 <span data-i18n="lblMethod">Payment Method</span></label>
+                        <select id="pMethod" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white">
+                            <option value="Cash">Cash</option>
+                            <option value="Bank">Bank</option>
+                            <option value="PDC">PDC</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-[#007ec5] mb-1 flex items-center gap-1">📄 <span data-i18n="lblRef">Payment Reference</span></label>
+                        <input type="text" id="pRef" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-[#007ec5] mb-1 flex items-center gap-1">📝 <span data-i18n="lblNotes">Notes</span></label>
+                    <textarea id="pNotes" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none"></textarea>
+                </div>
+            </div>
+
+            <div class="px-6 py-5 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                <span class="font-black text-lg text-gray-800" data-i18n="lblTotalAmt">Total Amount: <span class="text-[#2563eb] mx-1" id="displayTotalAmt">QAR 0.00</span></span>
+                <div class="flex gap-3">
+                    <button onclick="closeModal('newPaymentModal')" class="px-6 py-2 border border-gray-300 rounded-lg font-semibold text-gray-600 bg-white hover:bg-gray-50 transition" data-i18n="btnCancel">Cancel</button>
+                    <button onclick="submitPayment()" class="px-6 py-2 bg-[#2563eb] text-white rounded-lg font-semibold shadow-sm hover:bg-blue-700 transition" data-i18n="btnSavePay">Save Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="newAccountModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center py-6 z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-[450px] flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-lg text-gray-800" data-i18n="modalAccTitle">New Account</h3>
+                    <p class="text-xs text-gray-500 mt-0.5" data-i18n="modalAccSub">Create a new account by filling out the form below.</p>
+                </div>
+                <button onclick="closeModal('newAccountModal')" class="text-gray-400 hover:text-red-500 text-xl font-bold transition">&times;</button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-800 mb-1" data-i18n="lblAccName">Account Name</label>
+                    <input type="text" id="nAccName" data-i18n-placeholder="plhAccName" placeholder="Enter account name" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-800 mb-1" data-i18n="lblAccGroup">Account Group</label>
+                    <select id="nAccGroup" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white">
+                        <option value="Bank Account">Bank Account</option>
+                        <option value="Capital Account">Capital Account</option>
+                        <option value="Cash Account">Cash Account</option>
+                        <option value="Current Assets">Current Assets</option>
+                        <option value="Current Liabilities" selected>Current Liabilities</option>
+                        <option value="Deposits Asset">Deposits Asset</option>
+                        <option value="Direct Expense">Direct Expense</option>
+                        <option value="Direct Income">Direct Income</option>
+                        <option value="Indirect Expense">Indirect Expense</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-800 mb-1" data-i18n="lblStatus">Status</label>
+                    <select id="nAccStatus" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white">
+                        <option value="Active">✓ Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-800 mb-1" data-i18n="lblOpBal">Opening Balance (Optional)</label>
+                    <input type="number" id="nAccBalance" value="0" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-800 mb-1" data-i18n="lblOpDate">Opening Balance Date</label>
+                    <input type="date" id="nAccDate" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                <button onclick="closeModal('newAccountModal')" class="px-5 py-2 border border-gray-300 rounded-lg font-semibold text-gray-600 bg-white hover:bg-gray-50 transition" data-i18n="btnCancel">Cancel</button>
+                <button onclick="submitNewAccount()" class="px-6 py-2 bg-[#007ec5] text-white rounded-lg font-semibold shadow-sm hover:bg-blue-700 transition" data-i18n="btnSaveAcc">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // سحب قائمة الموردين من الباك إند كمتغير جافاسكربت
+        // 🌟 إصلاح ذكي لسحب الأرقام بدون ما تضرب الجافاسكربت 🌟
+        let suppliersList = [
+            {% for s in suppliers %}
+            { 
+                id: {{ s.id|default:"0" }}, 
+                name: "{{ s.name|escapejs }}", 
+                balance: parseFloat("{{ s.balance }}".replace(/,/g, '')) || 0 
+            },
+            {% endfor %}
+        ];
+
+        // ==========================================
+        // 🌍 نظام الترجمة (i18n) 🌍
+        // ==========================================
+        const i18n = {
+            en: {
+                pageTitle: "Payment Vouchers", btnBack: "Back to Dashboard", btnNew: "New Payment",
+                cardTotal: "Total Payments", cardCash: "Cash Payments", cardBank: "Bank Payments", cardPdc: "PDC Payments",
+                search: "Search payment vouchers...", thVoucher: "Voucher Number", thSupplier: "Supplier", thNotes: "Notes", thDate: "Date", thTotal: "Total Amount", thMethod: "Payment Method", noData: "No payment vouchers found",
+                modalPayTitle: "New Payment Voucher", modalPaySub: "Create a new payment voucher for outgoing payments",
+                lblPayTo: "Payment To", plhSelectSup: "Select supplier account", plhSearchSup: "Search supplier account..",
+                lblDate: "Date", lblDirect: "Direct Payment", lblTotal: "Total Amount", lblMethod: "Payment Method", lblRef: "Payment Reference", lblNotes: "Notes",
+                lblTotalAmt: "Total Amount:", btnCancel: "Cancel", btnSavePay: "Save Payment",
+                modalAccTitle: "New Account", modalAccSub: "Create a new account by filling out the form below.",
+                lblAccName: "Account Name", plhAccName: "Enter account name", lblAccGroup: "Account Group", lblStatus: "Status", lblOpBal: "Opening Balance (Optional)", lblOpDate: "Opening Balance Date", btnSaveAcc: "Save"
+            },
+            ar: {
+                pageTitle: "سندات الدفع", btnBack: "العودة للداشبورد", btnNew: "سند جديد",
+                cardTotal: "إجمالي المدفوعات", cardCash: "دفع نقدي", cardBank: "دفع بنكي", cardPdc: "شيكات",
+                search: "ابحث في السندات...", thVoucher: "رقم السند", thSupplier: "المورد / الحساب", thNotes: "ملاحظات", thDate: "التاريخ", thTotal: "الإجمالي", thMethod: "طريقة الدفع", noData: "لا توجد سندات دفع مسجلة",
+                modalPayTitle: "سند دفع جديد", modalPaySub: "إنشاء سند دفع جديد للمصروفات أو الموردين",
+                lblPayTo: "الدفع إلى", plhSelectSup: "اختر حساب المورد", plhSearchSup: "ابحث عن الحساب..",
+                lblDate: "التاريخ", lblDirect: "دفع مباشر", lblTotal: "المبلغ", lblMethod: "طريقة الدفع", lblRef: "الرقم المرجعي", lblNotes: "ملاحظات",
+                lblTotalAmt: "الإجمالي:", btnCancel: "إلغاء", btnSavePay: "حفظ السند",
+                modalAccTitle: "حساب جديد", modalAccSub: "أدخل بيانات الحساب الجديد بالأسفل.",
+                lblAccName: "اسم الحساب", plhAccName: "أدخل اسم الحساب", lblAccGroup: "مجموعة الحساب", lblStatus: "الحالة", lblOpBal: "الرصيد الافتتاحي (اختياري)", lblOpDate: "تاريخ الرصيد الافتتاحي", btnSaveAcc: "حفظ"
+            }
+        };
+
+        let currentLang = 'en';
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'ar' : 'en';
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            document.documentElement.lang = currentLang;
+            document.getElementById('lang-btn-text').innerText = currentLang === 'en' ? 'عربي' : 'English';
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[currentLang][key]) {
+                    // الحفاظ على الأيقونات داخل الـ labels
+                    if(el.tagName === 'SPAN' && el.parentElement.tagName === 'LABEL') {
+                        el.innerText = i18n[currentLang][key];
+                    } else {
+                        // إذا كان نص عادي
+                        if(el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
+                            el.innerText = i18n[currentLang][key];
+                        } else {
+                            // تعويض مؤقت لتجنب مسح العناصر الداخلية
+                            el.innerHTML = el.innerHTML.replace(el.innerText.trim(), i18n[currentLang][key]);
+                        }
+                    }
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18n[currentLang][key]) el.placeholder = i18n[currentLang][key];
+            });
+        }
+
+        // ==========================================
+        // 🛠️ منطق النوافذ والمحتوى 🛠️
+        // ==========================================
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function openPaymentModal() {
+            document.getElementById('pDate').valueAsDate = new Date();
+            document.getElementById('pAmount').value = '0';
+            document.getElementById('displayTotalAmt').innerText = 'QAR 0.00';
+            document.getElementById('supplierSearchDisplay').value = '';
+            document.getElementById('selectedSupplierId').value = '';
+            renderSupplierDropdown(suppliersList);
+            openModal('newPaymentModal');
+        }
+
+        function openNewAccountModal() {
+            document.getElementById('nAccDate').valueAsDate = new Date();
+            document.getElementById('nAccName').value = '';
+            document.getElementById('nAccBalance').value = '0';
+            openModal('newAccountModal');
+        }
+
+        // تحديث إجمالي المبلغ في الأسفل عند الكتابة
+        document.getElementById('pAmount').addEventListener('input', function(e) {
+            let val = parseFloat(e.target.value) || 0;
+            document.getElementById('displayTotalAmt').innerText = `QAR ${val.toFixed(2)}`;
+        });
+
+        // ==========================================
+        // 🔍 القائمة المنسدلة الذكية للموردين (Match Screenshot 3) 🔍
+        // ==========================================
+        function toggleSupplierDropdown() {
+            const dp = document.getElementById('supplierDropdown');
+            dp.classList.toggle('hidden');
+            if(!dp.classList.contains('hidden')) {
+                document.getElementById('supplierRealSearch').focus();
+            }
+        }
+
+        function renderSupplierDropdown(list) {
+            const ul = document.getElementById('supplierListUl');
+            if(list.length === 0) {
+                ul.innerHTML = `<li class="p-3 text-xs text-gray-500 text-center">No results found</li>`;
+                return;
+            }
+            ul.innerHTML = list.map(s => `
+                <li onclick="selectSupplier(${s.id}, '${s.name}')" class="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-0 transition">
+                    <p class="text-sm font-semibold text-[#007ec5]">${s.name}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Balance: <span class="font-bold text-gray-700">${s.balance.toFixed(2)}</span></p>
+                </li>
+            `).join('');
+        }
+
+        function filterSupplierList() {
+            const term = document.getElementById('supplierRealSearch').value.toLowerCase();
+            const filtered = suppliersList.filter(s => s.name.toLowerCase().includes(term));
+            renderSupplierDropdown(filtered);
+        }
+
+        function selectSupplier(id, name) {
+            document.getElementById('selectedSupplierId').value = id;
+            document.getElementById('supplierSearchDisplay').value = name;
+            document.getElementById('supplierDropdown').classList.add('hidden');
+        }
+
+        // إغلاق القائمة المنسدلة عند النقر خارجها
+        document.addEventListener('click', function(event) {
+            const container = document.getElementById('supplierSearchDisplay');
+            const dropdown = document.getElementById('supplierDropdown');
+            if (!container.contains(event.target) && !dropdown.contains(event.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        function filterTable() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#paymentsTableBody tr');
+            rows.forEach(row => {
+                if(row.innerText.toLowerCase().includes(term)) row.style.display = '';
+                else row.style.display = 'none';
+            });
+        }
+        // تفعيل زر All لإلغاء البحث وإظهار كل السندات
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            filterTable();
+        }
+
+        // ==========================================
+        // 💾 الإرسال للسيرفر (APIs) 💾
+        // ==========================================
+        async function submitPayment() {
+            const supId = document.getElementById('selectedSupplierId').value;
+            const amount = parseFloat(document.getElementById('pAmount').value) || 0;
+            if(!supId || amount <= 0) return alert(currentLang === 'ar' ? 'الرجاء اختيار الحساب وإدخال مبلغ صحيح' : 'Please select account and enter valid amount.');
+
+            const payload = {
+                supplier_id: supId,
+                date: document.getElementById('pDate').value,
+                amount: amount,
+                payment_method: document.getElementById('pMethod').value,
+                reference: document.getElementById('pRef').value,
+                notes: document.getElementById('pNotes').value,
+                is_direct_payment: document.getElementById('pDirect').checked
+            };
+
+            try {
+                const res = await fetch('/api/accounts/api/save-payment/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+                    body: JSON.stringify(payload)
+                });
+                if(res.ok) {
+                    alert(currentLang === 'ar' ? 'تم الحفظ بنجاح ✅' : 'Saved successfully ✅');
+                    window.location.reload();
+                } else {
+                    const err = await res.text();
+                    alert("Error: " + err);
+                }
+            } catch(e) { alert("Network Error"); }
+        }
+
+        async function submitNewAccount() {
+            const name = document.getElementById('nAccName').value.trim();
+            if(!name) return alert(currentLang === 'ar' ? 'الرجاء إدخال اسم الحساب' : 'Please enter account name');
+
+            const payload = {
+                name: name,
+                group: document.getElementById('nAccGroup').value,
+                status: document.getElementById('nAccStatus').value,
+                opening_balance: document.getElementById('nAccBalance').value,
+                date: document.getElementById('nAccDate').value
+            };
+
+            try {
+                const res = await fetch('/api/accounts/api/quick-add-account/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+                    body: JSON.stringify(payload)
+                });
+                if(res.ok) {
+                    const data = await res.json();
+                    alert(currentLang === 'ar' ? 'تم إضافة الحساب ✅' : 'Account added ✅');
+                    // إضافة الحساب للقائمة فوراً واختياره
+                    suppliersList.push(data.account);
+                    selectSupplier(data.account.id, data.account.name);
+                    closeModal('newAccountModal');
+                } else {
+                    const err = await res.text();
+                    alert("Error: " + err);
+                }
+            } catch(e) { alert("Network Error"); }
+        }
+    </script>
+</body>
+</html>

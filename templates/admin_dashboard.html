@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">لوحة الإدارة - نظام مغاسل </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f3f4f6; overflow: hidden; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 🚀 سحر الأنيميشن الجديد 🚀 */
+        .submenu { 
+            max-height: 0; 
+            opacity: 0; 
+            transform: translateY(-10px); /* يخليها مخفية ومسحوبة لفوق شوي */
+            overflow: hidden; 
+            /* سرعة النزول ونعومة الحركة (Cubic Bezier) */
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .submenu.open { 
+            max-height: 600px; 
+            opacity: 1; 
+            transform: translateY(0); /* تنزل لمكانها الطبيعي بنعومة */
+        }
+        .rotate-180 { 
+            transform: rotate(180deg); 
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* لفة السهم السلسة */
+        }
+        /* 🔔 ستايل إشعارات الدفع الصامتة 🔔 */
+        @keyframes slideInRTL { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideInLTR { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast-enter { animation: slideInLTR 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        [dir="rtl"] .toast-enter { animation: slideInRTL 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        .toast-exit { opacity: 0; transform: translateY(20px) scale(0.9); transition: all 0.3s ease-out; }
+    </style>
+</head>
+<body class="flex h-screen text-gray-800">
+
+    <aside class="w-72 bg-white border-x border-gray-200 flex flex-col shadow-sm z-20 transition-all duration-300">
+        <div class="h-16 flex items-center justify-center border-b border-gray-100 px-6">
+            <h1 class="text-xl font-black text-blue-900 tracking-tight flex items-center gap-2">
+                <span class="text-3xl text-blue-600">👔</span>
+                <span data-i18n="title">مغسلة المرونة</span>
+            </h1>
+        </div>
+
+        <div class="p-4">
+            <a href="/orders/management/" class="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md transition duration-200">
+                <span>🖥️</span> <span data-i18n="posBtn">نقطة البيع (POS)</span>
+            </a>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto scrollbar-hide px-3 pb-4 space-y-1">
+            
+            <a href="#" class="flex items-center gap-3 px-3 py-2.5 bg-blue-50 text-blue-700 rounded-lg font-bold transition">
+                <span class="text-lg">📊</span> <span data-i18n="navMain">الرئيسية</span>
+            </a>
+
+            <div>
+                <button onclick="toggleMenu('laundryMenu', 'laundryIcon')" class="w-full flex items-center justify-between px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg font-bold transition">
+                    <div class="flex items-center gap-3"><span class="text-lg text-gray-400">👕</span> <span data-i18n="navLaundry">إدارة المغسلة</span></div>
+                    <span id="laundryIcon" class="text-gray-400 transition-transform duration-300">▼</span>
+                </button>
+                <div id="laundryMenu" class="submenu px-2 space-y-1 mt-1">
+                    <a href="/items-management/" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                        <span data-i18n="navItems">الأصناف (Items)</span>
+                    </a>
+                    <a href="/customers-management/" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <span>العملاء (Customers)</span>
+                    </a>
+                    <a href="/staff-management/" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
+                        <span data-i18n="navStaff">الموظفين (Staffs)</span>
+                    </a>
+                </div>
+            </div>
+
+            <div>
+                <button onclick="toggleMenu('stockMenu', 'stockIcon')" class="w-full flex items-center justify-between px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg font-bold transition">
+                    <div class="flex items-center gap-3"><span class="text-lg text-gray-400">📦</span> <span data-i18n="navStock">إدارة المخزون</span></div>
+                    <span id="stockIcon" class="text-gray-400 transition-transform duration-300">▼</span>
+                </button>
+                <div id="stockMenu" class="submenu px-2 space-y-1 mt-1">
+                    <a href="{% url 'inventory_products_page' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                        <span data-i18n="navProducts">المنتجات (Products)</span>
+                    </a>
+                    <a href="{% url 'stock_report_page' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        <span data-i18n="navStockReport">تقرير المخزون (Stock Report)</span>
+                    </a>
+                </div>
+            </div>
+
+            <div>
+                <button onclick="toggleMenu('purchaseMenu', 'purchaseIcon')" class="w-full flex items-center justify-between px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg font-bold transition">
+                    <div class="flex items-center gap-3"><span class="text-lg text-gray-400">🛒</span> <span data-i18n="navPurchase">المشتريات</span></div>
+                    <span id="purchaseIcon" class="text-gray-400 transition-transform duration-300">▼</span>
+                </button>
+                <div id="purchaseMenu" class="submenu px-2 space-y-1 mt-1">
+                    <a href="{% url 'vendors_list' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l3 5v5h-3m-9-10v10m-3-3h3m7 0h3M5 17a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4z"></path></svg>
+                        <span data-i18n="navVendors">الموردين (Vendors)</span>
+                    </a>
+                    <a href="/purchases-management/" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                        <span data-i18n="navPurchaseList">المشتريات (Purchase)</span>
+                    </a>
+                    <a href="{% url 'purchase_returns_page' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                        <span data-i18n="navReturn">مرتجع المشتريات (Return)</span>
+                    </a>
+                    <a href="{% url 'payment_vouchers_view' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span data-i18n="navVoucher">سندات الدفع (Payment Voucher)</span>
+                    </a>
+                </div>
+            </div>
+
+            <div>
+                <button onclick="toggleMenu('accountsMenu', 'accountsIcon')" class="w-full flex items-center justify-between px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg font-bold transition">
+                    <div class="flex items-center gap-3"><span class="text-lg text-gray-400">📒</span> <span data-i18n="navAccounts">الحسابات</span></div>
+                    <span id="accountsIcon" class="text-gray-400 transition-transform duration-300">▼</span>
+                </button>
+                <div id="accountsMenu" class="submenu px-2 space-y-1 mt-1">
+                    <a href="/chart-of-accounts/" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path></svg>
+                        <span data-i18n="navCOA">شجرة الحسابات</span>
+                    </a>
+                    <a href="/ledger-report/" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        <span data-i18n="navLedger">دفتر الأستاذ</span>
+                    </a>
+                    <a href="/trial-balance/" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006 0l-3-9m0 0l3-1m0 0l3-1m-3 1v14m0 0v-10m0 0h12m0 0V5m0 0l3 1m-3-1l-3 1m3-1v10m-3 1l3 9a5.002 5.002 0 006 0l-3-9"></path></svg>
+                        <span data-i18n="navTrial">ميزان المراجعة</span>
+                    </a>
+                    <a href="{% url 'profit_loss_report' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                        <span data-i18n="navPL">الأرباح والخسائر</span>
+                    </a>
+                    <a href="{% url 'balance_sheet_report' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span data-i18n="navBalanceSheet">الميزانية العمومية</span>
+                    </a>
+                    <a href="{% url 'payments_list' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                        <span data-i18n="navPayments">المدفوعات</span>
+                    </a>
+                    <a href="{% url 'receipts_list' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <span data-i18n="navReceipts">المقبوضات</span>
+                    </a>
+                    <a href="/orders/shift-reports/" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        <span data-i18n="navJournal">قيود اليومية</span>
+                    </a>
+                </div>
+            </div>
+
+            <div>
+                <button onclick="toggleMenu('reportsMenu', 'reportsIcon')" class="w-full flex items-center justify-between px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg font-bold transition">
+                    <div class="flex items-center gap-3"><span class="text-lg text-gray-400">📈</span> <span data-i18n="navReports">التقارير</span></div>
+                    <span id="reportsIcon" class="text-gray-400 transition-transform duration-300">▼</span>
+                </button>
+                <div id="reportsMenu" class="submenu px-2 space-y-1 mt-1">
+                    <a href="{% url 'orders_report_page' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        <span data-i18n="navOrderRep">تقرير الطلبات</span>
+                    </a>
+                    <a href="{% url 'revenue_report_page' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span>تقرير الإيرادات</span>
+                    </a>
+                    <a href="{% url 'balance_sheet_page' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span>الميزانية العمومية</span>
+                    </a>
+                    <a href="{% url 'customer_ledger_page' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        <span>كشف الحساب (Ledger)</span>
+                    </a>
+                    <a href="{% url 'profitability_report_page' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                        <span data-i18n="navProfitRep">ربحية المنتجات (Profitability)</span>
+                    </a>
+                    <a href="{% url 'profit_loss_page' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                        <span>الربح والخسارة (Profit & Loss)</span>
+                    </a>
+                    <a href="{% url 'purchase_report_page' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 0a2 2 0 100 4 2 2 0 000-4z"></path></svg>
+                        <span data-i18n="navPurchaseRep">تقرير المشتريات (Purchases)</span>
+                    </a>
+                    <a href="{% url 'inventory_valuation_report_page' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span>تقييم المخزون (Stock Valuation)</span>
+                    </a>
+                    <a href="{% url 'trial_balance_page' %}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:bg-blue-50 hover:text-[#007ec5] rounded-lg font-medium transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006 0l-3-9m0 0l3-1m0 0l3-1m-3 1v14m0 0v-10m0 0h12m0 0V5m0 0l3 1m-3-1l-3 1m3-1v10m-3 1l3 9a5.002 5.002 0 006 0l-3-9"></path></svg>
+                        <span>ميزان المراجعة (Trial Balance)</span>
+                    </a>
+                 </div>
+            </div>
+
+        </nav>
+        
+        <div class="px-4 pb-4 mt-2">
+            <button onclick="openVoidedHistory()" class="flex items-center justify-center gap-2 w-full bg-red-50 border border-red-200 hover:bg-red-600 hover:border-red-600 text-red-600 hover:text-white font-bold py-2.5 rounded-lg transition duration-300 shadow-sm group">
+                <span class="text-lg group-hover:animate-pulse">🚨</span> 
+                <span class="text-sm">سجل الرقابة (Voided)</span>
+            </button>
+        </div>
+
+        <div class="p-4 border-t border-gray-100">
+            <a href="/logout/" onclick="localStorage.clear(); sessionStorage.clear();" class="flex items-center justify-center gap-2 w-full border border-gray-200 text-gray-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 font-bold py-2 rounded-lg transition duration-200">
+                <span data-i18n="btnLogout">تسجيل الخروج</span> <span>🚪</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col overflow-hidden relative">
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm z-10 flex-shrink-0">
+            <div>
+                <h2 class="text-2xl font-black text-gray-800" data-i18n="headerTitle">الرئيسية (Dashboard)</h2>
+                <p class="text-xs text-gray-500 font-medium" id="current-date">جاري تحميل التاريخ...</p>
+            </div>
+            
+            <div class="flex items-center gap-4">
+               <button onclick="toggleLanguage()" class="bg-gray-800 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition flex items-center gap-2">
+                    🌐 <span id="lang-btn-text">English</span>
+                </button>
+                <div class="h-8 w-px bg-gray-200 mx-2"></div>
+                <button onclick="toggleNotifications()" id="notif-btn" title="Toggle Notifications" class="text-gray-400 hover:text-blue-600 transition p-2 rounded-full hover:bg-gray-100 relative">
+                    <svg id="notif-icon-on" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    <svg id="notif-icon-off" class="w-6 h-6 hidden text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9m-9-4l18 18"></path></svg>
+                </button>
+                <div class="h-8 w-px bg-gray-200 mx-2"></div>
+                <div class="flex items-center gap-3">
+                    <div id="admin-text-container" class="text-left">
+                        <p class="text-sm font-bold text-gray-800 leading-none" data-i18n="adminName">مدير النظام</p>
+                        <p class="text-xs text-gray-500 mt-1" data-i18n="adminRole">Admin</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-inner">A</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 bg-[#f8fafc]">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-cyan-50 border border-cyan-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition duration-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-sm font-bold text-cyan-800" data-i18n="cardCashTitle">رصيد الصندوق (Cash)</h3>
+                        <span class="text-cyan-600 bg-white p-1.5 rounded-lg shadow-sm">💵</span>
+                    </div>
+                    <p class="text-3xl font-black text-cyan-900 mt-2">
+                        <span id="dash-cash">0.00</span> <span class="text-sm font-bold text-cyan-700 mx-1">QAR</span>
+                    </p>
+                    <p class="text-[11px] text-cyan-600 mt-2 font-medium" data-i18n="cardCashSub">عبر جميع حسابات الكاش</p>
+                </div>
+
+                <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition duration-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-sm font-bold text-emerald-800" data-i18n="cardBankTitle">رصيد البنك (Bank)</h3>
+                        <span class="text-emerald-600 bg-white p-1.5 rounded-lg shadow-sm">💳</span>
+                    </div>
+                    <p class="text-3xl font-black text-emerald-900 mt-2">
+                        <span id="dash-bank">0.00</span> <span class="text-sm font-bold text-emerald-700 mx-1">QAR</span>
+                    </p>
+                    <p class="text-[11px] text-emerald-600 mt-2 font-medium" data-i18n="cardBankSub">جميع الحسابات البنكية المربوطة</p>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition duration-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-sm font-bold text-blue-800" data-i18n="cardTotalTitle">إجمالي المبيعات (Orders)</h3>
+                        <span class="text-blue-500 bg-white p-1.5 rounded-lg shadow-sm">🛍️</span>
+                    </div>
+                    <p class="text-3xl font-black text-blue-900 mt-2">
+                        <span id="dash-total">0.00</span> <span class="text-sm font-bold text-blue-700 mx-1">QAR</span>
+                    </p>
+                    <p class="text-[11px] text-blue-600 mt-2 font-medium" data-i18n="cardTotalSub">إجمالي المبالغ المفوترة</p>
+                </div>
+
+                <div class="bg-rose-50 border border-rose-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition duration-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-sm font-bold text-rose-800" data-i18n="cardOutTitle">المبالغ المعلقة (Outstanding)</h3>
+                        <span class="text-rose-500 bg-white p-1.5 rounded-lg shadow-sm">⚠️</span>
+                    </div>
+                    <p class="text-3xl font-black text-rose-900 mt-2">
+                        <span id="dash-outstanding">0.00</span> <span class="text-sm font-bold text-rose-700 mx-1">QAR</span>
+                    </p>
+                    <p class="text-[11px] text-rose-600 mt-2 font-medium" data-i18n="cardOutSub">مبالغ بانتظار التحصيل</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="col-span-2 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><span>📊</span> <span data-i18n="chartBarTitle">الطلبات مقابل التحصيلات (آخر 30 يوم)</span></h3>
+                    <div class="relative h-[300px] w-full">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="col-span-1 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><span>🥧</span> <span data-i18n="chartPieTitle">طرق الدفع</span></h3>
+                    <div class="relative h-[300px] w-full flex items-center justify-center">
+                        <canvas id="paymentPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 mt-6">
+                <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex flex-col h-[400px]">
+                    <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <h3 class="text-lg font-bold text-gray-800" data-i18n="tableTodayOrders">طلبات اليوم</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto scrollbar-hide">
+                        <table class="w-full text-sm whitespace-nowrap rtl:text-right ltr:text-left">
+                            <thead class="bg-white text-gray-500 font-bold border-b border-gray-100 sticky top-0 z-10">
+                                <tr>
+                                    <th class="p-4" data-i18n="thOrder">الطلب</th>
+                                    <th class="p-4" data-i18n="thCustomer">العميل</th>
+                                    <th class="p-4 rtl:text-left ltr:text-right" data-i18n="thTotal">الإجمالي</th>
+                                    <th class="p-4 rtl:text-left ltr:text-right" data-i18n="thOutstanding">المتبقي</th>
+                                    <th class="p-4 text-center" data-i18n="thStatus">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="today-orders-tbody" class="divide-y divide-gray-50">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex flex-col h-[400px]">
+                    <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <h3 class="text-lg font-bold text-gray-800" data-i18n="tableTopDebtors">أكثر العملاء مديونية</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto scrollbar-hide">
+                        <table class="w-full text-sm whitespace-nowrap rtl:text-right ltr:text-left">
+                            <thead class="bg-white text-gray-500 font-bold border-b border-gray-100 sticky top-0 z-10">
+                                <tr>
+                                    <th class="p-4" data-i18n="thCustomer">العميل</th>
+                                    <th class="p-4 rtl:text-left ltr:text-right" data-i18n="thOutstanding">المديونية</th>
+                                </tr>
+                            </thead>
+                            <tbody id="top-debtors-tbody" class="divide-y divide-gray-50">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                        <button onclick="openDeliveredHistory()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 transition shadow-md text-sm">
+                            <span>📜</span> سجل الطلبات المسلمة
+                        </button>
+
+                        <a href="/orders/workshop/" class="relative bg-[#212b36] hover:bg-[#1a222b] text-white px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 transition shadow-md">
+                        <span class="text-xl">⚙️</span>
+                        <span>الورشة (NEW ORDERS)</span>
+                        <span id="workshop-badge" class="absolute -top-2 -right-2 bg-[#dc2626] text-white text-[10px] font-black px-2 py-0.5 rounded-full border-2 border-white hidden">0</span>
+                    </a>
+                    </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm whitespace-nowrap text-right">
+                        <thead class="bg-gray-50 text-gray-500 font-bold border-b border-gray-100">
+    <tr>
+        <th class="p-4 text-right">الطلب / العميل</th>
+        <th class="p-4 text-center">المرحلة 1: انتظار العمل</th>
+        <th class="p-4 text-center">المرحلة 2: قيد التشغيل</th>
+        <th class="p-4 text-center">إجمالي الوقت / الحالة</th>
+    </tr>
+</thead>
+                        <tbody id="workshop-tracking-tbody" class="divide-y divide-gray-50">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+    
+
+    <script>
+        // ==========================================
+        // 🌟 1. نظام الترجمة (i18n) 🌟
+        // ==========================================
+        const i18n = {
+            en: {
+                title: "Laundry System", posBtn: "POS (Point of Sale)", navMain: "Dashboard",
+                navLaundry: "Laundry Management", navItems: "Items", navCustomers: "Customers", navStaff: "Staffs",
+                navStock: "Stock Management", navProducts: "Products", navStockReport: "Stock Report",
+                navPurchase: "Purchases", navVendors: "Vendors", navPurchaseList: "Purchase List", navReturn: "Purchase Return", navVoucher: "Payment Voucher",
+                navAccounts: "Accounts", navCOA: "Chart of Accounts", navLedger: "Ledger", navTrial: "Trial Balance", navPL: "Profit & Loss", navBalanceSheet: "Balance Sheet", navPayments: "Payments", navReceipts: "Receipts", navJournal: "Journal Entries",
+                navReports: "Reports", navOrderRep: "Orders Report", navRevRep: "Revenue Report", navColRep: "Collection Report", navProfitRep: "Profitability",
+                btnLogout: "Logout", headerTitle: "Dashboard", adminName: "System Admin", adminRole: "Admin",
+                cardCashTitle: "Cash Balance", cardCashSub: "Across all cash accounts",
+                cardBankTitle: "Bank Balance", cardBankSub: "All linked bank accounts",
+                cardTotalTitle: "Total Orders", cardTotalSub: "Lifetime invoiced amount",
+                cardOutTitle: "Outstanding", cardOutSub: "Pending collections",
+                chartBarTitle: "Orders vs Receipts (Last 30 days)", chartPieTitle: "Cashflow Mix",
+                chartLabelOrders: "Orders", chartLabelReceipts: "Receipts",
+                payCash: "Cash", payBank: "Card / Bank", payWallet: "Wallet / Gift",
+                lastUpdated: "Updated ",
+                tableTodayOrders: "Today's Orders", tableTopDebtors: "Top Outstanding Customers",
+                thOrder: "Order", thCustomer: "Customer", thTotal: "Total", thOutstanding: "Outstanding", thStatus: "Status",
+                noOrdersToday: "No orders placed so far today.", noDebtors: "No outstanding customers found.",
+                statusPending: "PENDING", statusCompleted: "COMPLETED",
+                newPaymentMsg: "New Payment Received!", paidAmount: "Paid:", orderNum: "Order #"
+            },
+            ar: {
+                title: "نظام مغاسل", posBtn: "نقطة البيع (POS)", navMain: "الرئيسية",
+                navLaundry: "إدارة المغسلة", navItems: "الأصناف (Items)", navCustomers: "العملاء (Customers)", navStaff: "الموظفين (Staffs)",
+                navStock: "إدارة المخزون", navProducts: "المنتجات (Products)", navStockReport: "تقرير المخزون (Stock Report)",
+                navPurchase: "المشتريات", navVendors: "الموردين (Vendors)", navPurchaseList: "المشتريات (Purchase)", navReturn: "مرتجع المشتريات (Purchase Return)", navVoucher: "سندات الدفع (Payment Voucher)",
+                navAccounts: "الحسابات", navCOA: "شجرة الحسابات", navLedger: "دفتر الأستاذ", navTrial: "ميزان المراجعة", navPL: "الأرباح والخسائر", navBalanceSheet: "الميزانية العمومية", navPayments: "المدفوعات", navReceipts: "المقبوضات", navJournal: "قيود اليومية",
+                navReports: "التقارير", navOrderRep: "تقرير الطلبات", navRevRep: "تقرير الإيرادات", navColRep: "تقرير التحصيل", navProfitRep: "ربحية المنتجات",
+                btnLogout: "تسجيل الخروج", headerTitle: "الرئيسية (Dashboard)", adminName: "مدير النظام", adminRole: "Admin",
+                cardCashTitle: "رصيد الصندوق (Cash)", cardCashSub: "عبر جميع حسابات الكاش",
+                cardBankTitle: "رصيد البنك (Bank)", cardBankSub: "جميع الحسابات البنكية المربوطة",
+                cardTotalTitle: "إجمالي المبيعات (Orders)", cardTotalSub: "إجمالي المبالغ المفوترة",
+                cardOutTitle: "المبالغ المعلقة (Outstanding)", cardOutSub: "مبالغ بانتظار التحصيل",
+                chartBarTitle: "الطلبات مقابل التحصيلات (آخر 30 يوم)", chartPieTitle: "طرق الدفع",
+                chartLabelOrders: "الطلبات (Orders)", chartLabelReceipts: "التحصيلات (Receipts)",
+                payCash: "كاش", payBank: "بطاقة / شبكة", payWallet: "محفظة / هدايا",
+                lastUpdated: "آخر تحديث: ",
+                tableTodayOrders: "طلبات اليوم", tableTopDebtors: "أكثر العملاء مديونية",
+                thOrder: "الطلب", thCustomer: "العميل", thTotal: "الإجمالي", thOutstanding: "المتبقي", thStatus: "الحالة",
+                noOrdersToday: "لا توجد طلبات مسجلة اليوم.", noDebtors: "لا يوجد عملاء عليهم مديونيات.",
+                statusPending: "قيد الانتظار", statusCompleted: "مكتمل",
+                newPaymentMsg: "دفعة جديدة مستلمة!", paidAmount: "تم دفع:", orderNum: "طلب #"
+            }
+        };
+
+        let currentLang = 'ar';
+        let allFetchedOrders = []; // حفظ الداتا عشان لما نغير اللغة ترسم الشارت من جديد بدون ماتسحب من السيرفر
+        // ==========================================
+        // 🔐 دالة استخراج مفتاح الأمان (مهمة جداً لعمليات الحذف)
+        // ==========================================
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            const root = document.getElementById('html-root');
+            root.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            root.lang = currentLang;
+
+            document.getElementById('lang-btn-text').innerText = currentLang === 'ar' ? 'English' : 'عربي';
+            document.getElementById('admin-text-container').className = currentLang === 'ar' ? 'text-left' : 'text-right';
+            
+            // تحديث كل النصوص في الـ HTML
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[currentLang][key]) el.innerText = i18n[currentLang][key];
+            });
+
+            updateDateDisplay();
+            
+            if(allFetchedOrders.length > 0) {
+                renderCharts(allFetchedOrders); 
+                renderTables(allFetchedOrders); // إعادة رسم الجداول باللغة الجديدة
+                renderWorkshopTracking(allFetchedOrders); // تحديث جدول الورشة مع اللغة
+            }
+        }
+
+        function updateDateDisplay() {
+            const dateOptions = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            const locale = currentLang === 'ar' ? 'ar-QA' : 'en-US';
+            document.getElementById('current-date').innerText = i18n[currentLang].lastUpdated + new Date().toLocaleString(locale, dateOptions);
+        }
+
+        // ==========================================
+        // 🌟 2. إدارة القوائم والجلب 🌟
+        // ==========================================
+        function toggleMenu(menuId, iconId) {
+            const menu = document.getElementById(menuId);
+            const icon = document.getElementById(iconId);
+            const btn = icon.closest('button'); // 💡 خدعة ذكية تمسك الزر الرئيسي
+
+            if (menu.classList.contains('open')) {
+                menu.classList.remove('open');
+                icon.classList.remove('rotate-180');
+                if(btn) btn.classList.remove('bg-blue-50', 'text-blue-700'); // يشيل التظليل
+            } else {
+                // إغلاق أي قائمة مفتوحة ثانية (تأثير الأكورديون)
+                document.querySelectorAll('.submenu.open').forEach(el => el.classList.remove('open'));
+                document.querySelectorAll('[id$="Icon"].rotate-180').forEach(el => el.classList.remove('rotate-180'));
+                
+                // تنظيف الألوان من كل الأزرار الباقية
+                document.querySelectorAll('button').forEach(el => {
+                    if(el.classList.contains('bg-blue-50')) el.classList.remove('bg-blue-50', 'text-blue-700');
+                });
+                
+                // فتح القائمة المطلوبة وتلوين زرها
+                menu.classList.add('open');
+                icon.classList.add('rotate-180');
+                if(btn) btn.classList.add('bg-blue-50', 'text-blue-700'); // يخلي الزر أزرق فاتح ورهيب
+            }
+        }
+
+        // ==========================================
+        // 🌟 إعدادات ورصد الإشعارات (Toasts) 🌟
+        // ==========================================
+        let notificationsEnabled = localStorage.getItem('notificationsEnabled') !== 'false';
+        let knownPaidOrders = new Set();
+        let isFirstLoad = true;
+
+        function updateNotificationIcon() {
+            document.getElementById('notif-icon-on').classList.toggle('hidden', !notificationsEnabled);
+            document.getElementById('notif-icon-off').classList.toggle('hidden', notificationsEnabled);
+        }
+        
+        function toggleNotifications() {
+            notificationsEnabled = !notificationsEnabled;
+            localStorage.setItem('notificationsEnabled', notificationsEnabled);
+            updateNotificationIcon();
+        }
+
+        function showSilentToast(order) {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            
+            let paidAmount = parseFloat(order.total_amount).toFixed(2);
+            let customerName = order.customer_name || (currentLang === 'ar' ? 'عميل نقدي' : 'Walk-in Customer');
+            let orderId = String(order.id).padStart(4, '0');
+
+            toast.className = 'bg-white border-l-4 border-emerald-500 rounded-xl shadow-2xl p-4 w-80 pointer-events-auto toast-enter flex items-center gap-4';
+            if(currentLang === 'ar') toast.classList.replace('border-l-4', 'border-r-4');
+
+            toast.innerHTML = `
+                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 text-2xl flex-shrink-0 shadow-inner">💰</div>
+                <div class="flex-1">
+                    <h4 class="text-sm font-black text-gray-800 leading-tight">${i18n[currentLang].newPaymentMsg}</h4>
+                    <p class="text-[11px] text-gray-500 mt-1 font-bold">${i18n[currentLang].orderNum}${orderId} - ${customerName}</p>
+                    <p class="text-sm font-black text-emerald-600 mt-1">${paidAmount} QAR</p>
+                </div>
+            `;
+            container.appendChild(toast);
+
+            // تدمير الإشعار بعد 5 ثواني
+            setTimeout(() => {
+                toast.classList.replace('toast-enter', 'toast-exit');
+                setTimeout(() => toast.remove(), 400); 
+            }, 5000);
+        }
+
+        async function fetchDashboardData() {
+            try {
+                const response = await fetch('/api/orders/checkout/');
+                if (!response.ok) throw new Error('Network Error');
+                const data = await response.json();
+                allFetchedOrders = Array.isArray(data) ? data : (data.results || []);
+
+                // 🌟 السطر السحري: عزل الطلبات السليمة في مصفوفة جديدة 🌟
+                const validOrders = allFetchedOrders.filter(o => o.status !== 'VOID' && o.is_void !== true);
+
+                // 🔔 رصد الطلبات اللي توها اندفعت (نستخدم الطلبات السليمة فقط) 🔔
+                validOrders.forEach(o => {
+                    if (o.payment_status === 'PAID') {
+                        if (!knownPaidOrders.has(o.id)) {
+                            // إذا مو أول تحميل للصفحة والزر شغال، طلع الإشعار
+                            if (!isFirstLoad && notificationsEnabled) {
+                                showSilentToast(o);
+                            }
+                            knownPaidOrders.add(o.id);
+                        }
+                    }
+                });
+                isFirstLoad = false;
+                updateNotificationIcon(); // تأكيد حالة الأيقونة
+
+                // 🌟 نغذي الداشبورد والجداول بـ "الطلبات السليمة فقط" 🌟
+                calculateStats(validOrders);
+                renderCharts(validOrders);
+                renderTables(validOrders);
+                renderWorkshopTracking(validOrders); 
+                
+                // (ملاحظة: نافذة سجل الرقابة بتظل تسحب من allFetchedOrders عشان كذا بتشتغل صح)
+            } catch (error) { console.error("Error fetching data:", error); }
+        }
+
+        function calculateStats(orders) {
+            let totalCash = 0, totalBank = 0, totalSales = 0, totalOutstanding = 0;
+            orders.forEach(o => {
+                let orderTotal = parseFloat(o.total_amount) || 0;
+                totalSales += orderTotal;
+                if (o.status !== 'COMPLETED' && o.payment_status !== 'PAID') totalOutstanding += orderTotal;
+
+                if (o.payment_status === 'PAID' && o.payments && o.payments.length > 0) {
+                    o.payments.forEach(p => {
+                        let pAmt = parseFloat(p.amount) || 0;
+                        if (p.method === 'CASH') totalCash += pAmt;
+                        else if (p.method === 'CARD') totalBank += pAmt;
+                    });
+                } else if (o.payment_status === 'PAID') {
+                    totalCash += orderTotal;
+                }
+            });
+            animateValue('dash-cash', 0, totalCash, 1000);
+            animateValue('dash-bank', 0, totalBank, 1000);
+            animateValue('dash-total', 0, totalSales, 1000);
+            animateValue('dash-outstanding', 0, totalOutstanding, 1000);
+        }
+
+        function animateValue(id, start, end, duration) {
+            if (start === end) { document.getElementById(id).innerHTML = end.toFixed(2); return; }
+            let range = end - start;
+            let current = start;
+            let increment = end > start ? (range / (duration / 15)) : -1;
+            let stepTime = Math.abs(Math.floor(duration / (range / increment)));
+            let obj = document.getElementById(id);
+            let timer = setInterval(function() {
+                current += increment;
+                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) { current = end; clearInterval(timer); }
+                obj.innerHTML = current.toFixed(2);
+            }, stepTime);
+        }
+
+        // ==========================================
+        // 🌟 3. برمجة الرسوم البيانية المتوافقة مع الترجمة 🌟
+        // ==========================================
+        let chartInstance = null;
+        let pieInstance = null;
+
+        function renderCharts(orders) {
+            // -- الدائري --
+            let cashAmt = 0, cardAmt = 0, walletAmt = 0;
+            orders.forEach(o => {
+                if (o.payment_status === 'PAID' && o.payments && o.payments.length > 0) {
+                    o.payments.forEach(p => {
+                        let amt = parseFloat(p.amount) || 0;
+                        if (p.method === 'CASH') cashAmt += amt;
+                        else if (p.method === 'CARD') cardAmt += amt;
+                        else if (p.method === 'WALLET' || p.method === 'GIFT_CARD') walletAmt += amt;
+                    });
+                } else if (o.payment_status === 'PAID') { cashAmt += parseFloat(o.total_amount) || 0; }
+            });
+
+            const ctxPie = document.getElementById('paymentPieChart').getContext('2d');
+            if(pieInstance) pieInstance.destroy();
+            pieInstance = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: [i18n[currentLang].payCash, i18n[currentLang].payBank, i18n[currentLang].payWallet],
+                    datasets: [{ data: [cashAmt, cardAmt, walletAmt], backgroundColor: ['#3b82f6', '#10b981', '#8b5cf6'], borderWidth: 0, hoverOffset: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Tajawal', weight: 'bold' } } } } }
+            });
+
+            // -- الشريطي (آخر 30 يوم) --
+            let last30Days = {};
+            let labels = [];
+            const dateLocale = currentLang === 'ar' ? 'ar-EG' : 'en-US';
+
+            for (let i = 29; i >= 0; i--) {
+                let d = new Date();
+                d.setDate(d.getDate() - i);
+                let dateKey = d.toISOString().split('T')[0]; 
+                let displayLabel = d.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' });
+                
+                last30Days[dateKey] = { label: displayLabel, orders: 0, receipts: 0 };
+                labels.push(displayLabel);
+            }
+
+            orders.forEach(o => {
+                if (!o.created_at) return;
+                let orderDate = new Date(o.created_at).toISOString().split('T')[0];
+                if (last30Days[orderDate]) {
+                    last30Days[orderDate].orders += parseFloat(o.total_amount) || 0;
+                    if (o.payment_status === 'PAID') {
+                        if (o.payments && o.payments.length > 0) o.payments.forEach(p => last30Days[orderDate].receipts += parseFloat(p.amount) || 0);
+                        else last30Days[orderDate].receipts += parseFloat(o.total_amount) || 0;
+                    }
+                }
+            });
+
+            let dataOrders = Object.values(last30Days).map(d => d.orders);
+            let dataReceipts = Object.values(last30Days).map(d => d.receipts);
+
+            const ctxBar = document.getElementById('salesChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: i18n[currentLang].chartLabelOrders, data: dataOrders, backgroundColor: '#2563eb', borderRadius: 3, barPercentage: 0.7, categoryPercentage: 0.8 },
+                        { label: i18n[currentLang].chartLabelReceipts, data: dataReceipts, backgroundColor: '#10b981', borderRadius: 3, barPercentage: 0.7, categoryPercentage: 0.8 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { font: { family: 'Tajawal', weight: 'bold' }, usePointStyle: true } },
+                        tooltip: { titleFont: { family: 'Tajawal', size: 14 }, bodyFont: { family: 'Tajawal', size: 13, weight: 'bold' } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f3f4f6', borderDash: [5, 5] }, ticks: { font: { family: 'Tajawal' } } },
+                        x: { grid: { display: false }, ticks: { font: { family: 'Tajawal', size: 11 }, maxTicksLimit: 15 } }
+                    }
+                }
+            });
+        }
+
+        // ==========================================
+        // 🌟 4. برمجة الجداول السفلية (بالتوقيت المحلي) 🌟
+        // ==========================================
+        function renderTables(orders) {
+            const todayTbody = document.getElementById('today-orders-tbody');
+            const debtorsTbody = document.getElementById('top-debtors-tbody');
+
+            // 1. حساب تاريخ اليوم بالتوقيت المحلي (Local Time) وليس جرينتش
+            const now = new Date();
+            const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            // فلترة طلبات اليوم ومطابقتها مع التوقيت المحلي
+            let todayOrders = orders.filter(o => {
+                if (!o.created_at) return false;
+                let orderDate = new Date(o.created_at);
+                let orderDateStr = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}-${String(orderDate.getDate()).padStart(2, '0')}`;
+                return orderDateStr === localTodayStr;
+            });
+            
+            // ترتيب الطلبات لتظهر الأحدث في الأعلى
+            todayOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            if(todayOrders.length === 0) {
+                todayTbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400 font-medium" data-i18n="noOrdersToday">${i18n[currentLang].noOrdersToday}</td></tr>`;
+            } else {
+                todayTbody.innerHTML = todayOrders.map(o => {
+                    let total = parseFloat(o.total_amount) || 0;
+                    let outstand = (o.payment_status !== 'PAID') ? total : 0; 
+         let isPaid = (o.payment_status === 'PAID' || outstand === 0);
+let statColor = isPaid ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700';
+let statText = isPaid ? (currentLang === 'ar' ? 'مدفوع' : 'PAID') : (currentLang === 'ar' ? 'غير مدفوع' : 'UNPAID');
+                    
+                    return `
+                    <tr class="hover:bg-blue-50/50 transition">
+                        <td class="p-4 font-bold text-blue-600">${String(o.id).padStart(4, '0')}</td>
+                        <td class="p-4">
+                            <p class="font-bold text-gray-800">${o.customer_name || (currentLang === 'ar' ? 'عميل نقدي' : 'Cash Customer')}</p>
+                            <p class="text-[10px] text-gray-500">${o.customer_phone || '---'}</p>
+                        </td>
+                        <td class="p-4 rtl:text-left ltr:text-right font-bold text-gray-700">${total.toFixed(2)}</td>
+                        <td class="p-4 rtl:text-left ltr:text-right font-bold ${outstand > 0 ? 'text-rose-500' : 'text-gray-400'}">${outstand.toFixed(2)}</td>
+                        <td class="p-4 text-center">
+                            <span class="px-2.5 py-1 rounded-md text-[10px] font-bold ${statColor}">${statText}</span>
+                        </td>
+                    </tr>
+                    `;
+                }).join('');
+            }
+
+            // 2. حساب وعرض أكثر العملاء مديونية (Top Outstanding)
+            let customerDebts = {};
+            orders.forEach(o => {
+                if (o.status !== 'COMPLETED' && o.payment_status !== 'PAID') {
+                    let outstand = parseFloat(o.total_amount) || 0;
+                    let cId = o.customer_id || 'cash_' + o.id; 
+                    
+                    if(!customerDebts[cId]) {
+                        customerDebts[cId] = {
+                            name: o.customer_name || (currentLang === 'ar' ? 'عميل نقدي' : 'Cash Customer'),
+                            phone: o.customer_phone || '---',
+                            amount: 0
+                        };
+                    }
+                    customerDebts[cId].amount += outstand;
+                }
+            });
+
+            let topDebtors = Object.values(customerDebts).sort((a, b) => b.amount - a.amount).slice(0, 10);
+
+            if(topDebtors.length === 0) {
+                debtorsTbody.innerHTML = `<tr><td colspan="2" class="p-8 text-center text-gray-400 font-medium" data-i18n="noDebtors">${i18n[currentLang].noDebtors}</td></tr>`;
+            } else {
+                debtorsTbody.innerHTML = topDebtors.map(c => `
+                    <tr class="hover:bg-rose-50/50 transition border-b border-gray-50 last:border-0">
+                        <td class="p-4">
+                            <p class="font-bold text-gray-800">${c.phone}</p>
+                            <p class="text-[11px] text-gray-500 mt-0.5">${c.name}</p>
+                        </td>
+                        <td class="p-4 rtl:text-left ltr:text-right font-black text-rose-600 text-lg">${c.amount.toFixed(2)} <span class="text-xs text-rose-400">QAR</span></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // ==========================================
+        // 🌟 5. برمجة قسم الورشة وتتبع الوقت (المدمج) 🌟
+        // ==========================================
+        function calculateDuration(start, end) {
+            if (!start || !end) return '---';
+            const s = new Date(start);
+            const e = new Date(end);
+            const diffMs = e - s;
+            if (diffMs < 0) return '---';
+            
+            const diffMins = Math.floor(diffMs / 60000);
+            const hours = Math.floor(diffMins / 60);
+            const mins = diffMins % 60;
+            
+            // 🌍 دعم الترجمة آلياً حسب اللغة المختارة
+            const hLabel = currentLang === 'ar' ? 'ساعة' : 'h';
+            const mLabel = currentLang === 'ar' ? 'دقيقة' : 'm';
+            const andLabel = currentLang === 'ar' ? 'و' : '&';
+            
+            if (hours > 0) return `${hours} ${hLabel} ${andLabel} ${mins} ${mLabel}`;
+            return `${mins} ${mLabel}`;
+        }
+
+        function formatDateTime(dateString) {
+            if (!dateString) return '---';
+            const d = new Date(dateString);
+            return d.toLocaleTimeString(currentLang === 'ar' ? 'ar-QA' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+
+        function renderWorkshopTracking(orders) {
+            const tbody = document.getElementById('workshop-tracking-tbody');
+            const badge = document.getElementById('workshop-badge');
+            
+            // 1. فلترة الطلبات النشطة فقط
+            let trackingOrders = orders.filter(o => ['PENDING', 'PROCESSING', 'READY'].includes(o.status));
+            
+            // 2. الترتيب الهندسي: الأقدم أولاً (لإعطاء الأولوية للمتأخرين)
+            trackingOrders.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+            const activeCount = trackingOrders.filter(o => o.status !== 'READY').length;
+            badge.innerText = activeCount;
+            badge.classList.toggle('hidden', activeCount === 0);
+
+            if (trackingOrders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 font-medium">الورشة فارغة حالياً.</td></tr>`;
+                return;
+            }
+
+            const formatTimeOnly = (dateStr) => {
+                if (!dateStr) return '---';
+                return new Date(dateStr).toLocaleTimeString(currentLang === 'ar' ? 'ar-QA' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            };
+
+            tbody.innerHTML = trackingOrders.map(o => {
+                const now = new Date();
+                const nowISO = now.toISOString();
+                
+                // 🚨 منطق التنبيه: إذا تأخر الطلب أكثر من ساعتين في المغسلة
+                const isDelayed = (now - new Date(o.created_at)) / (1000 * 60 * 60) > 2 && o.status !== 'READY';
+
+                // المرحلة 1: انتظار العمل
+                const stage1End = o.processing_start_at || nowISO;
+                const stage1Duration = calculateDuration(o.created_at, stage1End);
+                const stage1Range = `${formatTimeOnly(o.created_at)} ⮕ ${o.processing_start_at ? formatTimeOnly(o.processing_start_at) : (currentLang === 'ar' ? 'الآن' : 'Now')}`;
+
+                // المرحلة 2: قيد التشغيل
+                let stage2HTML = `<div class="opacity-20 text-xs font-bold text-gray-400">${currentLang === 'ar' ? 'بانتظار البدء' : 'Waiting...'}</div>`;
+                if (o.processing_start_at) {
+                    const stage2End = o.ready_at || nowISO;
+                    const stage2Duration = calculateDuration(o.processing_start_at, stage2End);
+                    const stage2Range = `${formatTimeOnly(o.processing_start_at)} ⮕ ${o.ready_at ? formatTimeOnly(o.ready_at) : (currentLang === 'ar' ? 'الآن' : 'Now')}`;
+                    stage2HTML = `
+                        <div class="flex flex-col relative">
+                            ${o.status === 'PROCESSING' ? '<span class="absolute -right-3 top-1 w-2 h-2 bg-orange-500 rounded-full animate-ping"></span>' : ''}
+                            <span class="text-[12px] font-black ${o.status === 'PROCESSING' ? 'text-orange-600' : 'text-gray-500'}">${stage2Duration}</span>
+                            <span class="text-[9px] text-gray-400 font-bold">${stage2Range}</span>
+                        </div>`;
+                }
+
+                return `
+                    <tr class="group transition-all duration-500 border-b border-gray-50 last:border-0 ${isDelayed ? 'bg-red-50/50 hover:bg-red-100/40' : 'hover:bg-blue-50/30'}">
+                        <td class="p-4">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-[#212b36] text-white px-2 py-1 rounded text-[10px] font-black shadow-sm">#${String(o.id).padStart(4, '0')}</span>
+                                <div>
+                                    <p class="font-black text-slate-800 text-sm leading-none">${o.customer_name || 'Walk-in'}</p>
+                                    <p class="text-[10px] text-slate-400 mt-1 font-bold">${(o.items || []).length} قطعة</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-4 text-center">
+                            <div class="flex flex-col relative">
+                                ${o.status === 'PENDING' ? '<span class="absolute -right-3 top-1 w-2 h-2 bg-blue-500 rounded-full animate-ping"></span>' : ''}
+                                <span class="text-[12px] font-black ${o.status === 'PENDING' ? 'text-blue-600' : 'text-gray-500'}">${stage1Duration}</span>
+                                <span class="text-[9px] text-gray-400 font-bold">${stage1Range}</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-center border-x border-gray-50/50">${stage2HTML}</td>
+                        <td class="p-4 text-center">
+                            <div class="inline-flex flex-col items-center">
+                                ${isDelayed ? '<span class="text-red-600 text-lg mb-1 animate-bounce">⚠️</span>' : ''}
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider 
+                                    ${o.status === 'READY' ? 'bg-emerald-100 text-emerald-700' : (isDelayed ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700')}">
+                                    ${o.status === 'READY' ? (currentLang === 'ar' ? 'جاهز' : 'Ready') : (isDelayed ? (currentLang === 'ar' ? 'متأخر' : 'Delayed') : (currentLang === 'ar' ? 'نشط' : 'In Progress'))}
+                                </span>
+                                <span class="text-[9px] text-gray-400 mt-1 font-bold">الإجمالي: ${calculateDuration(o.created_at, o.ready_at || nowISO)}</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        function openDeliveredHistory() {
+            const modal = document.getElementById('deliveredModal');
+            const tbody = document.getElementById('delivered-history-tbody');
+            
+            const completedOrders = allFetchedOrders.filter(o => o.status === 'COMPLETED');
+            completedOrders.sort((a, b) => new Date(b.ready_at || b.created_at) - new Date(a.ready_at || a.created_at));
+
+            const formatTimeOnly = (dateStr) => {
+                if (!dateStr) return '---';
+                return new Date(dateStr).toLocaleTimeString(currentLang === 'ar' ? 'ar-QA' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            };
+
+            if (completedOrders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-12 text-center text-gray-400 font-bold">لم يتم تسليم أي طلبات بعد.</td></tr>`;
+            } else {
+                tbody.innerHTML = completedOrders.map(o => {
+                    const s1Range = `${formatTimeOnly(o.created_at)} ⮕ ${formatTimeOnly(o.processing_start_at)}`;
+                    const s2Range = o.processing_start_at && o.ready_at ? `${formatTimeOnly(o.processing_start_at)} ⮕ ${formatTimeOnly(o.ready_at)}` : '---';
+
+                    return `
+                        <tr class="hover:bg-gray-50 transition border-b border-gray-50">
+                            <td class="p-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-[10px] font-black border border-gray-200">#${String(o.id).padStart(4, '0')}</span>
+                                    <div><p class="font-black text-slate-800 text-sm leading-none">${o.customer_name || 'Walking Customer'}</p></div>
+                                </div>
+                            </td>
+                            <td class="p-4 text-center">
+                                <p class="text-[12px] font-bold text-blue-600">${calculateDuration(o.created_at, o.processing_start_at)}</p>
+                                <p class="text-[9px] text-gray-400">${s1Range}</p>
+                            </td>
+                            <td class="p-4 text-center">
+                                <p class="text-[12px] font-bold text-orange-600">${calculateDuration(o.processing_start_at, o.ready_at)}</p>
+                                <p class="text-[9px] text-gray-400">${s2Range}</p>
+                            </td>
+                            <td class="p-4 text-center">
+                                <span class="text-sm font-black text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">${calculateDuration(o.created_at, o.ready_at)}</span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            modal.classList.remove('hidden');
+        }
+        function closeDeliveredHistory() {
+            document.getElementById('deliveredModal').classList.add('hidden');
+        }
+        // ==========================================
+        // 🚨 سجل الرقابة (الطلبات الملغاة) 🚨
+        // ==========================================
+        // ==========================================
+        // 🚨 سجل الرقابة (الطلبات الملغاة) مع خيارات المدير 🚨
+        // ==========================================
+        function openVoidedHistory() {
+            const modal = document.getElementById('voidedModal');
+            const tbody = document.getElementById('voided-history-tbody');
+            
+            // إضافة عمود "الإجراءات" لترويسة الجدول إذا مو موجود
+            const theadTr = modal.querySelector('thead tr');
+            if(theadTr.children.length === 3) {
+                const th = document.createElement('th');
+                th.className = "p-4 text-center";
+                th.innerText = "الإجراءات (Actions)";
+                theadTr.appendChild(th);
+            }
+            
+            const voidedOrders = allFetchedOrders.filter(o => o.status === 'VOID' || o.is_void === true);
+            voidedOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            if (voidedOrders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-12 text-center text-emerald-500 font-bold text-lg">لا يوجد أي طلبات ملغاة حالياً. العمل سليم! 🛡️</td></tr>`;
+            } else {
+                tbody.innerHTML = voidedOrders.map(o => {
+                    let orderDate = new Date(o.created_at).toLocaleString(currentLang === 'ar' ? 'ar-QA' : 'en-US', { hour: '2-digit', minute: '2-digit', year: 'numeric', month: 'short', day: 'numeric' });
+                    let customerName = o.customer_name || (currentLang === 'ar' ? 'عميل نقدي' : 'Cash Customer');
+                    let reason = o.remarks || 'لم يتم كتابة سبب ⚠️';
+
+                    return `
+                        <tr class="hover:bg-red-50/50 transition">
+                            <td class="p-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-black border border-red-200">#${String(o.id).padStart(4, '0')}</span>
+                                    <div>
+                                        <p class="font-black text-slate-800 text-sm leading-none">${customerName}</p>
+                                        <p class="text-[10px] text-gray-400 mt-1 font-bold">${orderDate}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-4 text-center font-black text-gray-700">
+                                ${parseFloat(o.total_amount).toFixed(2)} QAR
+                            </td>
+                            <td class="p-4 rtl:text-right ltr:text-left">
+                                <span class="text-xs font-bold text-red-600 bg-red-50/50 border border-red-100 p-2.5 rounded-lg block w-full max-w-xs break-words shadow-sm">
+                                    ${reason}
+                                </span>
+                            </td>
+                            <td class="p-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="printOriginalReceipt(${o.id})" class="p-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-600 hover:text-white rounded-lg shadow-sm transition" title="طباعة الفاتورة الأصلية">
+                                        🖨️
+                                    </button>
+                                    <button onclick="printVoidReceipt(${o.id})" class="p-2 bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-500 hover:text-white rounded-lg shadow-sm transition" title="طباعة فاتورة الرقابة (سبب الإلغاء)">
+                                        🧾
+                                    </button>
+                                    <button onclick="deleteVoidedOrder(${o.id})" class="p-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-700 hover:text-white rounded-lg shadow-sm transition" title="حذف نهائي من النظام">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            modal.classList.remove('hidden');
+        }
+        // 1. دالة طباعة الفاتورة الأصلية
+        function printOriginalReceipt(orderId) {
+            window.open(`/api/orders/print/${orderId}/`, '_blank', 'width=400,height=600');
+        }
+
+        // 2. دالة طباعة فاتورة الإلغاء الخاصة (فاتورة الرقابة)
+        function printVoidReceipt(orderId) {
+            const order = allFetchedOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            let orderDate = new Date(order.created_at).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            let printDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            let customerName = order.customer_name || 'عميل نقدي';
+            let reason = order.remarks || 'لم يكتب الموظف سبباً محدد';
+            let amount = parseFloat(order.total_amount).toFixed(2);
+            let cashierName = order.cashier_name || 'النظام / غير محدد'; // اسم الموظف إذا كان مسجل
+
+            let printContent = `
+            <html><head>
+                <style>
+                    @page { margin: 0; }
+                    body { font-family: 'Tajawal', sans-serif; text-align: center; margin: 0; padding: 15px; width: 70mm; background: #fff; }
+                    .header { font-size: 16px; font-weight: 900; margin-bottom: 10px; border-bottom: 2px dashed #000; padding-bottom: 10px; color: #dc2626; }
+                    .row { display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+                    .reason-box { background: #fef2f2; border: 2px solid #000; padding: 10px; margin-top: 15px; border-radius: 5px; text-align: right; }
+                    .reason-title { font-size: 12px; font-weight: 900; border-bottom: 1px solid #000; display: inline-block; margin-bottom: 5px;}
+                    .reason-text { font-size: 13px; font-weight: bold; color: #000; display: block; line-height: 1.5; }
+                    .amount { font-size: 18px; font-weight: 900; margin-top: 15px; border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 10px 0; }
+                    .footer { font-size: 10px; margin-top: 15px; font-weight: bold; color: #666; }
+                </style>
+            </head><body dir="rtl">
+                <div class="header">⚠️ فاتورة إثبات إلغاء طلب ⚠️<br><span style="font-size: 12px; color:#000;">سجل المراقبة والتدقيق</span></div>
+                
+                <div class="row"><span>رقم الطلب الملغي:</span> <span style="font-size:14px;">#${String(order.id).padStart(4, '0')}</span></div>
+                <div class="row"><span>العميل:</span> <span>${customerName}</span></div>
+                <div class="row"><span>أنشئ بواسطة:</span> <span>${cashierName}</span></div>
+                <div class="row"><span>تاريخ إنشاء الطلب:</span> <span dir="ltr">${orderDate}</span></div>
+                <div class="row"><span>وقت طباعة الإثبات:</span> <span dir="ltr">${printDate}</span></div>
+                
+                <div class="amount">قيمة الطلب: ${amount} QAR</div>
+                
+                <div class="reason-box">
+                    <span class="reason-title">سبب الإلغاء المُسجل بالنظام:</span>
+                    <span class="reason-text">${reason}</span>
+                </div>
+                
+                <div class="footer">هذه وثيقة رسمية صادرة من نظام الحماية.</div>
+            </body></html>`;
+
+            const printWin = window.open('', '', 'width=400,height=600');
+            if (!printWin) return alert("يرجى السماح بالنوافذ المنبثقة (Pop-ups) للمتصفح.");
+            printWin.document.write(printContent);
+            printWin.document.close();
+            printWin.focus();
+            setTimeout(() => { printWin.print(); printWin.close(); }, 500);
+        }
+
+        // 3. دالة الحذف النهائي للطلب من قاعدة البيانات (Hard Delete)
+        async function deleteVoidedOrder(orderId) {
+            if (!confirm("🚨 تحذير: أنت على وشك حذف هذا الطلب (نهائياً) من قاعدة البيانات.\n\nسيتم مسحه للأبد ولا يمكن التراجع عن هذا الإجراء!\nهل أنت متأكد؟")) return;
+
+            try {
+                // نرسل أمر DELETE للسيرفر
+                const res = await fetch(`/api/orders/checkout/${orderId}/`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                });
+
+                if (res.ok || res.status === 204) {
+                    alert("تم حذف الطلب من قاعدة البيانات نهائياً وتطهير النظام ✅");
+                    // إخفاء الطلب من المصفوفة المحلية عشان ما نضطر نحدث الصفحة
+                    allFetchedOrders = allFetchedOrders.filter(o => o.id !== orderId);
+                    
+                    // إعادة رسم النافذة والإحصائيات
+                    openVoidedHistory();
+                    calculateStats(allFetchedOrders);
+                    renderCharts(allFetchedOrders);
+                } else {
+                    const err = await res.text();
+                    alert("❌ حدث خطأ أثناء الحذف، تفاصيل السيرفر:\n" + err);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("❌ خطأ في الاتصال بالسيرفر أثناء محاولة الحذف.");
+            }
+        }
+        function closeVoidedHistory() {
+            document.getElementById('voidedModal').classList.add('hidden');
+        }
+
+       // بدء التشغيل
+       window.onload = () => {
+           updateDateDisplay();
+           fetchDashboardData();
+           
+           // تحديث الشاشة تلقائياً كل 30 ثانية (لجلب الطلبات الجديدة أول بأول)
+           setInterval(() => {
+               fetchDashboardData();
+               updateDateDisplay();
+           }, 30000);
+       };
+    </script>
+
+    <script>
+        async function enforceAdminPermissions() {
+            try {
+                const res = await fetch('/api/accounts/my-permissions/');
+                const perms = await res.json();
+
+                // 1. إذا كان المدير (Superuser)، نسمح له بالبقاء
+                if (perms.is_superuser === true) return;
+
+                // 2. إذا كان موظفاً عادياً، نطرده ونرجعه لصفحاته المسموحة
+                let fallbackUrl = '/logout/';
+                let fallbackText = 'تسجيل الخروج';
+                
+                if (perms.can_access_pos) { fallbackUrl = '/cashier/'; fallbackText = 'العودة للكاشير'; }
+                else if (perms.can_access_orders) { fallbackUrl = '/orders/management/'; fallbackText = 'العودة للطلبات'; }
+                else if (perms.can_access_customers) { fallbackUrl = '/customers/'; fallbackText = 'العودة للعملاء'; }
+
+                document.body.innerHTML = `
+                    <div class="h-screen w-full flex flex-col items-center justify-center bg-gray-50">
+                        <span class="text-6xl mb-4">🛑</span>
+                        <h1 class="text-3xl font-black text-red-600 mb-2">Access Denied! (غير مصرح لك)</h1>
+                        <p class="text-gray-500 font-bold mb-6">عفواً، هذه الصفحة مخصصة لمدراء النظام فقط.</p>
+                        <div class="flex gap-4 mt-4">
+                            <button onclick="window.history.back()" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-gray-300 transition">⬅ رجوع</button>
+                            <a href="${fallbackUrl}" class="bg-[#007ec5] text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 transition">🏠 ${fallbackText}</a>
+                            <a href="/logout/" onclick="localStorage.clear(); sessionStorage.clear();" class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-red-600 transition">🚪 خروج للتبديل</a>
+                        </div>
+                    </div>`;
+            } catch (e) {
+                console.error("Permission check failed", e);
+                window.location.href = '/logout/';
+            }
+        }
+
+        // تشغيل نظام الحماية فور تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', enforceAdminPermissions);
+    </script>
+    <div id="deliveredModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-blue-50/50">
+                <div>
+                    <h3 class="text-xl font-black text-blue-900 flex items-center gap-2"><span>🤝</span> سجل الطلبات المكتملة (التاريخي)</h3>
+                    <p class="text-xs text-blue-600 font-bold mt-1">عرض كفاءة التشغيل لكل مرحلة للطلبات التي غادرت المغسلة</p>
+                </div>
+                <button onclick="closeDeliveredHistory()" class="text-gray-400 hover:text-red-500 text-2xl font-black p-2 transition">&times;</button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                <table class="w-full text-sm text-right">
+                    <thead class="bg-gray-50 text-gray-500 font-bold sticky top-0 z-10 border-b border-gray-100">
+                        <tr>
+                            <th class="p-4">الطلب / العميل</th>
+                            <th class="p-4 text-center">م1: انتظار (Pending)</th>
+                            <th class="p-4 text-center">م2: تشغيل (Processing)</th>
+                            <th class="p-4 text-center">إجمالي مدة العمل</th>
+                        </tr>
+                    </thead>
+                    <tbody id="delivered-history-tbody" class="divide-y divide-gray-50">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div id="voidedModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div class="p-6 border-b border-red-100 flex justify-between items-center bg-red-50">
+                <div>
+                    <h3 class="text-xl font-black text-red-700 flex items-center gap-2"><span>🚨</span> سجل الرقابة: الطلبات الملغاة (Voided Orders)</h3>
+                    <p class="text-xs text-red-500 font-bold mt-1">مراقبة وحصر الطلبات التي تم إلغاؤها من قبل الموظفين وأسباب الإلغاء</p>
+                </div>
+                <button onclick="closeVoidedHistory()" class="text-gray-400 hover:text-red-600 text-3xl font-black p-2 transition">&times;</button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6 scrollbar-hide bg-gray-50">
+                <table class="w-full text-sm rtl:text-right ltr:text-left bg-white rounded-xl shadow-sm overflow-hidden">
+                    <thead class="bg-gray-100 text-gray-500 font-bold sticky top-0 z-10 border-b border-gray-200 uppercase tracking-wider text-[11px]">
+                        <tr>
+                            <th class="p-4">الطلب / العميل</th>
+                            <th class="p-4 text-center">القيمة</th>
+                            <th class="p-4 rtl:text-right ltr:text-left">سبب الإلغاء (Remarks)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="voided-history-tbody" class="divide-y divide-gray-100">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-6 ltr:right-6 rtl:left-6 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
+
+</body>
+    <div id="toast-container" class="fixed bottom-6 ltr:right-6 rtl:left-6 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
+
+</body>
+</html>

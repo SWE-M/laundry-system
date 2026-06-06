@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شجرة الحسابات - مغسلة المرونة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; overflow: hidden; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="flex flex-col h-screen text-gray-800">
+
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm z-10 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <a href="/admin-dashboard/" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-sm border border-gray-200">
+                <span>⬅️</span> عودة للرئيسية
+            </a>
+            <h2 class="text-xl font-black text-gray-800 border-r-2 border-gray-300 pr-4">الحسابات المالية</h2>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="text-left" dir="ltr">
+                <p class="text-sm font-bold text-gray-800 leading-none">مدير النظام</p>
+                <p class="text-xs text-gray-500 mt-1 text-right">Admin</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-inner">A</div>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-8 scrollbar-hide">
+        <div class="max-w-7xl mx-auto"> <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 class="text-3xl font-black text-slate-800">Chart of Accounts (شجرة الحسابات)</h2>
+                    <p class="text-slate-500 text-sm font-bold mt-2">إدارة الحسابات المالية والمجموعات الضريبية</p>
+                </div>
+                <div class="flex gap-3">
+    <button onclick="openModal('newGroupModal')" class="bg-white border border-slate-200 text-slate-700 px-5 py-2.5 rounded-lg font-bold shadow-sm hover:bg-slate-50 transition flex items-center gap-2">
+        <span>+</span> New Group
+    </button>
+    <button onclick="openModal('newAccountModal')" class="bg-[#007ec5] text-white px-5 py-2.5 rounded-lg font-bold shadow-md hover:bg-blue-700 transition flex items-center gap-2">
+        <span>+</span> New Account
+    </button>
+</div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mb-6 flex justify-between items-center">
+                <div class="relative w-1/2">
+                    <span class="absolute inset-y-0 right-3 flex items-center text-slate-400">🔍</span>
+                    <input type="text" id="accountSearch" onkeyup="filterAccounts()" placeholder="ابحث برمز الحساب، الاسم، أو المجموعة..." 
+                           class="w-full pr-10 pl-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium outline-none focus:border-blue-400 transition">
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="border border-slate-200 px-5 py-2.5 rounded-lg text-sm font-bold text-slate-600 flex items-center gap-2 hover:bg-slate-50 transition">
+                        <span>🔍</span> الكل
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <table class="w-full text-right">
+                    <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 text-[11px] font-black uppercase tracking-wider">
+                        <tr>
+                            <th class="p-5">النوع (Type)</th>
+                            <th class="p-5">اسم الحساب (Name)</th>
+                            <th class="p-5 text-center">المجموعة (Group)</th>
+                            <th class="p-5 text-left">الرصيد (Balance)</th>
+                            <th class="p-5 text-center">الحالة (Status)</th>
+                            <th class="p-5 text-center">إجراءات (Actions)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountsTableBody" class="divide-y divide-slate-50">
+                        <tr><td colspan="6" class="p-10 text-center text-gray-400 font-bold animate-pulse">جاري سحب البيانات المالية... ⏳</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+        <div id="newAccountModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl w-[500px] overflow-hidden flex flex-col" dir="ltr">
+            <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">New Account</h3>
+                    <p class="text-xs text-gray-500">Create a new account by filling out the form below.</p>
+                </div>
+                <button onclick="closeModal('newAccountModal')" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Account Name</label>
+                    <input type="text" id="acc_name" placeholder="Enter account name" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Account Group</label>
+                   <select id="acc_group" onchange="handleGroupSelection(this)" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500">
+    <option value="">Select account group</option>
+    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Status</label>
+                    <select id="acc_status" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Opening Balance (Optional)</label>
+                    <input type="number" id="acc_balance" placeholder="0.00" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Opening Balance Date</label>
+                    <input type="date" id="acc_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+                <button onclick="closeModal('newAccountModal')" class="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-100">Cancel</button>
+                <button onclick="submitNewAccount()" class="bg-[#007ec5] hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-sm">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="newGroupModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl w-[500px] overflow-hidden flex flex-col" dir="ltr">
+            <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">Create New Group</h3>
+                    <p class="text-xs text-gray-500">Create a new account group by filling out the form below.</p>
+                </div>
+                <button onclick="closeModal('newGroupModal')" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Group Name</label>
+                    <input type="text" id="grp_name" placeholder="Enter group name" class="w-full border border-blue-400 ring-2 ring-blue-100 rounded-lg px-3 py-2 text-sm outline-none">
+                </div>
+                <div>
+    <label class="block text-xs font-bold text-gray-700 mb-1">Parent Group</label>
+    <select id="grp_parent" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500">
+        <option value="">Select parent group</option>
+        <option value="Bank Account">Bank Account</option>
+        <option value="Capital Account">Capital Account</option>
+        <option value="Cash Account">Cash Account</option>
+        <option value="Current Assets">Current Assets</option>
+        <option value="Current Liabilities">Current Liabilities</option>
+        <option value="Deposits Asset">Deposits Asset</option>
+        <option value="Direct Expense">Direct Expense</option>
+        <option value="Direct Income">Direct Income</option>
+        <option value="Indirect Expense">Indirect Expense</option>
+        <option value="Indirect Income">Indirect Income</option>
+        <option value="Investment">Investment</option>
+        <option value="Provisions">Provisions</option>
+        <option value="Purchase Account">Purchase Account</option>
+        <option value="Sales Account">Sales Account</option>
+        <option value="Stock In Hand">Stock In Hand</option>
+        <option value="Sundry Creditors">Sundry Creditors</option>
+        <option value="Sundry Debtors">Sundry Debtors</option>
+    </select>
+</div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Account Type</label>
+                    <select id="grp_type" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500">
+                        <option value="ASSET">Asset</option>
+                        <option value="LIABILITY">Liability</option>
+                        <option value="REVENUE">Revenue</option>
+                        <option value="EXPENSE">Expense</option>
+                    </select>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+                <button onclick="closeModal('newGroupModal')" class="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-100">Cancel</button>
+                <button onclick="submitNewGroup()" class="bg-[#007ec5] hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-sm">Create Group</button>
+            </div>
+        </div>
+    </div>
+    </main>
+    
+
+    <script>
+        let allAccounts = [];
+
+        async function fetchAccounts() {
+            try {
+                const response = await fetch('/api/accounts/financial-accounts/');
+                if (response.ok) {
+                    const data = await response.json();
+                    allAccounts = Array.isArray(data) ? data : (data.results || []);
+                    renderAccounts(allAccounts);
+                } else {
+                    document.getElementById('accountsTableBody').innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-500 font-bold">❌ فشل تحميل البيانات المالية.</td></tr>`;
+                }
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                document.getElementById('accountsTableBody').innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-500 font-bold">❌ خطأ في الاتصال بالسيرفر.</td></tr>`;
+            }
+        }
+
+        function renderAccounts(accounts) {
+            const tbody = document.getElementById('accountsTableBody');
+            
+            if (accounts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-gray-400 font-bold">لا توجد حسابات مسجلة بعد. يرجى إضافتها من لوحة الإدارة.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = accounts.map(acc => {
+                const statusClass = acc.is_active ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100';
+                const statusText = acc.is_active ? 'نشط' : 'موقوف';
+                
+                let balanceColor = 'text-emerald-600';
+                if (acc.account_type === 'LIABILITY' || acc.account_type === 'EXPENSE') {
+                    balanceColor = 'text-red-500';
+                }
+
+                return `
+                <tr class="hover:bg-slate-50/80 transition duration-150">
+                    <td class="p-5 text-xs font-black text-slate-600 uppercase tracking-wider">${acc.account_type}</td>
+                    <td class="p-5 font-bold text-slate-800 text-base">${acc.name}</td>
+                    <td class="p-5 text-center">
+                        <span class="bg-blue-50 text-blue-600 px-3 py-1 rounded text-[11px] font-bold border border-blue-100 uppercase">${acc.group_name}</span>
+                    </td>
+                    <td class="p-5 text-left font-black text-lg ${balanceColor}" dir="ltr">QAR ${parseFloat(acc.balance).toFixed(2)}</td>
+                    <td class="p-5 text-center">
+                        <span class="${statusClass} px-4 py-1 rounded-full text-[11px] font-black border">${statusText}</span>
+                    </td>
+                    <td class="p-5 text-center">
+                        <button onclick="alert('تعديل الحساب سيتوفر قريباً')" class="text-slate-500 hover:text-blue-600 bg-white hover:bg-blue-50 border border-slate-200 rounded-lg px-4 py-1.5 text-xs font-bold transition shadow-sm">📝 تعديل</button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function filterAccounts() {
+            const query = document.getElementById('accountSearch').value.toLowerCase();
+            const filtered = allAccounts.filter(acc => 
+                (acc.name && acc.name.toLowerCase().includes(query)) ||
+                (acc.group_name && acc.group_name.toLowerCase().includes(query))
+            );
+            renderAccounts(filtered);
+        }
+
+        window.onload = fetchAccounts;
+        // دوال فتح وإغلاق النوافذ
+        function openModal(id) { 
+            document.getElementById(id).classList.remove('hidden'); 
+            if(id === 'newAccountModal') populateGroupsDropdown(); // تعبئة المجموعات تلقائياً
+        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // دالة مساعدة لجلب التوكن الخاص بدجانغو (للحماية)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // 🌟 1. دالة إضافة حساب جديد 🌟
+        async function submitNewAccount() {
+            const payload = {
+                name: document.getElementById('acc_name').value,
+                group_name: document.getElementById('acc_group').value || 'General',
+                is_active: document.getElementById('acc_status').value === 'true',
+                balance: document.getElementById('acc_balance').value || 0,
+                account_type: 'ASSET' // كقيمة افتراضية، يمكنك تعديلها لاحقاً
+            };
+
+            if(!payload.name) return alert('يرجى إدخال اسم الحساب!');
+
+            try {
+                const response = await fetch('/api/accounts/financial-accounts/', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    closeModal('newAccountModal');
+                    fetchAccounts(); // تحديث الجدول فوراً
+                    document.getElementById('acc_name').value = ''; // تصفير الحقل
+                } else {
+                    alert('❌ حدث خطأ أثناء الحفظ.');
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // 🌟 2. دالة إضافة مجموعة جديدة 🌟
+        async function submitNewGroup() {
+            // ملاحظة هندسية: بما أن الداتابيز الحالية تحفظ الـ Group كنص داخل الحساب، 
+            // سنقوم بحفظ المجموعة كـ "حساب رئيسي بصفر رصيد" لكي تظهر في القوائم.
+            const payload = {
+                name: document.getElementById('grp_name').value + ' (Group)',
+                group_name: document.getElementById('grp_parent').value || 'Main',
+                account_type: document.getElementById('grp_type').value,
+                balance: 0,
+                is_active: true
+            };
+
+            if(!document.getElementById('grp_name').value) return alert('يرجى إدخال اسم المجموعة!');
+
+            try {
+                const response = await fetch('/api/accounts/financial-accounts/', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    closeModal('newGroupModal');
+                    fetchAccounts();
+                    document.getElementById('grp_name').value = '';
+                } else {
+                    alert('❌ حدث خطأ أثناء الحفظ.');
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // 🌟 3. ميزة ذكية: تعبئة قائمة المجموعات في نافذة الحساب من البيانات الموجودة 🌟
+       // 🌟 3. ميزة ذكية: تعبئة قائمة المجموعات في نافذة الحساب من البيانات الموجودة 🌟
+        function populateGroupsDropdown() {
+            const select = document.getElementById('acc_group');
+            // استخراج أسماء المجموعات بدون تكرار
+            const uniqueGroups = [...new Set(allAccounts.map(a => a.group_name).filter(Boolean))];
+            
+            select.innerHTML = '<option value="">Select account group</option>';
+            uniqueGroups.forEach(group => {
+                select.innerHTML += `<option value="${group}">${group}</option>`;
+            });
+            select.innerHTML += `<option value="New Group...">+ إضافة مجموعة جديدة</option>`;
+        } // ⬅️ (هنا قفلنا الدالة الأولى بشكل صحيح)
+
+        // 🌟 4. دالة مراقبة خيارات المجموعة (لفتح نافذة مجموعة جديدة) 🌟
+        function handleGroupSelection(selectElement) {
+            // إذا اختار الموظف "+ إضافة مجموعة جديدة"
+            if (selectElement.value === 'New Group...') {
+                // 1. نرجع القائمة للوضع الافتراضي عشان ما تعلق على هذا الخيار
+                selectElement.value = ''; 
+                // 2. نقفل نافذة إضافة الحساب مؤقتاً
+                closeModal('newAccountModal'); 
+                // 3. نفتح نافذة المجموعة الجديدة فوراً
+                openModal('newGroupModal'); 
+            }
+        }
+
+            // 🌟 دالة مراقبة خيارات المجموعة (لفتح نافذة مجموعة جديدة) 🌟
+        function handleGroupSelection(selectElement) {
+            // إذا اختار الموظف "+ إضافة مجموعة جديدة"
+            if (selectElement.value === 'New Group...') {
+                // 1. نرجع القائمة للوضع الافتراضي عشان ما تعلق على هذا الخيار
+                selectElement.value = ''; 
+                // 2. نقفل نافذة إضافة الحساب مؤقتاً (البيانات اللي كتبها بتظل محفوظة ما بتنمسح)
+                closeModal('newAccountModal'); 
+                // 3. نفتح نافذة المجموعة الجديدة فوراً
+                openModal('newGroupModal'); 
+            }
+        }
+        
+    </script>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Staff Management - Almarona</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); z-index: 100; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-white border-b border-gray-200 shadow-sm z-10 flex-shrink-0 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <a href="/admin-dashboard/" class="text-gray-500 hover:text-[#007ec5] font-bold text-lg transition flex items-center gap-2">
+                ⬅ Back
+            </a>
+            <span class="text-2xl">🧑‍💼</span>
+            <h1 class="text-2xl font-black text-gray-800 tracking-wide">System Admin</h1>
+        </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8 flex flex-col">
+        
+        <div class="bg-white border border-blue-100/50 rounded-xl shadow-sm p-6 max-w-6xl mx-auto w-full">
+            
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-bold text-gray-800">Staff Management</h2>
+                <button onclick="openStaffModal()" class="bg-[#007ec5] hover:bg-blue-700 text-white px-5 py-2 rounded-md font-bold shadow transition flex items-center gap-2 text-sm">
+                    <span>+</span> Add Staff
+                </button>
+            </div>
+
+            <div class="flex items-center gap-4 mb-6">
+                <div class="relative w-full max-w-sm">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+                    <input type="text" id="search-input" onkeyup="renderStaff()" placeholder="Search staff by name, email, or phone..." class="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-[#007ec5] focus:ring-1 focus:ring-[#007ec5] shadow-sm transition">
+                </div>
+                <span class="text-sm text-gray-500 font-medium" id="staff-count">0 staff members</span>
+            </div>
+
+            <div class="overflow-x-auto border border-gray-100 rounded-lg">
+                <table class="w-full text-left text-sm text-gray-600">
+                    <thead class="bg-white border-b border-gray-100 text-gray-500 font-bold">
+                        <tr>
+                            <th class="px-6 py-4">ID</th>
+                            <th class="px-6 py-4">Username</th>
+                            <th class="px-6 py-4">Email</th>
+                            <th class="px-6 py-4">Phone Number</th>
+                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="staff-table" class="divide-y divide-gray-50">
+                        <tr><td colspan="6" class="text-center py-8 text-gray-400 font-bold">Loading staff members...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="staffModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl w-[500px] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-black text-gray-800 text-lg" id="modal-title">Add New Staff</h3>
+                <button onclick="closeStaffModal()" class="text-gray-400 hover:text-red-500 text-2xl font-bold transition">&times;</button>
+            </div>
+
+            <div class="p-6 bg-white">
+                <form id="staffForm" class="space-y-4">
+                    <input type="hidden" id="staffId">
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Username *</label>
+                        <input type="text" id="staffUsername" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-[#007ec5] outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Email</label>
+                        <input type="email" id="staffEmail" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-[#007ec5] outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Phone Number</label>
+                        <input type="text" id="staffPhone" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-[#007ec5] outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Password <span class="text-xs text-gray-400 font-normal">(Leave blank if editing and not changing)</span></label>
+                        <input type="password" id="staffPassword" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-[#007ec5] outline-none">
+                    </div>
+
+                    <div class="pt-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="staffIsActive" class="w-4 h-4 text-[#007ec5] rounded border-gray-300 focus:ring-[#007ec5]" checked>
+                            <span class="font-bold text-gray-800 text-sm">Account is Active</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                <button onclick="closeStaffModal()" class="px-5 py-2 border border-gray-300 text-gray-600 font-bold rounded-lg hover:bg-gray-100 transition shadow-sm text-sm">Cancel</button>
+                <button onclick="saveStaff()" id="btnSave" class="px-6 py-2 bg-[#007ec5] hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition text-sm">Save Staff</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allStaff = [];
+        
+        // ⚠️ ملاحظة: تأكد أن هذا الرابط هو الرابط الصحيح لإدارة الموظفين في الـ Django عندك
+        const API_URL = '/api/accounts/staff/'; 
+
+        async function fetchInitialData() {
+            try {
+                // استخدمنا مسار تجريبي، إذا كان الرابط مختلف في الموديل حقك عدله هنا
+                const res = await fetch(API_URL);
+                if (res.ok) {
+                    const data = await res.json();
+                    allStaff = Array.isArray(data) ? data : (data.results || []);
+                    renderStaff();
+                } else {
+                    document.getElementById('staff-table').innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-500 font-bold">Failed to load data. Check API endpoint.</td></tr>`;
+                }
+            } catch (error) { 
+                console.error("Error loading staff", error);
+            }
+        }
+
+        function renderStaff() {
+            const table = document.getElementById('staff-table');
+            const search = document.getElementById('search-input').value.toLowerCase();
+            
+            const filtered = allStaff.filter(s => {
+                return (s.username || '').toLowerCase().includes(search) || 
+                       (s.email || '').toLowerCase().includes(search) || 
+                       (s.phone || '').includes(search);
+            });
+
+            document.getElementById('staff-count').innerText = `${filtered.length} staff members`;
+
+            if (filtered.length === 0) {
+                table.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-400 font-bold">No staff members found.</td></tr>`;
+                return;
+            }
+
+            table.innerHTML = filtered.map(s => {
+                // التصميم المطابق بالملي للصورة
+                const isActive = s.is_active !== false; // افتراضياً نشط ما لم يكن false
+                const statusBadge = isActive 
+                    ? `<span class="bg-[#007ec5] text-white px-2.5 py-1 rounded text-xs font-bold">Active</span>`
+                    : `<span class="bg-gray-400 text-white px-2.5 py-1 rounded text-xs font-bold">Inactive</span>`;
+
+                return `
+                <tr class="hover:bg-blue-50/20 transition duration-150">
+                    <td class="px-6 py-4 font-bold text-gray-700">${s.id || '---'}</td>
+                    <td class="px-6 py-4 font-bold text-gray-900">${s.username || '---'}</td>
+                    <td class="px-6 py-4 text-gray-500">${s.email || '—'}</td>
+                    <td class="px-6 py-4 text-gray-500">${s.phone || '—'}</td>
+                    <td class="px-6 py-4">${statusBadge}</td>
+                    <td class="px-6 py-4 flex gap-2">
+                        <button onclick="openPermissionsModal(${s.id}, '${s.username}')" class="border border-purple-300 text-purple-600 bg-purple-50 hover:bg-purple-600 hover:text-white rounded px-3 py-1.5 text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+                            🔑 Permissions
+                        </button>
+
+                        <button onclick="openEditModal(${s.id})" class="border border-gray-300 text-gray-600 bg-white hover:bg-gray-50 rounded px-3 py-1.5 text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+                            📝 Edit
+                        </button>
+                        <button onclick="deleteStaff(${s.id})" class="bg-[#ef4444] hover:bg-red-600 text-white rounded px-3 py-1.5 text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+                            🗑️ Delete
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function openStaffModal() {
+            document.getElementById('staffModal').classList.remove('hidden');
+            document.getElementById('staffForm').reset();
+            document.getElementById('staffId').value = '';
+            document.getElementById('modal-title').innerText = 'Add New Staff';
+            document.getElementById('staffIsActive').checked = true;
+        }
+
+        function closeStaffModal() {
+            document.getElementById('staffModal').classList.add('hidden');
+        }
+
+        function openEditModal(id) {
+            const staff = allStaff.find(s => String(s.id) === String(id));
+            if (!staff) return;
+
+            openStaffModal();
+            document.getElementById('modal-title').innerText = 'Edit Staff';
+            document.getElementById('staffId').value = staff.id;
+            document.getElementById('staffUsername').value = staff.username || '';
+            document.getElementById('staffEmail').value = staff.email || '';
+            document.getElementById('staffPhone').value = staff.phone || '';
+            document.getElementById('staffIsActive').checked = staff.is_active !== false;
+        }
+
+        async function saveStaff() {
+            const id = document.getElementById('staffId').value;
+            const username = document.getElementById('staffUsername').value.trim();
+            const password = document.getElementById('staffPassword').value;
+
+            if (!username) {
+                alert("Username is required.");
+                return;
+            }
+
+            if (!id && !password) {
+                alert("Password is required for new staff members.");
+                return;
+            }
+
+            const btn = document.getElementById('btnSave');
+            btn.innerText = 'Saving...'; btn.disabled = true;
+
+            const payload = {
+                username: username,
+                email: document.getElementById('staffEmail').value.trim(),
+                phone: document.getElementById('staffPhone').value.trim(),
+                is_active: document.getElementById('staffIsActive').checked
+            };
+
+            if (password) {
+                payload.password = password;
+            }
+
+            const url = id ? `${API_URL}${id}/` : API_URL;
+            const method = id ? 'PATCH' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    closeStaffModal();
+                    fetchInitialData();
+                } else {
+                    const err = await res.json();
+                    alert('❌ Error: ' + JSON.stringify(err));
+                }
+            } catch (e) {
+                alert('Network Error');
+            } finally {
+                btn.innerText = 'Save Staff'; btn.disabled = false;
+            }
+        }
+
+        async function deleteStaff(id) {
+            if(!confirm("Are you sure you want to delete this staff member?")) return;
+            try {
+                const res = await fetch(`${API_URL}${id}/`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                });
+                if(res.ok) {
+                    fetchInitialData();
+                } else {
+                    alert("Failed to delete.");
+                }
+            } catch(e) { alert("Error deleting"); }
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        window.onload = fetchInitialData;
+         
+
+        // دالة إغلاق نافذة الصلاحيات
+        function closePermissionsModal() {
+            document.getElementById('permissionsModal').classList.add('hidden');
+        }
+        // --- دوال الصلاحيات الشاملة المرتبطة بالـ API ---
+        async function openPermissionsModal(id, username) {
+            document.getElementById('permissionsModal').classList.remove('hidden');
+            document.getElementById('permStaffId').value = id;
+            document.getElementById('perm-staff-name').innerText = username;
+            
+            // تصفير كل الخيارات
+            document.querySelectorAll('#permissionsModal input[type="checkbox"]').forEach(cb => cb.checked = false);
+            const btn = document.getElementById('btnSavePerms');
+            btn.innerText = 'Loading...'; btn.disabled = true;
+
+            try {
+                const response = await fetch(`/api/accounts/staff/${id}/permissions/`);
+                if (response.ok) {
+                    const perms = await response.json();
+                    
+                    // 1. Pages
+                    document.getElementById('perm_pos').checked = perms.can_access_pos;
+                    document.getElementById('perm_customers').checked = perms.can_access_customers;
+                    document.getElementById('perm_orders').checked = perms.can_access_orders;
+                    
+                    // 2. POS
+                    document.getElementById('perm_gift_cards').checked = perms.can_sell_gift_cards;
+                    document.getElementById('perm_wallet').checked = perms.can_recharge_wallet;
+                    document.getElementById('perm_add_expenses').checked = perms.can_add_expenses;
+                    document.getElementById('perm_discount').checked = perms.can_apply_discount;
+                    document.getElementById('perm_delete_item').checked = perms.can_delete_from_cart;
+                    document.getElementById('perm_add_new_customer').checked = perms.can_add_new_customer;
+                    document.getElementById('perm_pay_wallet_gc').checked = perms.can_pay_with_wallet_gc;
+
+                    // 3. Customers
+                    document.getElementById('perm_edit_customer').checked = perms.can_edit_customer;
+                    document.getElementById('perm_delete_customer').checked = perms.can_delete_customer;
+                    document.getElementById('perm_pay_debt').checked = perms.can_pay_debt;
+                    document.getElementById('perm_add_category').checked = perms.can_add_category;
+                    document.getElementById('perm_view_history').checked = perms.can_view_history;
+
+                    // 4. Orders
+                    document.getElementById('perm_void_order').checked = perms.can_void_order;
+                    document.getElementById('perm_finance_center').checked = perms.can_access_finance_center;
+                    document.getElementById('perm_change_status').checked = perms.can_change_order_status;
+                    document.getElementById('perm_add_items_order').checked = perms.can_add_items_to_order;
+                }
+            } catch (error) {
+                console.error("Error fetching permissions:", error);
+            } finally {
+                btn.innerText = 'Save Permissions'; btn.disabled = false;
+            }
+        }
+
+        async function savePermissions() {
+            const btn = document.getElementById('btnSavePerms');
+            btn.innerText = 'Saving...';
+            btn.disabled = true;
+
+            const staffId = document.getElementById('permStaffId').value;
+            
+            // تجميع الداتا (تأكدنا من مطابقة أسماء الحقول مع models.py)
+            const permissionsData = {
+                can_access_pos: document.getElementById('perm_pos').checked,
+                can_access_customers: document.getElementById('perm_customers').checked,
+                can_access_orders: document.getElementById('perm_orders').checked,
+                
+                can_sell_gift_cards: document.getElementById('perm_gift_cards').checked,
+                can_recharge_wallet: document.getElementById('perm_wallet').checked,
+                can_add_expenses: document.getElementById('perm_add_expenses').checked,
+                can_apply_discount: document.getElementById('perm_discount').checked,
+                can_delete_from_cart: document.getElementById('perm_delete_item').checked,
+                can_add_new_customer: document.getElementById('perm_add_new_customer').checked,
+                can_pay_with_wallet_gc: document.getElementById('perm_pay_wallet_gc').checked,
+
+                can_edit_customer: document.getElementById('perm_edit_customer').checked,
+                can_delete_customer: document.getElementById('perm_delete_customer').checked,
+                can_pay_debt: document.getElementById('perm_pay_debt').checked,
+                can_add_category: document.getElementById('perm_add_category').checked,
+                can_view_history: document.getElementById('perm_view_history').checked,
+
+                can_void_order: document.getElementById('perm_void_order').checked,
+                can_access_finance_center: document.getElementById('perm_finance_center').checked,
+                can_change_order_status: document.getElementById('perm_change_status').checked,
+                can_add_items_to_order: document.getElementById('perm_add_items_order').checked,
+            };
+
+            try {
+                const response = await fetch(`/api/accounts/staff/${staffId}/permissions/`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(permissionsData)
+                });
+
+                if (response.ok) {
+                    alert("✅ Permissions saved successfully!");
+                    closePermissionsModal();
+                } else {
+                    alert("❌ Failed to save permissions.");
+                }
+            } catch (error) {
+                alert("Network error while saving.");
+            } finally {
+                btn.innerText = 'Save Permissions';
+                btn.disabled = false;
+            }
+        }
+    </script>
+    <div id="permissionsModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[200]">
+        <div class="bg-white rounded-xl shadow-2xl w-[700px] flex flex-col overflow-hidden max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <div>
+                    <h3 class="font-black text-gray-800 text-lg">🔑 System Permissions</h3>
+                    <p class="text-xs text-gray-500 font-bold mt-1">Staff: <span id="perm-staff-name" class="text-[#007ec5]"></span></p>
+                </div>
+                <button onclick="closePermissionsModal()" class="text-gray-400 hover:text-red-500 text-2xl font-bold transition">&times;</button>
+            </div>
+
+            <div class="p-6 bg-white overflow-y-auto flex-1 space-y-6">
+                <input type="hidden" id="permStaffId">
+
+                <div>
+                    <h4 class="font-black text-gray-800 mb-3 border-b pb-2 text-sm text-[#007ec5]">1. Main Pages Access (الوصول للصفحات)</h4>
+                    <div class="grid grid-cols-3 gap-3">
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_pos" class="w-4 h-4 text-[#007ec5] rounded"><span class="font-bold text-gray-700 text-xs">POS Cashier</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_customers" class="w-4 h-4 text-[#007ec5] rounded"><span class="font-bold text-gray-700 text-xs">Customers Page</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orders" class="w-4 h-4 text-[#007ec5] rounded"><span class="font-bold text-gray-700 text-xs">Orders Page</span></label>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-black text-gray-800 mb-3 border-b pb-2 text-sm text-emerald-600">2. POS Actions (صلاحيات الكاشير)</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_gift_cards" class="w-4 h-4 text-emerald-600 rounded"><span class="font-bold text-gray-700 text-xs">Sell Gift Cards (بيع بطاقات)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_wallet" class="w-4 h-4 text-emerald-600 rounded"><span class="font-bold text-gray-700 text-xs">Recharge Wallets (شحن محفظة)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_add_expenses" class="w-4 h-4 text-emerald-600 rounded"><span class="font-bold text-gray-700 text-xs">Add Expenses (إضافة مصروفات)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_discount" class="w-4 h-4 text-emerald-600 rounded"><span class="font-bold text-gray-700 text-xs">Apply Discounts (تطبيق خصم)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_delete_item" class="w-4 h-4 text-emerald-600 rounded"><span class="font-bold text-gray-700 text-xs">Delete from Cart (حذف من السلة)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_add_new_customer" class="w-4 h-4 text-emerald-600 rounded"><span class="font-bold text-gray-700 text-xs">Add New Customer (إضافة عميل)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_pay_wallet_gc" class="w-4 h-4 text-emerald-600 rounded"><span class="font-bold text-gray-700 text-xs">Pay with Wallet/GC (الدفع بالمحفظة/البطاقة)</span></label>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-black text-gray-800 mb-3 border-b pb-2 text-sm text-purple-600">3. Customers Management (صلاحيات العملاء)</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_edit_customer" class="w-4 h-4 text-purple-600 rounded"><span class="font-bold text-gray-700 text-xs">Edit Customer Info (تعديل بيانات)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_delete_customer" class="w-4 h-4 text-red-500 rounded"><span class="font-bold text-red-600 text-xs">Delete Customer (حذف عميل)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_pay_debt" class="w-4 h-4 text-purple-600 rounded"><span class="font-bold text-gray-700 text-xs">Pay Debt (سداد ديون)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_add_category" class="w-4 h-4 text-purple-600 rounded"><span class="font-bold text-gray-700 text-xs">Add Category (إضافة فئة)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_view_history" class="w-4 h-4 text-purple-600 rounded"><span class="font-bold text-gray-700 text-xs">View Order History (سجل المشتريات)</span></label>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-black text-gray-800 mb-3 border-b pb-2 text-sm text-orange-500">4. Orders Management (صلاحيات الطلبات)</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_void_order" class="w-4 h-4 text-red-500 rounded"><span class="font-bold text-red-600 text-xs">Void Order (إلغاء الطلب نهائياً)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_finance_center" class="w-4 h-4 text-orange-500 rounded"><span class="font-bold text-gray-700 text-xs">Access Finance Center (المركز المالي)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_change_status" class="w-4 h-4 text-orange-500 rounded"><span class="font-bold text-gray-700 text-xs">Change Order Status (تغيير حالة الطلب)</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_add_items_order" class="w-4 h-4 text-orange-500 rounded"><span class="font-bold text-gray-700 text-xs">Add Items to Order (إضافة قطع للطلب)</span></label>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                <button onclick="closePermissionsModal()" class="px-5 py-2 border border-gray-300 text-gray-600 font-bold rounded-lg hover:bg-gray-100 transition shadow-sm text-sm">Cancel</button>
+                <button onclick="savePermissions()" id="btnSavePerms" class="px-6 py-2 bg-[#007ec5] hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition text-sm">Save Permissions</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

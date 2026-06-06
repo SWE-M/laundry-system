@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Receipt</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Tajawal:wght@700&display=swap');
+        
+        body {
+            font-family: 'Courier Prime', monospace;
+            width: 80mm; /* مقاس طابعة الرول */
+            margin: 0 auto;
+            padding: 10px;
+            color: #000;
+            background: #fff;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .font-bold { font-weight: bold; }
+        .border-top { border-top: 2px dashed #000; padding-top: 5px; margin-top: 5px; }
+        .border-bottom { border-bottom: 2px dashed #000; padding-bottom: 5px; margin-bottom: 5px; }
+        .border-solid-y { border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 5px 0; margin: 10px 0; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th { border-bottom: 2px solid #000; padding-bottom: 4px; }
+        td { border-bottom: 1px solid #000; padding: 4px 0; font-weight: bold; }
+        
+        .header-logo { width: 60px; margin-bottom: 10px; }
+        .arabic { font-family: 'Tajawal', sans-serif; }
+        
+        @media print {
+            body { width: 100%; margin: 0; padding: 0; }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="text-center">
+        <h2 class="font-bold" style="margin-bottom: 0;">AL MARONA LAUNDRY</h2>
+        <h2 class="arabic font-bold" style="margin-top: 0; font-size: 20px;">مغسلة المرونة</h2>
+        <p>C.R. No.: 201365<br>Al Duhail, Doha, Qatar<br>Tel: +974 5188 8455</p>
+    </div>
+
+    <div class="text-center border-solid-y">
+        <h3 style="margin: 0;">PAYMENT RECEIPT</h3>
+    </div>
+
+    <table style="margin-bottom: 10px; border: none;">
+        <tr>
+            <td style="border: none; padding: 0;">Receipt No:</td>
+            <td style="border: none; padding: 0;" class="text-right font-bold">{{ receipt_no }}</td>
+        </tr>
+        <tr>
+            <td style="border: none; padding: 0;">Date:</td>
+            <td style="border: none; padding: 0;" class="text-right font-bold">{{ date }}</td>
+        </tr>
+        <tr>
+            <td style="border: none; padding: 0;">Time:</td>
+            <td style="border: none; padding: 0;" class="text-right font-bold">{{ time }}</td>
+        </tr>
+        <tr>
+            <td style="border: none; padding: 0;">Method:</td>
+            <td style="border: none; padding: 0;" class="text-right font-bold">{{ method }}</td>
+        </tr>
+        <tr>
+            <td style="border: none; padding: 0;">Type:</td>
+            <td style="border: none; padding: 0;" class="text-right font-bold">Order Amount</td>
+        </tr>
+    </table>
+
+    <div class="border-solid-y flex" style="display: flex; justify-content: space-between;">
+        <span>Customer: <b>{{ customer_name }}</b></span>
+        <span>Code: <b>{{ customer_code }}</b></span>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="text-left w-10">SN</th>
+                <th class="text-left">Order</th>
+                <th class="text-right">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for o in orders %}
+            <tr>
+                <td>{{ o.sn }}</td>
+                <td>{{ o.order_no }}</td>
+                <td class="text-right">{{ o.amount|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="border-solid-y flex font-bold" style="display: flex; justify-content: space-between; font-size: 16px;">
+        <span>TOTAL AMOUNT (QAR)</span>
+        <span>{{ total_amount|floatformat:2 }}</span>
+    </div>
+
+    <p style="margin-top: 5px;">Payment Method / <span class="arabic">طريقة الدفع</span>: <b>{{ method }}</b></p>
+
+    <div class="text-center" style="margin-top: 20px;">
+        <p class="font-bold">Thanks for your payment!</p>
+        <p>This receipt serves as proof of payment for the above transaction.</p>
+    </div>
+
+</body>
+</html>

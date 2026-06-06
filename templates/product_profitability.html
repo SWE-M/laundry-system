@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Business Performance | تقرير أداء العمل</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <style>
+        body { font-family: 'Inter', 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        /* 🖨️ إعدادات الطباعة المطابقة للملف 🖨️ */
+        @media print {
+            body > *:not(#printArea) { display: none !important; }
+            body { background-color: white; }
+            #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #334155; }
+            .print-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; background-color: white !important; -webkit-print-color-adjust: exact; }
+            .print-table { width: 100%; text-align: left; font-size: 11px; border-collapse: collapse; }
+            .print-table th { border-bottom: 2px solid #cbd5e1; padding: 8px; font-weight: bold; }
+            .print-table td { border-bottom: 1px solid #e2e8f0; padding: 8px; }
+            .kpi-print-card { background-color: #f8fafc !important; text-align: center; padding: 15px; border-radius: 8px; -webkit-print-color-adjust: exact; }
+            @page { size: A4; margin: 15mm; }
+        }
+    </style>
+</head>
+<body class="text-[#0f172a] h-screen overflow-hidden flex flex-col">
+
+    <div class="flex-1 overflow-y-auto p-8 scrollbar-hide">
+        
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                Business Performance Report <span class="text-lg text-slate-400 font-medium">| أداء العمل</span>
+            </h1>
+            
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="fetchData()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+                    🔄 Refresh <span class="text-[10px] text-slate-400 font-normal">تحديث</span>
+                </button>
+                <button onclick="exportCSV()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+                    📥 Export CSV <span class="text-[10px] text-slate-400 font-normal">تصدير</span>
+                </button>
+                <button onclick="window.print()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+                    🖨️ Print <span class="text-[10px] text-slate-400 font-normal">طباعة</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex justify-between gap-4 mb-6">
+            <div class="relative w-[300px]">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">📅</span>
+                <input type="text" id="dateRange" class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:border-blue-500 outline-none cursor-pointer bg-white font-bold text-slate-700 shadow-sm" readonly>
+            </div>
+
+            <div class="flex gap-3 w-1/2 justify-end">
+                <div class="relative w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">🔍</span>
+                    <input type="text" id="searchFilter" onkeyup="if(event.key === 'Enter') fetchData()" placeholder="Search products..." class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:border-blue-500 outline-none shadow-sm">
+                </div>
+                <select id="costFilter" onchange="fetchData()" class="w-48 border border-slate-300 rounded-lg px-4 py-2.5 bg-white text-sm font-bold text-slate-700 outline-none cursor-pointer shadow-sm">
+                    <option value="all">All Products</option>
+                    <option value="high">High Cost (>100)</option>
+                    <option value="low">Low Cost (≤100)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-5 mb-8">
+            <div class="bg-white border border-[#bae6fd] rounded-xl p-5 shadow-sm relative">
+                <p class="text-[13px] font-semibold text-slate-600 mb-1">Total Earnings <span class="text-[10px] text-slate-400">(إجمالي الإيرادات)</span></p>
+                <h3 class="text-2xl font-black text-slate-800">QAR <span id="ui-earnings">0.00</span></h3>
+                <p class="text-[11px] text-slate-500 font-medium mt-1"><span id="ui-receipts-cnt">0</span> receipts</p>
+                <span class="absolute right-4 top-5 text-green-500 font-bold">$</span>
+            </div>
+            
+            <div class="bg-white border border-[#bae6fd] rounded-xl p-5 shadow-sm relative">
+                <p class="text-[13px] font-semibold text-slate-600 mb-1">Usage Costs <span class="text-[10px] text-slate-400">(تكاليف الاستخدام)</span></p>
+                <h3 class="text-2xl font-black text-slate-800">QAR <span id="ui-costs">0.00</span></h3>
+                <p class="text-[11px] text-slate-500 font-medium mt-1"><span id="ui-prods-used">0</span> products used</p>
+                <span class="absolute right-4 top-5 text-red-500">🛒</span>
+            </div>
+
+            <div class="bg-white border border-[#bae6fd] rounded-xl p-5 shadow-sm relative">
+                <p class="text-[13px] font-semibold text-slate-600 mb-1">Net Profit <span class="text-[10px] text-slate-400">(صافي الربح)</span></p>
+                <h3 class="text-2xl font-black text-green-600">QAR <span id="ui-profit">0.00</span></h3>
+                <p class="text-[11px] text-slate-500 font-medium mt-1"><span id="ui-margin-top">0.00</span>% margin</p>
+                <span class="absolute right-4 top-5 text-green-500">✅</span>
+            </div>
+
+            <div class="bg-white border border-[#bae6fd] rounded-xl p-5 shadow-sm relative">
+                <p class="text-[13px] font-semibold text-slate-600 mb-1">Efficiency Ratio <span class="text-[10px] text-slate-400">(معدل الكفاءة)</span></p>
+                <h3 class="text-2xl font-black text-slate-800"><span id="ui-eff">0.00</span>x</h3>
+                <p class="text-[11px] text-slate-500 font-medium mt-1">Earnings per cost unit</p>
+                <span class="absolute right-4 top-5 text-blue-500">⚡</span>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mb-4 px-1">
+            <h2 class="text-lg font-black text-slate-800">Business Performance Statement</h2>
+            <span class="text-xs font-mono text-slate-500" id="ui-period">---</span>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-t-xl p-6 shadow-sm">
+            <h3 class="text-sm font-black text-slate-800 mb-4">Performance Summary</h3>
+            <div class="grid grid-cols-2 gap-12 text-sm text-slate-600 font-medium">
+                <div>
+                    <p class="font-bold text-slate-800 mb-3 text-[13px]">Earnings Breakdown <span class="text-[10px] text-slate-400 font-normal">(تفصيل الإيرادات)</span></p>
+                    <div class="flex justify-between mb-2"><span>Total Earnings:</span> <span class="font-bold text-slate-800">QAR <span id="s-tot-earn">0.00</span></span></div>
+                    <div class="flex justify-between mb-2"><span>Cash Receipts:</span> <span class="font-bold text-slate-800">QAR <span id="s-cash">0.00</span></span></div>
+                    <div class="flex justify-between"><span>Bank Receipts:</span> <span class="font-bold text-slate-800">QAR <span id="s-bank">0.00</span></span></div>
+                </div>
+                <div>
+                    <p class="font-bold text-slate-800 mb-3 text-[13px]">Cost Analysis <span class="text-[10px] text-slate-400 font-normal">(تحليل التكلفة)</span></p>
+                    <div class="flex justify-between mb-2"><span>Total Usage Cost:</span> <span class="font-bold text-slate-800">QAR <span id="s-tot-cost">0.00</span></span></div>
+                    <div class="flex justify-between mb-2"><span>Products Used:</span> <span class="font-bold text-slate-800" id="s-prods">0</span></div>
+                    <div class="flex justify-between"><span>Categories:</span> <span class="font-bold text-slate-800" id="s-cats">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-t-0 border-slate-200 rounded-b-xl shadow-sm overflow-hidden mb-8">
+            <div class="p-6 border-b border-slate-100">
+                <h3 class="text-sm font-black text-slate-800">Product Usage Details</h3>
+                <p class="text-xs text-slate-400 mt-1">Showing <span id="s-row-cnt">0</span> products</p>
+            </div>
+            <table class="w-full text-sm text-left">
+                <thead class="bg-[#f8fafc] text-slate-500 font-bold text-xs uppercase border-b border-slate-100">
+                    <tr>
+                        <th class="px-6 py-4">Product <span class="block text-[9px] text-slate-400">المنتج</span></th>
+                        <th class="px-6 py-4">Category <span class="block text-[9px] text-slate-400">الفئة</span></th>
+                        <th class="px-6 py-4 text-center">Quantity Used <span class="block text-[9px] text-slate-400">الكمية</span></th>
+                        <th class="px-6 py-4 text-right">Unit Cost <span class="block text-[9px] text-slate-400">تكلفة الوحدة</span></th>
+                        <th class="px-6 py-4 text-right text-slate-800">Total Cost <span class="block text-[9px] text-slate-400">الإجمالي</span></th>
+                    </tr>
+                </thead>
+                <tbody id="reportTbody" class="divide-y divide-slate-100">
+                    <tr><td colspan="5" class="p-10 text-center text-slate-500 font-bold">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <h3 class="text-lg font-black text-slate-800 mb-4">Performance Indicators</h3>
+        <div class="grid grid-cols-3 gap-5">
+            <div class="bg-[#ecfdf5] border border-green-100 rounded-xl p-6 text-center shadow-sm">
+                <h2 class="text-3xl font-black text-green-600 mb-1"><span id="ind-margin">0.00</span>%</h2>
+                <p class="text-xs text-slate-500 font-medium">Profit Margin <span class="text-[9px] text-slate-400">(هامش الربح)</span></p>
+            </div>
+            <div class="bg-[#f0f9ff] border border-blue-100 rounded-xl p-6 text-center shadow-sm">
+                <h2 class="text-3xl font-black text-blue-600 mb-1"><span id="ind-cost-pct">0.00</span>%</h2>
+                <p class="text-xs text-slate-500 font-medium">Cost Percentage <span class="text-[9px] text-slate-400">(نسبة التكلفة)</span></p>
+            </div>
+            <div class="bg-[#faf5ff] border border-purple-100 rounded-xl p-6 text-center shadow-sm">
+                <h2 class="text-3xl font-black text-purple-600 mb-1"><span id="ind-eff">0.00</span>x</h2>
+                <p class="text-xs text-slate-500 font-medium">Efficiency Ratio <span class="text-[9px] text-slate-400">(معدل الكفاءة)</span></p>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="printArea" class="hidden font-sans bg-white p-4">
+        
+        <div class="flex justify-between items-start mb-8">
+            <div class="text-left flex flex-col gap-0 border-b-2 border-black pb-2 pr-10">
+                <img src="/static/images/logo.png" alt="Logo" class="h-14 object-contain mb-1 w-max">
+                <h1 class="text-xl font-black text-black uppercase tracking-widest">AL MARONA LAUNDRY</h1>
+                <h2 class="text-lg font-black text-black">مغسلة المرونة</h2>
+                <p class="text-[11px] text-black font-bold mt-1">Al Duhail, Doha, Qatar</p>
+                <p class="text-[11px] text-black font-bold">Tel: +974 5188 8455</p>
+                <p class="text-[11px] text-black font-bold">C.R. No.: 201365</p>
+            </div>
+            
+            <div class="text-right flex flex-col items-end pt-4">
+                <h1 class="text-2xl font-black text-black uppercase tracking-wider mb-2">BUSINESS PERFORMANCE</h1>
+                <p class="text-[12px] font-bold text-slate-800">Print Date: <span id="p-date-top">---</span></p>
+                <p class="text-[12px] font-bold text-slate-800">Period: <span id="p-period-top">---</span></p>
+            </div>
+        </div>
+
+        <div class="print-box">
+            <h3 class="text-sm font-black mb-4">Performance Summary</h3>
+            <div class="flex justify-between text-xs">
+                <div class="w-1/2 pr-4">
+                    <p class="font-bold mb-2">Earnings Breakdown</p>
+                    <div class="flex justify-between mb-1"><span class="text-slate-500">Total Earnings:</span> <span class="font-bold">QAR <span id="pp-tot-earn">0.00</span></span></div>
+                    <div class="flex justify-between mb-1"><span class="text-slate-500">Cash Receipts:</span> <span class="font-bold">QAR <span id="pp-cash">0.00</span></span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Bank Receipts:</span> <span class="font-bold">QAR <span id="pp-bank">0.00</span></span></div>
+                </div>
+                <div class="w-1/2 pl-4">
+                    <p class="font-bold mb-2">Cost Analysis</p>
+                    <div class="flex justify-between mb-1"><span class="text-slate-500">Total Usage Cost:</span> <span class="font-bold">QAR <span id="pp-tot-cost">0.00</span></span></div>
+                    <div class="flex justify-between mb-1"><span class="text-slate-500">Products Used:</span> <span class="font-bold" id="pp-prods">0</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Categories:</span> <span class="font-bold" id="pp-cats">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="print-box">
+            <h3 class="text-sm font-black mb-1">Product Usage Details</h3>
+            <p class="text-[10px] text-slate-400 mb-3">Showing <span id="pp-row-cnt">0</span> products</p>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th class="text-center">Quantity Used</th>
+                        <th class="text-right">Unit Cost</th>
+                        <th class="text-right">Total Cost</th>
+                    </tr>
+                </thead>
+                <tbody id="printTbody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="print-box mt-8">
+            <h3 class="text-sm font-black mb-4">Performance Indicators</h3>
+            <div class="flex justify-between">
+                <div class="kpi-print-card w-[30%]">
+                    <h2 class="text-lg font-black text-green-600 mb-1"><span id="pp-ind-margin">0.00</span>%</h2>
+                    <p class="text-[10px] text-slate-500">Profit Margin</p>
+                </div>
+                <div class="kpi-print-card w-[30%]">
+                    <h2 class="text-lg font-black text-blue-600 mb-1"><span id="pp-ind-cost">0.00</span>%</h2>
+                    <p class="text-[10px] text-slate-500">Cost Percentage</p>
+                </div>
+                <div class="kpi-print-card w-[30%]">
+                    <h2 class="text-lg font-black text-purple-600 mb-1"><span id="pp-ind-eff">0.00</span>x</h2>
+                    <p class="text-[10px] text-slate-500">Efficiency Ratio</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-[9px] text-slate-400 mt-10 flex justify-between">
+            <span>https://almaronalaundry.com/admin/reports/product-profitability-report</span>
+            <span>1/1</span>
+        </div>
+    </div>
+
+    <script>
+        // إعداد التقويم ليعرض شهرين (Double Calendar) مثل الصورة
+        flatpickr("#dateRange", {
+            mode: "range",
+            showMonths: 2, 
+            defaultDate: [new Date(new Date().setDate(1)), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)],
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates) {
+                if(selectedDates.length === 2) fetchData();
+            }
+        });
+
+        async function fetchData() {
+            const dates = document.getElementById('dateRange').value.split(" to ");
+            let start = dates[0] || '';
+            let end = dates[1] || start;
+            let search = document.getElementById('searchFilter').value;
+            let costFilter = document.getElementById('costFilter').value;
+
+            const url = `{% url 'api_profitability_report_data' %}?start=${start}&end=${end}&search=${search}&cost_filter=${costFilter}`;
+            
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                // تحديث الـ KPIs العلوية
+                document.getElementById('ui-earnings').innerText = data.summary.total_earnings.toFixed(2);
+                document.getElementById('ui-receipts-cnt').innerText = data.summary.receipts_count;
+                document.getElementById('ui-costs').innerText = data.summary.usage_costs.toFixed(2);
+                document.getElementById('ui-prods-used').innerText = data.summary.products_used;
+                document.getElementById('ui-profit').innerText = data.summary.net_profit.toFixed(2);
+                document.getElementById('ui-margin-top').innerText = data.summary.profit_margin.toFixed(2);
+                document.getElementById('ui-eff').innerText = data.summary.efficiency_ratio.toFixed(2);
+
+                const periodStr = `${data.summary.start} to ${data.summary.end}`;
+                document.getElementById('ui-period').innerText = periodStr;
+                document.getElementById('p-period-top').innerText = periodStr;
+
+                // تحديث الملخص
+                document.getElementById('s-tot-earn').innerText = data.summary.total_earnings.toFixed(2);
+                document.getElementById('s-cash').innerText = `${data.summary.cash_total.toFixed(2)} (${data.summary.cash_count})`;
+                document.getElementById('s-bank').innerText = `${data.summary.bank_total.toFixed(2)} (${data.summary.bank_count})`;
+                document.getElementById('s-tot-cost').innerText = data.summary.usage_costs.toFixed(2);
+                document.getElementById('s-prods').innerText = data.summary.products_used;
+                document.getElementById('s-cats').innerText = data.summary.categories_count;
+
+                // تحديث المؤشرات السفلية
+                document.getElementById('ind-margin').innerText = data.summary.profit_margin.toFixed(2);
+                document.getElementById('ind-cost-pct').innerText = data.summary.cost_percentage.toFixed(2);
+                document.getElementById('ind-eff').innerText = data.summary.efficiency_ratio.toFixed(2);
+
+                // تحديث بيانات الطباعة للملخص
+                document.getElementById('pp-tot-earn').innerText = data.summary.total_earnings.toFixed(2);
+                document.getElementById('pp-cash').innerText = `${data.summary.cash_total.toFixed(2)} (${data.summary.cash_count})`;
+                document.getElementById('pp-bank').innerText = `${data.summary.bank_total.toFixed(2)} (${data.summary.bank_count})`;
+                document.getElementById('pp-tot-cost').innerText = data.summary.usage_costs.toFixed(2);
+                document.getElementById('pp-prods').innerText = data.summary.products_used;
+                document.getElementById('pp-cats').innerText = data.summary.categories_count;
+                document.getElementById('pp-ind-margin').innerText = data.summary.profit_margin.toFixed(2);
+                document.getElementById('pp-ind-cost').innerText = data.summary.cost_percentage.toFixed(2);
+                document.getElementById('pp-ind-eff').innerText = data.summary.efficiency_ratio.toFixed(2);
+
+                document.getElementById('s-row-cnt').innerText = data.products.length;
+                document.getElementById('pp-row-cnt').innerText = data.products.length;
+                
+                const now = new Date();
+                document.getElementById('p-date-top').innerText = now.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }) + ' ' + now.toLocaleDateString();
+
+                // رسم الجدول
+                const tbody = document.getElementById('reportTbody');
+                const ptbody = document.getElementById('printTbody');
+                
+                if(data.products.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-500 font-bold">No products found. | لا يوجد بيانات.</td></tr>`;
+                    ptbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center font-bold">No records.</td></tr>`;
+                } else {
+                    let html = '', phtml = '';
+                    data.products.forEach(p => {
+                        html += `
+                            <tr class="hover:bg-slate-50 transition text-slate-700">
+                                <td class="px-6 py-4 font-bold text-slate-800">${p.name}</td>
+                                <td class="px-6 py-4 text-slate-500">${p.category}</td>
+                                <td class="px-6 py-4 text-center font-mono font-bold">${p.qty}</td>
+                                <td class="px-6 py-4 text-right font-mono text-slate-500">QAR ${p.unit_cost.toFixed(2)}</td>
+                                <td class="px-6 py-4 text-right font-mono font-black text-slate-800">QAR ${p.total_cost.toFixed(2)}</td>
+                            </tr>
+                        `;
+                        phtml += `
+                            <tr>
+                                <td class="font-bold">${p.name}</td>
+                                <td>${p.category}</td>
+                                <td class="text-center">${p.qty}</td>
+                                <td class="text-right font-mono">QAR ${p.unit_cost.toFixed(2)}</td>
+                                <td class="text-right font-bold font-mono">QAR ${p.total_cost.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                    ptbody.innerHTML = phtml;
+                }
+
+            } catch(e) { console.error(e); }
+        }
+
+        function exportCSV() {
+            const dates = document.getElementById('dateRange').value.split(" to ");
+            let start = dates[0] || '';
+            let end = dates[1] || start;
+            let costFilter = document.getElementById('costFilter').value;
+            window.location.href = `{% url 'export_profitability_excel' %}?start=${start}&end=${end}&cost_filter=${costFilter}`;
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            setTimeout(() => { fetchData(); }, 150);
+        });
+    </script>
+</body>
+</html>

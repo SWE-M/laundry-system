@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <title>Orders Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 50; }
+        .status-badge { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; border: 1px solid transparent; }
+        .status-pending { background: #fff7ed; color: #c2410c; border-color: #ffedd5; }
+        .status-paid { background: #ecfdf5; color: #059669; border-color: #d1fae5; }
+        .payment-modal { width: 1050px; max-height: 90vh; background: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .btn-active { border-color: #10b981 !important; background-color: #ecfdf5 !important; color: #059669 !important; }
+    </style>
+</head>
+<body>
+
+    <header class="bg-white border-b shadow-sm z-10 flex-shrink-0">
+    <div class="flex items-center justify-between px-6 py-3">
+        <div class="flex gap-2 items-center">
+            <a href="/cashier/" class="bg-white text-gray-500 border px-10 py-2 rounded-md font-bold text-sm hover:bg-gray-50 transition">ITEMS</a>
+            <a href="/customers/" class="bg-white text-gray-500 border px-10 py-2 rounded-md font-bold text-sm hover:bg-gray-50 transition">CUSTOMERS</a>
+            <a href="/orders/management/" class="bg-[#007ec5] text-white px-10 py-2 rounded-md font-bold text-sm shadow-inner">ORDERS</a>
+            
+            <button onclick="openFinanceModal()" class="ml-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2 rounded-md font-bold text-sm shadow-md hover:shadow-lg hover:opacity-90 transition flex items-center gap-2">
+                <span class="text-lg">💳</span> Wallets & Gift Cards
+            </button>
+            
+            <button onclick="window.open('/orders/workshop/', '_blank')" class="relative flex items-center justify-center bg-gray-800 hover:bg-gray-900 text-white font-bold py-2.5 px-6 rounded-lg shadow-md transition duration-200 mx-4 border-2 border-gray-700">
+                <span>⚙️ الورشة (NEW ORDERS)</span>
+                <span class="absolute -top-3 -right-3 flex h-6 w-6">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-6 w-6 bg-red-600 border-2 border-white text-white text-xs font-black items-center justify-center" id="workshop-active-count">
+                        0
+                    </span>
+                </span>
+            </button>
+        </div>
+
+        <button onclick="toggleLanguage()" class="bg-gray-100 text-gray-800 px-4 py-2 rounded-md font-bold text-sm flex items-center gap-2">
+            🌐 عربي
+        </button>
+    </div>
+</header>
+
+    <main class="flex-1 overflow-hidden flex flex-col p-4 gap-4">
+        
+        <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-wrap gap-3 items-center">
+            <div class="relative flex-1 min-w-[300px]">
+                <input type="text" id="orderSearch" onkeyup="applyFilters()" placeholder="Search by order #, customer name, phone, or file number..." class="w-full border border-gray-200 rounded-lg pl-4 pr-4 py-2 text-sm outline-none focus:border-blue-400 transition">
+            </div>
+            
+            <select id="laundryFilter" onchange="applyFilters()" class="border border-gray-200 rounded-lg px-3 py-2 text-xs font-bold outline-none text-gray-600 focus:border-blue-400 transition cursor-pointer">
+                <option value="all">Laundry: All</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+            </select>
+
+            <select id="deliveryFilter" onchange="applyFilters()" class="border border-gray-200 rounded-lg px-3 py-2 text-xs font-bold outline-none text-gray-600 focus:border-blue-400 transition cursor-pointer">
+                <option value="all">Delivery: All</option>
+                <option value="delivered">Delivered</option>
+                <option value="pending">Pending</option>
+            </select>
+
+            <select id="paymentFilter" onchange="applyFilters()" class="border border-gray-200 rounded-lg px-3 py-2 text-xs font-bold outline-none text-gray-600 focus:border-blue-400 transition cursor-pointer">
+                <option value="all">Payment: All</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+            </select>
+
+            <select id="categoryFilter" onchange="applyFilters()" class="border border-gray-200 rounded-lg px-3 py-2 text-xs font-bold outline-none text-gray-600 focus:border-blue-400 transition cursor-pointer">
+                <option value="all">Category: All</option>
+                <option value="uncategorized">Uncategorized</option>
+            </select>
+
+            <div class="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 focus-within:border-blue-400 transition">
+                <input type="date" id="startDate" onchange="applyFilters()" class="bg-transparent text-xs font-bold outline-none text-gray-700 cursor-pointer">
+                <span class="text-gray-400 text-xs">→</span>
+                <input type="date" id="endDate" onchange="applyFilters()" class="bg-transparent text-xs font-bold outline-none text-gray-700 cursor-pointer">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-6 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition duration-200">
+                <div class="flex justify-between items-start"><span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Total Orders</span><span class="text-blue-500 bg-blue-50 p-1.5 rounded-lg text-lg">📦</span></div>
+                <p id="total-orders" class="text-2xl font-black text-gray-800 mt-2">0</p>
+                <p class="text-[9px] text-gray-400 mt-1">Total items processed</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition duration-200">
+                <div class="flex justify-between items-start"><span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Cash Revenue</span><span class="text-green-500 bg-green-50 p-1.5 rounded-lg text-lg">💵</span></div>
+                <p class="text-2xl font-black text-gray-800 mt-2"><span id="cash-rev">0.00</span> <span class="text-sm font-bold text-gray-500">QAR</span></p>
+                <p class="text-[9px] text-gray-400 mt-1">Paid in Cash</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition duration-200">
+                <div class="flex justify-between items-start"><span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Bank Revenue</span><span class="text-orange-500 bg-orange-50 p-1.5 rounded-lg text-lg">💳</span></div>
+                <p class="text-2xl font-black text-gray-800 mt-2"><span id="bank-rev">0.00</span> <span class="text-sm font-bold text-gray-500">QAR</span></p>
+                <p class="text-[9px] text-gray-400 mt-1">Card / Transfer</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition duration-200">
+                <div class="flex justify-between items-start"><span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Deliveries</span><span class="text-purple-500 bg-purple-50 p-1.5 rounded-lg text-lg">🚚</span></div>
+                <p id="total-deliveries" class="text-2xl font-black text-gray-800 mt-2">0</p>
+                <p class="text-[9px] text-gray-400 mt-1">Out for delivery</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm border-r-4 border-r-red-400 hover:shadow-md transition duration-200">
+                <div class="flex justify-between items-start"><span class="text-[11px] font-bold text-red-500 uppercase tracking-wide">Pending Payments</span><span class="text-red-500 bg-red-50 p-1.5 rounded-lg text-lg">⚠️</span></div>
+                <p class="text-2xl font-black text-red-500 mt-2"><span id="pending-amt">0.00</span> <span class="text-sm font-bold text-red-400">QAR</span></p>
+                <p class="text-[9px] text-gray-400 mt-1">Requires follow-up</p>
+            </div>
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition duration-200">
+                <div class="flex justify-between items-start"><span class="text-[11px] font-bold text-blue-600 uppercase tracking-wide">Total Revenue</span><span class="text-blue-600 bg-white p-1.5 rounded-lg text-lg shadow-sm">💰</span></div>
+                <p class="text-2xl font-black text-blue-800 mt-2"><span id="total-rev">0.00</span> <span class="text-sm font-bold text-blue-600">QAR</span></p>
+                <p class="text-[9px] text-blue-400 mt-1">Overall income</p>
+            </div>
+        </div>
+
+        <div class="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+            <div class="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b text-[10px] font-black text-gray-500 uppercase tracking-wider">
+    <div class="col-span-1">Order #</div>
+    <div class="col-span-1">Date</div>
+    <div class="col-span-2">Customer</div>
+    <div class="col-span-1">Shelf #</div> <div class="col-span-1">Items</div>
+    <div class="col-span-1 text-center">Laundry</div>
+    <div class="col-span-1 text-center">Delivery</div>
+    <div class="col-span-1 text-center">Payment</div>
+    <div class="col-span-1 text-right">Total</div>
+    <div class="col-span-2 text-center">Actions</div>
+</div>
+
+            <div id="ordersContainer" class="flex-1 overflow-y-auto sidebar-scroll">
+                <div class="p-20 text-center text-gray-400 flex flex-col items-center justify-center">
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Loading orders...
+                </div>
+            </div>
+            
+            <div class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center text-xs text-gray-500">
+                <div id="pagination-info">Showing <span class="font-bold text-gray-700">0</span> orders</div>
+                <div class="flex gap-1">
+                    <button class="px-2 py-1 border border-gray-300 rounded bg-white hover:bg-gray-100 disabled:opacity-50">Prev</button>
+                    <button class="px-2 py-1 border border-gray-300 rounded bg-white hover:bg-gray-100 disabled:opacity-50">Next</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="scaryVoidModal" class="hidden fixed inset-0 flex items-center justify-center z-[200] bg-black/80 backdrop-blur-sm transition-opacity">
+        <div class="bg-white w-[500px] rounded-2xl shadow-2xl overflow-hidden border-4 border-red-600 transform scale-100 animate-fade-in-up" dir="auto">
+            <div class="bg-red-600 px-6 py-4 flex items-center justify-between">
+                <h3 class="font-black text-white text-xl flex items-center gap-2">
+                    <span class="text-3xl animate-pulse">⚠️</span> <span id="scaryTitle">تنبيه أمني خطير!</span>
+                </h3>
+            </div>
+            
+            <div class="p-6 bg-red-50">
+                <p class="text-red-800 font-bold text-sm mb-4 leading-relaxed">
+                    <span id="scaryDesc1">أنت على وشك إلغاء هذا الطلب نهائياً.</span> <br>
+                    <span class="text-black font-black" id="scaryDesc2">هذه العملية حساسة جداً، وسيتم تسجيلها فوراً في (قسم المراقبة والتدقيق).</span>
+                </p>
+                
+                <label id="scaryLabel" class="block text-xs font-black text-red-700 uppercase mb-2">يرجى كتابة سبب الإلغاء بدقة (إجباري) *</label>
+                <textarea id="voidReasonInput" rows="3" class="w-full border-2 border-red-300 rounded-lg p-3 text-sm font-bold outline-none focus:border-red-600 focus:ring-2 focus:ring-red-200 transition shadow-inner bg-white" required></textarea>
+                <p id="voidErrorMsg" class="hidden text-red-600 text-xs font-bold mt-2 animate-bounce">❌ يجب كتابة السبب!</p>
+            </div>
+            
+            <div class="px-6 py-4 bg-gray-100 border-t border-red-200 flex justify-between items-center gap-4">
+                <button onclick="closeScaryModal()" id="btnScaryCancel" class="flex-1 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold rounded-lg transition">
+                    تراجع
+                </button>
+                <button onclick="executeVoidAction()" id="btnScaryConfirm" class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white font-black rounded-lg shadow-lg flex items-center justify-center gap-2 transition hover:scale-105">
+                    🗑️ تأكيد الإلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="orderDetailModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[100]">
+        <div class="bg-white rounded-xl shadow-2xl w-[1000px] max-h-[90vh] flex flex-col overflow-hidden">
+            
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white shadow-sm z-10">
+                <div class="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 mr-2 shadow-sm">
+                        <span class="text-blue-500 text-lg">🧑‍💼</span>
+                        <span class="font-black text-blue-700 text-sm capitalize">{{ request.user.username|default:"Admin" }}</span>
+                    </div>
+                <div class="flex items-center gap-3">
+                    <h3 class="font-black text-gray-800 text-xl tracking-tight" id="modal-order-id">Order #OR-000000</h3>
+                    <span class="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded border border-gray-200 uppercase tracking-wider">View Mode</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="modal-order-status" class="status-badge status-pending uppercase tracking-wider px-3 py-1">PENDING</span>
+                    <button onclick="closeModal('orderDetailModal')" class="text-gray-400 hover:text-gray-700 text-2xl font-bold transition">&times;</button>
+                </div>
+            </div>
+
+            <div class="flex-1 p-6 overflow-y-auto bg-[#f8fafc] flex gap-6">
+                
+                <div class="w-[320px] space-y-4 flex-shrink-0">
+                    
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2"><span>ℹ️</span> Order Summary</h4>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-500 font-medium">Date</span>
+                                <span class="text-sm font-bold text-gray-800" id="modal-order-date">---</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-2 border-t border-gray-50">
+                                <span class="text-xs text-gray-500 font-medium">Total Amount</span>
+                                <span class="text-lg font-black text-gray-800" id="modal-order-total">0.00 QAR</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2"><span>👤</span> Customer Details</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-bold mb-0.5">Name</p>
+                                <p class="text-sm font-bold text-gray-800" id="modal-cust-name">---</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-bold mb-0.5">Phone</p>
+                                <p class="text-sm font-bold text-gray-800" id="modal-cust-phone">---</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-bold mb-0.5">Order Date</p>
+                                <p class="text-sm font-bold text-gray-800" id="modal-cust-date">---</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-2">
+                       <button onclick="updateOrderStatus('COMPLETED')" class="w-full py-2.5 border border-emerald-500 text-emerald-600 rounded-lg text-sm font-bold hover:bg-emerald-50 transition flex items-center justify-center gap-2 bg-white shadow-sm">
+                            Mark All as Completed
+                        </button>
+                        <button onclick="updateOrderStatus('DELIVERED')" class="w-full py-2.5 border border-blue-200 text-blue-500 rounded-lg text-sm font-bold hover:bg-blue-50 transition flex items-center justify-center gap-2 bg-white shadow-sm">
+                            Mark All as Delivered
+                        </button>
+                        <button onclick="sendWhatsAppFromModal()" class="w-full py-2.5 border border-green-500 text-green-600 rounded-lg text-sm font-bold hover:bg-green-50 transition flex items-center justify-center gap-2 bg-white shadow-sm">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.305-.885-.653-1.482-1.459-1.656-1.756-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+                            Send to WhatsApp
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-white">
+                        <h4 class="text-sm font-bold text-gray-800">Order Items</h4>
+                        <button onclick="showAddItemRow()" class="text-xs text-emerald-600 font-bold border border-emerald-200 bg-emerald-50 px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-emerald-100 transition shadow-sm">+ Add Items</button>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider text-[10px]">
+                                <tr>
+                                    <th class="py-3 px-4 border-b border-gray-100">Item</th>
+                                    <th class="border-b border-gray-100">Service</th>
+                                    <th class="border-b border-gray-100">Status</th> <th class="text-center border-b border-gray-100">Qty</th>
+                                    <th class="text-right border-b border-gray-100">Price</th>
+                                    <th class="text-right border-b border-gray-100">Total</th>
+                                    <th class="text-center px-4 border-b border-gray-100">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modal-items-body" class="text-gray-700 divide-y divide-gray-50">
+                                </tbody>
+                            <tbody id="add-item-tbody" class="hidden bg-emerald-50">
+                                <tr>
+                                    <td colspan="3" class="py-2 px-4 border-b border-emerald-100">
+                                        <select id="new-item-select" class="w-full border border-gray-300 rounded px-2 py-1 text-xs outline-none focus:border-emerald-500">
+                                            <option value="">Select Item from Catalog...</option>
+                                        </select>
+                                    </td>
+                                    <td class="text-center border-b border-emerald-100">
+                                        <input type="number" id="new-item-qty" value="1" min="1" class="w-16 border border-gray-300 rounded px-2 py-1 text-xs text-center outline-none focus:border-emerald-500">
+                                    </td>
+                                    <td colspan="2" class="text-right border-b border-emerald-100 text-[10px] text-gray-500 font-bold">
+                                        (Auto-Price)
+                                    </td>
+                                    <td class="text-center px-4 border-b border-emerald-100">
+                                        <div class="flex justify-center gap-1">
+                                            <button onclick="submitNewItem()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-1 px-3 rounded shadow transition">Save</button>
+                                            <button onclick="hideAddItemRow()" class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-1 px-2 rounded shadow transition">X</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="bg-white p-5 border-t border-gray-200 space-y-3 text-sm">
+                        <div class="flex justify-between text-gray-500 font-medium">
+                            <span>Subtotal</span>
+                            <span id="modal-subtotal">0.00 QAR</span>
+                        </div>
+                        <div class="flex justify-between text-red-500 font-bold" id="modal-discount-row">
+    <span>Discount <span id="modal-discount-badge" class="ml-1 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[10px] hidden"></span></span>
+    <span id="modal-discount-amount">0.00 QAR</span>
+</div>
+                        <div class="flex justify-between font-black text-gray-800 text-lg pt-3 border-t border-gray-100">
+                            <span>Total</span>
+                            <span id="modal-final-total">0.00 QAR</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+   <div id="receiptModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[110]">
+        <div class="bg-white rounded-xl shadow-2xl w-[900px] max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-black text-gray-800 text-lg flex items-center gap-2">
+                    <span class="text-emerald-500 text-xl">💵</span> Create Payment Receipt
+                </h3>
+                <button onclick="closeModal('receiptModal')" class="text-gray-400 hover:text-red-500 text-2xl font-bold transition">&times;</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 bg-white flex flex-col gap-6">
+                <div class="flex gap-6">
+                    <div class="flex-1 bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center">
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Customer Details</h4>
+                            <p class="font-bold text-gray-800 text-lg" id="receiptCustomerName">---</p>
+                            <p class="text-xs text-gray-500 mt-1">Processing Payment for selected order.</p>
+                        </div>
+                        <div id="receiptWalletInfo" class="hidden text-right">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase">Wallet Balance</p>
+                            <p class="text-xl font-black text-[#007ec5]"><span id="receiptWalletBalance">0.00</span> QAR</p>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Payment Method *</h4>
+                        <div class="grid grid-cols-4 gap-2">
+                            <button onclick="setReceiptMethod('CASH')" id="rBtnCASH" class="py-2 border-2 border-emerald-500 bg-emerald-50 text-emerald-600 font-bold rounded-lg text-xs transition shadow-sm">Cash</button>
+                            <button onclick="setReceiptMethod('CARD')" id="rBtnCARD" class="py-2 border-2 border-gray-200 text-gray-500 font-bold rounded-lg text-xs hover:bg-gray-100 transition">Card</button>
+                            <button onclick="setReceiptMethod('WALLET')" id="rBtnWALLET" class="py-2 border-2 border-gray-200 text-gray-500 font-bold rounded-lg text-xs hover:bg-gray-100 transition">Wallet</button>
+                            <button onclick="setReceiptMethod('GIFT_CARD')" id="rBtnGIFT_CARD" class="py-2 border-2 border-gray-200 text-gray-500 font-bold rounded-lg text-xs hover:bg-gray-100 transition">Gift Card</button>
+                        </div>
+                        <div id="receiptGiftCardContainer" class="hidden mt-3">
+                            <div class="flex gap-2">
+                                <input type="text" id="receiptGiftCardNumber" placeholder="Enter Gift Card Number..." class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-500 transition">
+                                <button onclick="checkGiftCard()" id="btnCheckGC" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-700 transition shadow-sm">Check</button>
+                            </div>
+                            <div id="gcResult" class="mt-2 text-xs font-bold"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-xl overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-50 text-gray-500 font-bold text-[10px] uppercase tracking-wider">
+                            <tr>
+                                <th class="p-3 border-b border-gray-200">Order #</th>
+                                <th class="p-3 border-b border-gray-200">Date</th>
+                                <th class="p-3 border-b border-gray-200 text-right">Total</th>
+                                <th class="p-3 border-b border-gray-200 text-right">Due Amount</th>
+                                <th class="p-3 border-b border-gray-200 text-center w-40">Amount to Pay</th>
+                            </tr>
+                        </thead>
+                        <tbody id="receiptOrdersBody" class="divide-y divide-gray-100">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+                <div>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Payment</p>
+                    <p class="text-2xl font-black text-emerald-600"><span id="receiptTotalAmount">0.00</span> <span class="text-sm font-bold">QAR</span></p>
+                </div>
+                <button onclick="submitPaymentReceipt()" id="btnSubmitReceipt" class="bg-[#008f7a] hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-lg transition flex items-center gap-2">
+                    Confirm Payment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <div id="financeModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[120]">
+        <div class="bg-white rounded-xl shadow-2xl w-[1100px] max-h-[90vh] flex flex-col overflow-hidden">
+            
+            <div class="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center z-10">
+                <div class="flex items-center gap-4">
+                    <div class="bg-white p-2 rounded-lg shadow-sm border border-gray-200 text-2xl">🏦</div>
+                    <div>
+                        <h3 class="font-black text-gray-800 text-xl">Finance Center</h3>
+                        <p class="text-xs text-gray-500 font-bold mt-0.5">Manage Customer Wallets & Gift Cards</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="relative w-72">
+                        <input type="text" id="financeSearchInput" onkeyup="filterFinanceData()" placeholder="Search name, phone, card #..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-purple-500 transition shadow-sm">
+                        <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
+                    </div>
+                    <button onclick="closeModal('financeModal')" class="text-gray-400 hover:text-red-500 text-3xl font-black transition">&times;</button>
+                </div>
+            </div>
+
+            <div class="flex border-b border-gray-200 bg-white px-6 pt-4 gap-6 text-sm font-bold text-gray-500">
+                <button id="tabWallets" onclick="switchFinanceTab('WALLETS')" class="pb-3 border-b-4 border-purple-600 text-purple-700 transition flex items-center gap-2">
+                    <span>✨</span> Customer Wallets
+                </button>
+                <button id="tabGiftCards" onclick="switchFinanceTab('GIFTCARDS')" class="pb-3 border-b-4 border-transparent hover:text-gray-800 transition flex items-center gap-2">
+                    <span>🎁</span> Gift Cards
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 bg-[#f8fafc]">
+                
+                <div id="walletsContainer" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-50 text-gray-500 font-bold text-[10px] uppercase tracking-wider">
+                            <tr>
+                                <th class="p-4 border-b border-gray-200">Customer Name</th>
+                                <th class="p-4 border-b border-gray-200">Phone & File #</th>
+                                <th class="p-4 border-b border-gray-200 text-right">Current Balance</th>
+                                <th class="p-4 border-b border-gray-200 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="walletsTableBody" class="divide-y divide-gray-100">
+                            </tbody>
+                    </table>
+                </div>
+
+                <div id="giftCardsContainer" class="hidden bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-50 text-gray-500 font-bold text-[10px] uppercase tracking-wider">
+                            <tr>
+                                <th class="p-4 border-b border-gray-200">Card Number</th>
+                                <th class="p-4 border-b border-gray-200 text-right">Original Value</th>
+                                <th class="p-4 border-b border-gray-200 text-right">Remaining Balance</th>
+                                <th class="p-4 border-b border-gray-200 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="giftCardsTableBody" class="divide-y divide-gray-100">
+                            </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ==========================================
+        // المتغيرات العامة (Global Variables)
+        // ==========================================
+        let allOrders = [];
+        let currentStatusFilter = 'ALL';
+        let currentSelectedOrderId = null;
+        let selectedPaymentMethod = 'CASH';
+        let currentSelectedCustomerId = null;
+        
+        // 🌟 متغير جديد لتخزين كتالوج الملابس 🌟
+        let availableLaundryItems = [];
+
+        // ==========================================
+        // دوال مساعدة (Helper Functions)
+        // ==========================================
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        async function fetchCategoriesForFilter() {
+            try {
+                const response = await fetch('/api/accounts/categories/');
+                if (response.ok) {
+                    const data = await response.json();
+                    const categories = Array.isArray(data) ? data : (data.results || []);
+                    
+                    const filterEl = document.getElementById('categoryFilter');
+                    if(filterEl) {
+                        let filterHTML = `
+                            <option value="all">Category: All</option>
+                            <option value="uncategorized">Uncategorized</option>
+                        `;
+                        categories.forEach(cat => { 
+                            filterHTML += `<option value="${cat.name.toLowerCase()}">${cat.name}</option>`; 
+                        });
+                        filterEl.innerHTML = filterHTML;
+                    }
+                }
+            } catch (error) { console.error("Error loading categories:", error); }
+        }
+
+        // 🌟 دالة جديدة لجلب الملابس لتعبئة قائمة الإضافة 🌟
+        async function fetchLaundryItemsForDropdown() {
+            try {
+                const res = await fetch('/api/services/items/');
+                if(res.ok) {
+                    const data = await res.json();
+                    availableLaundryItems = Array.isArray(data) ? data : (data.results || []);
+                }
+            } catch(e) { console.error("Error loading items catalog:", e); }
+        }
+
+        // ==========================================
+        // 1. جلب وعرض الطلبات (Fetch & Render)
+        // ==========================================
+        
+        function applyFilters() {
+            const query = document.getElementById('orderSearch').value.toLowerCase();
+            const laundry = document.getElementById('laundryFilter').value;
+            const delivery = document.getElementById('deliveryFilter').value;
+            const payment = document.getElementById('paymentFilter').value;
+            const category = document.getElementById('categoryFilter').value.toLowerCase();
+            const startStr = document.getElementById('startDate').value;
+            const endStr = document.getElementById('endDate').value;
+
+            const startDate = startStr ? new Date(startStr) : null;
+            if(startDate) startDate.setHours(0,0,0,0);
+            const endDate = endStr ? new Date(endStr) : null;
+            if(endDate) endDate.setHours(23,59,59,999);
+
+            let filtered = allOrders.filter(o => {
+                
+                // 🌟 التعديل السحري: طرد وإخفاء الطلبات الملغية (VOID) من الشاشة والإحصائيات 🌟
+                if (o.status === 'VOID' || o.is_void === true) return false;
+
+                const formattedId = String(o.id).padStart(4, '0');
+                
+                const matchesSearch =
+                    String(o.id).includes(query) ||                         
+                    formattedId.includes(query) ||                         
+                    (o.customer_name && o.customer_name.toLowerCase().includes(query)) ||
+                    (o.customer_phone && o.customer_phone.includes(query)) ||
+                    (o.customer_file_number && String(o.customer_file_number).toLowerCase().includes(query)); 
+                
+                if (!matchesSearch) return false;
+
+                if (laundry !== 'all') {
+                    if (laundry === 'completed' && o.status !== 'COMPLETED') return false;
+                    if (laundry === 'pending' && o.status === 'COMPLETED') return false;
+                }
+
+                const pStatus = o.payment_status || (o.status === 'COMPLETED' ? 'PAID' : 'PENDING');
+                if (payment !== 'all') {
+                    if (payment === 'paid' && pStatus !== 'PAID') return false;
+                    if (payment === 'pending' && pStatus === 'PAID') return false;
+                }
+
+              if (delivery !== 'all') {
+                    // 🌟 التعديل: مطابقة الفلتر مع حالة DELIVERED
+                    const isDelivered = o.status === 'DELIVERED' || (o.delivery_date && o.delivery_date !== '---' && o.delivery_date !== null);
+                    if (delivery === 'delivered' && !isDelivered) return false;
+                    if (delivery === 'pending' && isDelivered) return false;
+                }
+
+               if (category !== 'all') {
+                    const cCat = String(o.customer_category || 'uncategorized').toLowerCase().trim();
+                    if (cCat !== category.trim()) return false;
+                }
+
+                if (startDate || endDate) {
+                    const orderDate = new Date(o.created_at);
+                    if (startDate && orderDate < startDate) return false;
+                    if (endDate && orderDate > endDate) return false;
+                }
+
+                return true; 
+            });
+
+            updateDashboardStats(filtered);
+            renderFilteredOrders(filtered);
+        }
+
+       async function fetchOrders() {
+            const container = document.getElementById('ordersContainer');
+            try {
+                const response = await fetch(`/api/orders/checkout/`);
+                const data = await response.json();
+                allOrders = Array.isArray(data) ? data : (data.results || []);
+                applyFilters();
+            } catch (e) { 
+                console.error("Error fetching orders:", e);
+                container.innerHTML = `<div class="p-20 text-center text-red-500 font-bold">Failed to load orders. Please try again.</div>`;
+            }
+            // تحديث عدد الطلبات النشطة في زر الورشة
+const pendingCount = allOrders.filter(o => o.status === 'PENDING').length;
+document.getElementById('workshop-active-count').innerText = pendingCount;
+        }
+
+        function renderFilteredOrders(ordersToRender) {
+            const container = document.getElementById('ordersContainer');
+
+            if(ordersToRender.length === 0) {
+                container.innerHTML = `<div class="p-20 text-center text-gray-400 font-bold">No orders found matching your filters.</div>`;
+                document.getElementById('pagination-info').innerHTML = `Showing <span class="font-bold text-gray-700">0</span> orders`;
+                return;
+            }
+
+            document.getElementById('pagination-info').innerHTML = `Showing <span class="font-bold text-gray-700">${ordersToRender.length}</span> orders`;
+
+            container.innerHTML = ordersToRender.map(o => {
+                const totalAmt = parseFloat(o.total_amount) || 0;
+                const pStatus = o.payment_status || (o.status === 'COMPLETED' ? 'PAID' : 'PENDING');
+                const isPaid = pStatus === 'PAID';
+                
+                let itemsSummary = 'No items';
+                if(o.items && o.items.length > 0) {
+                    itemsSummary = o.items.map(i => `${i.quantity}x ${i.item_name}`).join(', ');
+                }
+
+                const formattedDate = new Date(o.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+               return `
+    <div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition text-xs">
+        
+        <div class="col-span-1 font-bold text-blue-600 cursor-pointer hover:underline" onclick="viewOrderDetails(${o.id})">${String(o.id).padStart(4, '0')}</div>
+        
+        <div class="col-span-1 text-gray-500 leading-tight">
+            ${formattedDate.replace(', ', '<br>')}
+        </div>
+        
+        <div class="col-span-2">
+            <p class="font-bold text-gray-800 uppercase truncate">${o.customer_name || 'Walking Customer'}</p>
+            <p class="text-[10px] text-gray-400">${o.customer_phone || '---'}</p>
+        </div>
+
+        <div class="col-span-1 text-center">
+            <span class="bg-amber-100 text-amber-700 px-2 py-1 rounded-md font-black border border-amber-200">
+                ${o.remarks && o.remarks.includes('رقم الرف:') ? o.remarks.split('رقم الرف:')[1].trim() : '---'}
+            </span>
+        </div>
+        
+        <div class="col-span-1 text-gray-500 font-medium truncate" title="${itemsSummary}">${itemsSummary}</div>
+        
+        <div class="col-span-1 text-center"><span class="status-badge ${o.status === 'COMPLETED' ? 'status-paid' : 'status-pending'}">${o.status}</span></div>
+        
+        <div class="col-span-1 text-center"><span class="status-badge border-gray-200 text-gray-400 bg-gray-50">Pending</span></div>
+        
+        <div class="col-span-1 text-center flex flex-col items-center">
+            <span class="status-badge ${isPaid ? 'status-paid' : 'status-pending'}">${pStatus}</span>
+            ${!isPaid ? `<span class="text-[9px] text-red-500 font-bold mt-1">Due: ${totalAmt.toFixed(2)}</span>` : ''}
+        </div>
+        
+        <div class="col-span-1 text-right font-black text-gray-700">${totalAmt.toFixed(2)} QAR</div>
+        
+        <div class="col-span-2 flex justify-center gap-1">
+            <button onclick="printOrderReceipt(${o.id})" class="p-1.5 border border-gray-200 text-gray-600 rounded hover:bg-gray-100 transition shadow-sm" title="Print Receipt">🖨️</button>
+            
+            <button onclick="printOrderTags(${o.id})" class="p-1.5 border border-gray-200 text-gray-600 rounded hover:bg-gray-100 transition shadow-sm" title="Print Tags">🏷️</button>
+            
+            <button onclick="openWhatsApp('${o.customer_phone || ''}', ${o.id})" class="p-1.5 border border-green-200 text-green-600 bg-green-50 rounded hover:bg-green-600 hover:text-white transition shadow-sm" title="WhatsApp">💬</button>
+
+            <button onclick="alert('📝 Order Remarks:\\n\\n' + ('${o.remarks || 'No notes available'}'))" class="p-1.5 border border-amber-200 text-amber-600 bg-amber-50 rounded hover:bg-amber-600 hover:text-white transition shadow-sm" title="Order Remarks">📝</button>
+            
+            <button onclick="viewOrderDetails(${o.id})" class="p-1.5 border border-blue-200 text-blue-600 bg-blue-50 rounded hover:bg-blue-600 hover:text-white transition shadow-sm" title="View Details">👁️</button>
+            
+            <button onclick="openPaymentModal(${o.id}, ${totalAmt}, '${o.customer_name}', ${o.customer_id || o.customer || 'null'})" ${isPaid ? 'disabled class="p-1.5 border border-gray-200 text-gray-300 rounded bg-gray-50 cursor-not-allowed"' : 'class="p-1.5 border border-emerald-200 text-emerald-600 bg-emerald-50 rounded hover:bg-emerald-600 hover:text-white transition shadow-sm"'} title="Pay Order">💸</button>
+            
+            <button onclick="confirmVoid(${o.id})" class="p-1.5 border border-red-200 text-red-500 bg-red-50 rounded hover:bg-red-500 hover:text-white transition shadow-sm" title="Cancel Order">❌</button>
+        </div>
+    </div>
+`;
+            }).join('');
+        }
+
+        // ==========================================
+        // 2. تحديث لوحة العدادات (Dashboard)
+        // ==========================================
+        function updateDashboardStats(orders) {
+            let totalOrders = orders.length;
+            let totalRev = 0;
+            let pendingAmt = 0;
+            let cashRev = 0;
+            let bankRev = 0;
+            let deliveries = 0;
+
+            orders.forEach(o => {
+                let amt = parseFloat(o.total_amount) || 0;
+                totalRev += amt;
+                
+                if (o.status !== 'COMPLETED' && o.payment_status !== 'PAID') {
+                    pendingAmt += amt;
+                }
+
+                if (o.payment_status === 'PAID' && o.payments && o.payments.length > 0) {
+                    o.payments.forEach(p => {
+                        let pAmt = parseFloat(p.amount) || 0;
+                        if (p.method === 'CASH') cashRev += pAmt;
+                        else if (p.method === 'CARD') bankRev += pAmt;
+                    });
+                } else if (o.payment_status === 'PAID') {
+                    cashRev += amt;
+                }
+
+                // 🌟 التعديل: يحسب الطلب كـ "تم التوصيل" إذا كانت حالته DELIVERED أو له تاريخ
+                if(o.status === 'DELIVERED' || (o.delivery_date && o.delivery_date !== '---' && o.delivery_date !== null)) {
+                    deliveries++;
+                }
+            });
+
+            document.getElementById('total-orders').innerText = totalOrders;
+            document.getElementById('total-rev').innerText = totalRev.toFixed(2);
+            document.getElementById('pending-amt').innerText = pendingAmt.toFixed(2);
+            document.getElementById('cash-rev').innerText = cashRev.toFixed(2);
+            document.getElementById('bank-rev').innerText = bankRev.toFixed(2);
+            document.getElementById('total-deliveries').innerText = deliveries;
+        }
+
+        // ==========================================
+        // 3. وظائف الأزرار (Actions)
+        // ==========================================
+        
+        async function viewOrderDetails(id) {
+            currentSelectedOrderId = id;
+            openModal('orderDetailModal');
+            document.getElementById('modal-items-body').innerHTML = `<tr><td colspan="7" class="text-center py-10 text-gray-400">Loading order items...</td></tr>`;
+            hideAddItemRow(); // إخفاء سطر الإضافة عند فتح طلب جديد
+            
+            try {
+                const response = await fetch(`/api/orders/checkout/${id}/`);
+                if(!response.ok) throw new Error("Failed to fetch");
+                const o = await response.json();
+                
+                document.getElementById('modal-order-id').innerText = `Order #${String(o.id).padStart(4, '0')}`;
+                const pStatus = o.payment_status || (o.status === 'COMPLETED' ? 'PAID' : 'PENDING');
+                const statusBadge = document.getElementById('modal-order-status');
+                statusBadge.innerText = pStatus;
+                statusBadge.className = `status-badge uppercase tracking-wider px-3 py-1 ${pStatus === 'PAID' ? 'status-paid' : 'status-pending'}`;
+                
+                const dateStr = new Date(o.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+                document.getElementById('modal-order-date').innerText = dateStr;
+                document.getElementById('modal-cust-date').innerText = dateStr;
+                
+                // حسبة الخصم والنسبة المئوية
+const finalAmount = parseFloat(o.total_amount) || 0;
+const discountPct = parseFloat(o.discount_percentage) || 0;
+let subtotal = o.items ? o.items.reduce((s, i) => s + (i.quantity * parseFloat(i.price)), 0) : finalAmount;
+let discountAmt = subtotal - finalAmount;
+
+// تحديث القيم في الواجهة
+document.getElementById('modal-subtotal').innerText = `${subtotal.toFixed(2)} QAR`;
+document.getElementById('modal-final-total').innerText = `${finalAmount.toFixed(2)} QAR`;
+document.getElementById('modal-order-total').innerText = `${finalAmount.toFixed(2)} QAR`;
+document.getElementById('modal-discount-amount').innerText = `-${Math.abs(discountAmt).toFixed(2)} QAR`;
+
+// إظهار نسبة الخصم إذا وجدت
+const badge = document.getElementById('modal-discount-badge');
+if (discountPct > 0) {
+    badge.innerText = `${discountPct}%`;
+    badge.classList.remove('hidden');
+} else {
+    badge.classList.add('hidden');
+}
+                
+                document.getElementById('modal-cust-name').innerText = o.customer_name || 'Walking Customer';
+                document.getElementById('modal-cust-phone').innerText = o.customer_phone || '---';
+
+                if(o.items && o.items.length > 0) {
+                    document.getElementById('modal-items-body').innerHTML = o.items.map(item => {
+                        // 🌟 التعديل البصري للحالة (لتظهر الألوان بدلاً من كلمة Normal) 🌟
+                        let iStatus = item.status || 'PENDING';
+                        let badgeClass = iStatus === 'READY' ? 'bg-emerald-100 text-emerald-600 border-emerald-200' :
+                                         iStatus === 'DELIVERED' ? 'bg-blue-100 text-blue-600 border-blue-200' :
+                                         'bg-orange-100 text-orange-600 border-orange-200';
+
+                        return `
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="py-3 px-4 font-bold text-gray-800 border-b border-gray-100">${item.item_name}</td>
+                            <td class="text-gray-600 border-b border-gray-100">${item.service_name}</td>
+                            <td class="border-b border-gray-100">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">${iStatus}</span>
+                            </td>
+                            <td class="text-center font-bold border-b border-gray-100">${item.quantity}</td>
+                            <td class="text-right text-gray-500 border-b border-gray-100">${parseFloat(item.price).toFixed(2)} QAR</td>
+                            <td class="text-right font-black text-gray-800 border-b border-gray-100">${(item.quantity * parseFloat(item.price)).toFixed(2)} QAR</td>
+                            <td class="text-center px-4 border-b border-gray-100">
+                                <div class="flex justify-center gap-1">
+                                    <button onclick="updateItemStatus(${item.id}, 'READY')" class="p-1 border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition shadow-sm" title="Mark Piece as Ready">✓</button>
+                                    <button onclick="updateItemStatus(${item.id}, 'DELIVERED')" class="p-1 border border-blue-400 text-blue-600 rounded-lg hover:bg-blue-50 transition shadow-sm" title="Mark Piece as Delivered">🚚</button>
+                                </div>
+                            </td>
+                        </tr>
+                        `;
+                    }).join('');
+                } else {
+                    document.getElementById('modal-items-body').innerHTML = `<tr><td colspan="7" class="text-center py-6 text-gray-400 font-medium italic">No items found in this order.</td></tr>`;
+                }
+            } catch (e) { 
+                console.error(e);
+                document.getElementById('modal-items-body').innerHTML = `<tr><td colspan="7" class="text-center py-6 text-red-500 font-bold">Error loading order details.</td></tr>`;
+            }
+        }
+
+        // ==========================================
+        // 🌟 وظائف إضافة أصناف (Add Items Inline) 🌟
+        // ==========================================
+       function showAddItemRow() {
+            const tbody = document.getElementById('add-item-tbody');
+            const select = document.getElementById('new-item-select');
+
+            if (select.options.length <= 1 && availableLaundryItems.length > 0) {
+                
+                // 🌟 سطر أضفته لكشف شكل البيانات القادمة من السيرفر ومعرفة اسم حقل السعر 🌟
+                console.log("🔍 نظرة على بيانات القطعة من السيرفر:", availableLaundryItems[0]);
+
+                availableLaundryItems.forEach(item => {
+                    let opt = document.createElement('option');
+                    opt.value = item.id;
+                    
+                    // 🌟 نحاول سحب السعر بأشهر المسميات المحتملة في نظامك 🌟
+                    let itemPrice = item.price || item.base_price || item.washing_price || item.default_price || 0;
+                    
+                    let nameAr = item.name_ar || item.name || "";
+                    let nameEn = item.name_en || item.name || "";
+                    
+                    opt.text = `${nameAr} - ${nameEn} (${parseFloat(itemPrice).toFixed(2)} QAR)`;
+                    opt.dataset.price = itemPrice;
+                    
+                    select.appendChild(opt);
+                });
+            }
+
+            tbody.classList.remove('hidden');
+        }
+
+        function hideAddItemRow() {
+            document.getElementById('add-item-tbody').classList.add('hidden');
+            document.getElementById('new-item-select').value = '';
+            document.getElementById('new-item-qty').value = '1';
+        }
+
+        async function submitNewItem() {
+            if (!currentSelectedOrderId) return;
+            
+            const select = document.getElementById('new-item-select');
+            const qtyInput = document.getElementById('new-item-qty');
+            
+            const itemId = select.value;
+            const qty = parseInt(qtyInput.value);
+            
+            if (!itemId || qty < 1) {
+                alert("Please select an item and enter a valid quantity.");
+                return;
+            }
+
+            const selectedOption = select.options[select.selectedIndex];
+            const price = selectedOption.dataset.price;
+
+            try {
+                // إرسال القطعة الجديدة للسيرفر (للرابط الجديد اللي سويناه items/)
+                const response = await fetch(`/api/orders/items/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({
+                        order: currentSelectedOrderId,
+                        item: itemId,
+                        quantity: qty,
+                        price: price,
+                        status: 'PENDING'
+                    })
+                });
+
+                if(response.ok) {
+                    hideAddItemRow();
+                    viewOrderDetails(currentSelectedOrderId); // تحديث النافذة لإظهار القطعة
+                    fetchOrders(); // تحديث الجدول الرئيسي لضبط الإجمالي
+                } else {
+                    alert("❌ Failed to add item. Check server.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Network error while adding item.");
+            }
+        }
+        // ==========================================
+
+        function openWhatsApp(phone, orderId) {
+            if(!phone || phone === '---' || phone === 'null') {
+                return alert("No phone number registered for this order.");
+            }
+            let cleanPhone = phone.replace(/\D/g, '');
+            if(cleanPhone.length === 8) cleanPhone = '974' + cleanPhone; 
+            let message = encodeURIComponent(`مرحباً، طلبك رقم ${String(orderId).padStart(4, '0')} جاهز للاستلام من مغسلة المرونة.\nHello, your order ${String(orderId).padStart(4, '0')} is ready for collection at Almarona Laundry.`);
+            window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+        }
+
+        function sendWhatsAppFromModal() {
+            const phone = document.getElementById('modal-cust-phone').innerText;
+            const orderId = document.getElementById('modal-order-id').innerText.replace('Order #', '');
+            openWhatsApp(phone, parseInt(orderId));
+        }
+
+        
+
+        let currentReceiptOrders = [];
+        let receiptPaymentMethod = 'CASH';
+        let currentCustomerWalletBalance = 0;
+        let isGiftCardValid = false;
+
+        function setReceiptMethod(method) {
+            receiptPaymentMethod = method;
+            const methods = ['CASH', 'CARD', 'WALLET', 'GIFT_CARD'];
+            methods.forEach(m => {
+                const btn = document.getElementById(`rBtn${m}`);
+                if (m === method) {
+                    btn.className = 'py-2 border-2 border-emerald-500 bg-emerald-50 text-emerald-600 font-bold rounded-lg text-xs transition shadow-sm';
+                } else {
+                    btn.className = 'py-2 border-2 border-gray-200 text-gray-500 font-bold rounded-lg text-xs hover:bg-gray-100 transition';
+                }
+            });
+            
+            document.getElementById('receiptGiftCardContainer').style.display = (method === 'GIFT_CARD') ? 'block' : 'none';
+            document.getElementById('receiptWalletInfo').style.display = (method === 'WALLET') ? 'block' : 'none';
+        }
+
+        async function checkGiftCard() {
+            const gcInput = document.getElementById('receiptGiftCardNumber').value.trim();
+            const resultDiv = document.getElementById('gcResult');
+            const btn = document.getElementById('btnCheckGC');
+            
+            if(!gcInput) {
+                resultDiv.innerHTML = '<span class="text-red-500">Please enter a card number.</span>';
+                return;
+            }
+
+            btn.innerHTML = "⏳"; btn.disabled = true;
+            try {
+               const response = await fetch(`/api/orders/giftcards/check-balance/?card_number=${gcInput}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    isGiftCardValid = true;
+                    resultDiv.innerHTML = `<span class="text-emerald-600">✅ Valid Card. Balance: <b>${parseFloat(data.balance).toFixed(2)} QAR</b></span>`;
+                } else {
+                    isGiftCardValid = false;
+                    resultDiv.innerHTML = `<span class="text-red-500">❌ ${data.error || 'Invalid Card'}</span>`;
+                }
+            } catch (e) {
+                console.error("GC Error:", e);
+                isGiftCardValid = false;
+                resultDiv.innerHTML = '<span class="text-red-500">❌ المسار غير صحيح (URL Error)</span>';
+            } finally {
+                btn.innerHTML = "Check"; btn.disabled = false;
+            }
+        }
+
+        async function openPaymentModal(orderId, amount, customerName, customerId) {
+            currentSelectedOrderId = orderId;
+            currentSelectedCustomerId = customerId;
+            document.getElementById('receiptCustomerName').innerText = customerName || 'Walking Customer';
+            
+            document.getElementById('receiptGiftCardNumber').value = '';
+            document.getElementById('gcResult').innerHTML = '';
+            isGiftCardValid = false;
+            currentCustomerWalletBalance = 0;
+            document.getElementById('receiptWalletBalance').innerText = '0.00';
+            
+            setReceiptMethod('CASH');
+            
+            const tbody = document.getElementById('receiptOrdersBody');
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-gray-400">Loading order data...</td></tr>`;
+            openModal('receiptModal');
+            
+            currentReceiptOrders = [];
+
+            if (customerId && customerId !== 'null' && customerId !== 'undefined') {
+                try {
+                    const res = await fetch(`/api/orders/checkout/pending/?customer=${customerId}`);
+                    if (res.ok) { currentReceiptOrders = await res.json(); }
+
+                    const custRes = await fetch(`/api/accounts/search/${customerId}/`);
+                    if (custRes.ok) {
+                        const custData = await custRes.json();
+                        const customerObj = Array.isArray(custData.results) ? custData.results[0] : custData;
+                        
+                        if (customerObj && customerObj.wallet_balance) {
+                            currentCustomerWalletBalance = parseFloat(customerObj.wallet_balance);
+                        } else {
+                            currentCustomerWalletBalance = 0;
+                        }
+                        document.getElementById('receiptWalletBalance').innerText = currentCustomerWalletBalance.toFixed(2);
+                    }
+                } catch (e) { console.error("Wallet Fetch Error:", e); }
+            }
+            
+            if (currentReceiptOrders.length === 0) {
+                const existingOrder = allOrders.find(o => o.id === orderId);
+                const orderDate = existingOrder ? new Date(existingOrder.created_at).toLocaleDateString('en-GB') : '---';
+                currentReceiptOrders = [{ id: orderId, total_amount: amount, original_total: amount, date: orderDate }];
+            }
+
+            renderReceiptOrders(orderId);
+        }
+
+        function renderReceiptOrders(autoSelectOrderId) {
+            const tbody = document.getElementById('receiptOrdersBody');
+            if (currentReceiptOrders.length === 0) return;
+
+            tbody.innerHTML = currentReceiptOrders.map(o => {
+                const defaultPay = (o.id === autoSelectOrderId) ? parseFloat(o.total_amount).toFixed(2) : '';
+                return `
+                    <tr class="hover:bg-gray-50 transition">
+                       <td class="p-3 font-bold text-blue-600">${String(o.id).padStart(4, '0')}</td>
+                        <td class="p-3 text-gray-500 text-xs">${o.date || '---'}</td>
+                        <td class="p-3 text-right font-bold text-gray-700">${parseFloat(o.original_total || o.total_amount).toFixed(2)}</td>
+                        <td class="p-3 text-right font-bold text-red-500">${parseFloat(o.total_amount).toFixed(2)}</td>
+                        <td class="p-3">
+                            <div class="relative">
+                                <input type="number" min="0" max="${o.total_amount}" step="0.01" 
+                                    class="receipt-pay-input w-full border border-gray-300 rounded-lg px-2 py-1.5 text-right font-bold text-emerald-600 outline-none focus:border-emerald-500 transition" 
+                                    data-order-id="${o.id}" 
+                                    data-due="${o.total_amount}"
+                                    value="${defaultPay}"
+                                    oninput="calculateReceiptTotal()">
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            calculateReceiptTotal();
+        }
+
+        function calculateReceiptTotal() {
+            const inputs = document.querySelectorAll('.receipt-pay-input');
+            let total = 0;
+            inputs.forEach(input => {
+                let val = parseFloat(input.value) || 0;
+                let due = parseFloat(input.getAttribute('data-due')) || 0;
+                if (val > due) { val = due; input.value = due.toFixed(2); }
+                total += val;
+            });
+            document.getElementById('receiptTotalAmount').innerText = total.toFixed(2);
+            return total;
+        }
+
+        async function submitPaymentReceipt() {
+            const totalPay = calculateReceiptTotal();
+            if (totalPay <= 0) return alert("Please enter an amount to pay.");
+
+            if (receiptPaymentMethod === 'WALLET' && totalPay > currentCustomerWalletBalance) {
+                return alert(`رصيد المحفظة غير كافٍ. الرصيد الحالي: ${currentCustomerWalletBalance.toFixed(2)} QAR`);
+            }
+
+            const inputs = document.querySelectorAll('.receipt-pay-input');
+            const ordersToPay = [];
+            inputs.forEach(input => {
+                let val = parseFloat(input.value) || 0;
+                if (val > 0) {
+                    ordersToPay.push({
+                        order_id: parseInt(input.getAttribute('data-order-id')),
+                        amount: val
+                    });
+                }
+            });
+
+            const btn = document.getElementById('btnSubmitReceipt');
+            btn.innerHTML = "⏳ Processing..."; btn.disabled = true;
+
+            const payload = {
+                customer_id: currentSelectedCustomerId,
+                payment_method: receiptPaymentMethod,
+                orders: ordersToPay
+            };
+
+            if (receiptPaymentMethod === 'GIFT_CARD') {
+                const gcInput = document.getElementById('receiptGiftCardNumber').value.trim();
+                if(!isGiftCardValid || !gcInput) {
+                    alert("Please Check the Gift Card before confirming payment.");
+                    btn.innerHTML = "Confirm Payment"; btn.disabled = false;
+                    return;
+                }
+                payload.gift_card_number = gcInput;
+            }
+
+            try {
+                // 🌟 التعديل هنا: أزلنا سطر ngrok لأنه يسبب حظر (CORS Preflight)
+                const response = await fetch('/api/orders/checkout/pay-receipt/', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    alert("✅ Payment Receipt processed successfully!");
+                    closeModal('receiptModal');
+                    fetchOrders();
+                } else {
+                    const err = await response.json();
+                    alert("❌ Error: " + (err.error || "Payment failed"));
+                }
+            } catch (error) {
+                console.error("Payment Fetch Error:", error);
+                alert("Network Error! Please make sure the server is running.");
+            } finally {
+                btn.innerHTML = "Confirm Payment"; btn.disabled = false;
+            }
+        }
+
+        function printOrderReceipt(orderId) {
+            window.open(`/api/orders/print/${orderId}/`, '_blank', 'width=400,height=600');
+        }
+
+        function printOrderTags(orderId) {
+            // 1. البحث عن الطلب في المصفوفة مع التأكد من نوع البيانات
+            const order = allOrders.find(o => parseInt(o.id) === parseInt(orderId));
+            
+            if (!order || !order.items || order.items.length === 0) {
+                return alert(currentLang === 'ar' ? "⚠️ عذراً، لا توجد بيانات أصناف لهذا الطلب لطباعتها." : "⚠️ Sorry, no item data found for this order.");
+            }
+
+            const dateStr = new Date(order.created_at).toLocaleString('en-GB', { 
+                day: '2-digit', month: '2-digit', year: 'numeric', 
+                hour: '2-digit', minute: '2-digit', hour12: true 
+            }).replace(',', ' •');
+
+            const displayId = String(order.id).padStart(4, '0');
+
+            let printContent = `
+            <html><head>
+                <style>
+                    @page { margin: 0; }
+                    body { font-family: 'Tajawal', sans-serif; text-align: center; margin: 0; padding: 5px; width: 50mm; }
+                    .tag-container { border: 2px solid black; padding: 10px; margin-bottom: 10px; page-break-after: always; border-radius: 8px; }
+                    .header { font-size: 18px; font-weight: 900; margin-bottom: 2px; border-bottom: 1px dashed black; padding-bottom: 5px; }
+                    .date { font-size: 10px; margin-bottom: 8px; font-weight: bold; color: #333; }
+                    .item-name { font-size: 15px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; background: #eee; padding: 3px; }
+                    .piece-count { font-size: 13px; font-weight: bold; margin-bottom: 5px; }
+                    .service-type { font-size: 14px; font-weight: 900; border-top: 1px solid black; pt: 5px; margin-top: 5px; }
+                    .customer-mini { font-size: 10px; font-weight: bold; margin-top: 5px; }
+                </style>
+            </head><body dir="rtl">`;
+
+            // 🌟 توليد تاج منفصل لكل قطعة غسيل 🌟
+            order.items.forEach(item => {
+                const qty = parseInt(item.quantity) || 1;
+                for (let i = 1; i <= qty; i++) {
+                    printContent += `
+                        <div class="tag-container">
+                            <div class="header">طلب: ${displayId}</div>
+                            <div class="date">${dateStr}</div>
+                            <div class="item-name">${item.item_name}</div>
+                            <div class="piece-count">قطعة ${i} من ${qty}</div>
+                            <div class="service-type">${item.status_display || 'غسيل/كوي'}</div>
+                            <div class="customer-mini">${order.customer_name || 'عميل نقدي'}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            printContent += `</body></html>`;
+
+            // 2. فتح نافذة الطباعة
+            const printWin = window.open('', '', 'width=400,height=600');
+            if (!printWin) {
+                return alert(currentLang === 'ar' ? "⚠️ يرجى السماح بالبثق (Pop-ups) في المتصفح لكي تظهر الطباعة." : "⚠️ Please allow pop-ups to print tags.");
+            }
+            
+            printWin.document.write(printContent);
+            printWin.document.close();
+            
+            // التأكد من تحميل الصور والخطوط قبل الطباعة
+            printWin.focus();
+            setTimeout(() => {
+                printWin.print();
+                printWin.close();
+            }, 500);
+        }
+
+        // بدء التشغيل
+       window.onload = function() {
+            fetchCategoriesForFilter(); 
+            fetchLaundryItemsForDropdown(); // جلب الملابس للإضافة
+            fetchOrders();              
+        };
+
+        // ==========================================
+        // 4. مركز الإدارة المالية (Wallets & Gift Cards)
+        // ==========================================
+        let allWalletsData = [];
+        let allGiftCardsData = [];
+        let currentFinanceTab = 'WALLETS';
+
+        async function openFinanceModal() {
+            openModal('financeModal');
+            document.getElementById('financeSearchInput').value = '';
+            
+            document.getElementById('walletsTableBody').innerHTML = `<tr><td colspan="4" class="text-center py-10 text-gray-400 font-bold">Loading Wallets...⏳</td></tr>`;
+            document.getElementById('giftCardsTableBody').innerHTML = `<tr><td colspan="4" class="text-center py-10 text-gray-400 font-bold">Loading Gift Cards...⏳</td></tr>`;
+            
+            try {
+                const wRes = await fetch('/api/accounts/search/');
+                if (wRes.ok) {
+                    const data = await wRes.json();
+                    const customers = Array.isArray(data) ? data : (data.results || []);
+                    allWalletsData = customers.filter(c => parseFloat(c.wallet_balance) > 0);
+                }
+
+                const gRes = await fetch('/api/orders/giftcards/');
+                if (gRes.ok) {
+                    const data = await gRes.json();
+                    allGiftCardsData = Array.isArray(data) ? data : (data.results || []);
+                }
+            } catch (e) {
+                console.error("Finance API Error:", e);
+            }
+
+            renderFinanceTables();
+        }
+
+        function switchFinanceTab(tabName) {
+            currentFinanceTab = tabName;
+            
+            const tabW = document.getElementById('tabWallets');
+            const tabG = document.getElementById('tabGiftCards');
+            
+            if (tabName === 'WALLETS') {
+                tabW.className = "pb-3 border-b-4 border-purple-600 text-purple-700 transition flex items-center gap-2";
+                tabG.className = "pb-3 border-b-4 border-transparent hover:text-gray-800 transition flex items-center gap-2";
+                document.getElementById('walletsContainer').classList.remove('hidden');
+                document.getElementById('giftCardsContainer').classList.add('hidden');
+            } else {
+                tabG.className = "pb-3 border-b-4 border-indigo-600 text-indigo-700 transition flex items-center gap-2";
+                tabW.className = "pb-3 border-b-4 border-transparent hover:text-gray-800 transition flex items-center gap-2";
+                document.getElementById('giftCardsContainer').classList.remove('hidden');
+                document.getElementById('walletsContainer').classList.add('hidden');
+            }
+            filterFinanceData(); 
+        }
+
+        function renderFinanceTables(filteredWallets = allWalletsData, filteredCards = allGiftCardsData) {
+            const tbodyW = document.getElementById('walletsTableBody');
+            if (filteredWallets.length === 0) {
+                tbodyW.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-400">No wallet data found.</td></tr>`;
+            } else {
+                tbodyW.innerHTML = filteredWallets.map(w => `
+                    <tr class="hover:bg-purple-50 transition">
+                        <td class="p-4 font-bold text-gray-800 uppercase">${w.name || 'Unknown'}</td>
+                        <td class="p-4">
+                            <p class="text-xs font-bold text-gray-600">${w.phone || '---'}</p>
+                            <p class="text-[10px] text-gray-400">File: ${w.file_number || 'N/A'}</p>
+                        </td>
+                        <td class="p-4 text-right font-black text-purple-600 text-lg">${parseFloat(w.wallet_balance).toFixed(2)} <span class="text-xs text-purple-400">QAR</span></td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center gap-3">
+                                <span class="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-bold border border-emerald-200">Active</span>
+                                <button onclick="printWalletBalance('${w.name}', '${w.phone}', '${w.file_number || '---'}', '${w.wallet_balance}')" class="text-gray-400 hover:text-purple-600 transition text-lg" title="Print Balance">🖨️</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            const tbodyG = document.getElementById('giftCardsTableBody');
+            if (filteredCards.length === 0) {
+                tbodyG.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-400">No gift cards found.</td></tr>`;
+            } else {
+                tbodyG.innerHTML = filteredCards.map(g => {
+                    const isActive = parseFloat(g.balance) > 0 && g.is_active !== false;
+                    return `
+                    <tr class="hover:bg-indigo-50 transition">
+                        <td class="p-4 font-bold text-indigo-700 font-mono tracking-widest">${g.card_number || '---'}</td>
+                        <td class="p-4 text-right text-gray-500 font-bold line-through text-xs">${parseFloat(g.initial_balance || g.balance).toFixed(2)} QAR</td>
+                        <td class="p-4 text-right font-black text-indigo-600 text-lg">${parseFloat(g.balance).toFixed(2)} <span class="text-xs text-indigo-400">QAR</span></td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center gap-3">
+                                <span class="${isActive ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : 'bg-red-100 text-red-600 border-red-200'} px-3 py-1 rounded-full text-[10px] font-bold border">
+                                    ${isActive ? 'Available' : 'Empty / Used'}
+                                </span>
+                               <button onclick="printGiftCardBalance('${g.card_number}', '${g.balance}', '${g.customer_name || '---'}', '${g.customer_file_number || g.file_number || '---'}')" class="text-gray-400 hover:text-indigo-600 transition text-lg" title="Print Balance">🖨️</button>
+                            </div>
+                        </td>
+                    </tr>
+                `}).join('');
+            }
+        }
+
+        function filterFinanceData() {
+            const query = document.getElementById('financeSearchInput').value.toLowerCase();
+            
+            if (currentFinanceTab === 'WALLETS') {
+                const filtered = allWalletsData.filter(w => 
+                    (w.name && w.name.toLowerCase().includes(query)) || 
+                    (w.phone && w.phone.includes(query)) ||
+                    (w.file_number && w.file_number.toLowerCase().includes(query))
+                );
+                renderFinanceTables(filtered, allGiftCardsData);
+            } else {
+                const filtered = allGiftCardsData.filter(g => 
+                    (g.card_number && g.card_number.toLowerCase().includes(query))
+                );
+                renderFinanceTables(allWalletsData, filtered);
+            }
+        }
+
+        async function updateOrderStatus(newStatus) {
+            if (!currentSelectedOrderId) return alert("No order selected!");
+
+            try {
+                const response = await fetch(`/api/orders/checkout/${currentSelectedOrderId}/`, {
+                    method: 'PATCH', 
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken') 
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (response.ok) {
+                    alert(`✅ Order status updated to ${newStatus}`);
+                    closeModal('orderDetailModal'); 
+                    fetchOrders(); 
+                } else {
+                    alert("❌ Failed to update status");
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function printWalletBalance(name, phone, file, balance) {
+            const data = { name, phone, file, balance };
+            localStorage.setItem('printBalance', JSON.stringify(data));
+            window.open('/wallet-balance-print/', '_blank', 'width=400,height=600');
+        }
+
+        function printGiftCardBalance(cardNum, balance, customerName, customerFile) {
+    const giftData = {
+        cardNum: cardNum,
+        balance: balance,
+        name: customerName,
+        file: customerFile || '---' // هنا يسحب رقم الملف الحقيقي أو يضع خطوط إذا كان فارغاً
+    };
+    localStorage.setItem('lastGiftCard', JSON.stringify(giftData));
+    window.open('/gift-card-receipt/', '_blank', 'width=400,height=600');
+}
+
+      async function updateItemStatus(itemId, newStatus) {
+            try {
+                // 🌟 إرسال الحالة إلى السيرفر بناءً على مسار items الجديد 🌟
+                const response = await fetch(`/api/orders/items/${itemId}/`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ status: newStatus }) 
+                });
+
+                if (response.ok) {
+                    viewOrderDetails(currentSelectedOrderId); // تحديث الواجهة مباشرة
+                } else {
+                    // محاولة بديلة
+                    await fetch(`/api/orders/order-items/${itemId}/`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                        body: JSON.stringify({ status: newStatus })
+                    });
+                    viewOrderDetails(currentSelectedOrderId);
+                }
+            } catch (e) { console.error("Update Error", e); }
+        }
+
+ // ==========================================
+// 🛡️ نظام التدقيق والمراقبة المزدوج اللغة (Bilingual Audit Action) 🛡️
+// ==========================================
+
+let orderToVoidId = null;
+
+// قاموس الترجمة الخاص بالمربع المخيف
+const voidI18n = {
+    ar: {
+        title: "تنبيه أمني خطير!",
+        desc1: "أنت على وشك إلغاء هذا الطلب نهائياً.",
+        desc2: "هذه العملية حساسة جداً، وسيتم تسجيلها فوراً في (قسم المراقبة والتدقيق) مع توثيق الوقت.",
+        label: "يرجى كتابة سبب الإلغاء بدقة (إجباري) *",
+        placeholder: "مثال: العميل ألغى الطلب، خطأ في إدخال القطع...",
+        error: "❌ يجب كتابة السبب لكي تتمكن من الإلغاء!",
+        cancelBtn: "تراجع (إبقاء الطلب)",
+        confirmBtn: "تأكيد الإلغاء",
+        successAlert: "تم إلغاء الطلب وتسجيل السبب في قسم المراقبة بنجاح ✅",
+        errorAlert: "❌ حدث خطأ أثناء الإلغاء، تأكد من اتصالك بالسيرفر.",
+        reasonPrefix: "تم الإلغاء عبر الرقابة بسبب: "
+    },
+    en: {
+        title: "CRITICAL SECURITY ALERT!",
+        desc1: "You are about to permanently cancel this order.",
+        desc2: "This is a highly sensitive action. It will be instantly recorded in the Audit & Monitoring section.",
+        label: "Please enter the exact reason for cancellation (Required) *",
+        placeholder: "e.g., Customer changed mind, data entry error...",
+        error: "❌ You must enter a reason to proceed!",
+        cancelBtn: "Cancel (Keep Order)",
+        confirmBtn: "Confirm Void",
+        successAlert: "Order cancelled and reason recorded successfully ✅",
+        errorAlert: "❌ Error occurred while cancelling. Check server.",
+        reasonPrefix: "Voided via Audit due to: "
+    }
+};
+
+// معرفة لغة الصفحة الحالية من اتجاه الشاشة
+function getCurrentLang() {
+    return document.getElementById('html-root').getAttribute('dir') === 'rtl' ? 'ar' : 'en';
+}
+
+// 1. دالة إظهار المربع المخيف باللغة المناسبة
+function confirmVoid(orderId) {
+    orderToVoidId = orderId;
+    const lang = getCurrentLang();
+    const t = voidI18n[lang];
+
+    // تبديل النصوص حسب اللغة
+    document.getElementById('scaryTitle').innerText = t.title;
+    document.getElementById('scaryDesc1').innerText = t.desc1;
+    document.getElementById('scaryDesc2').innerText = t.desc2;
+    document.getElementById('scaryLabel').innerText = t.label;
+    document.getElementById('voidReasonInput').placeholder = t.placeholder;
+    document.getElementById('voidErrorMsg').innerText = t.error;
+    document.getElementById('btnScaryCancel').innerText = t.cancelBtn;
+    document.getElementById('btnScaryConfirm').innerHTML = `🗑️ ${t.confirmBtn}`;
+
+    // إظهار المربع
+    document.getElementById('voidReasonInput').value = ''; 
+    document.getElementById('voidErrorMsg').classList.add('hidden'); 
+    document.getElementById('scaryVoidModal').classList.remove('hidden'); 
+    document.getElementById('voidReasonInput').focus();
+}
+
+// 2. دالة الإغلاق
+function closeScaryModal() {
+    document.getElementById('scaryVoidModal').classList.add('hidden');
+    orderToVoidId = null;
+}
+
+// 3. التنفيذ
+// 3. التنفيذ
+function executeVoidAction() {
+    const reason = document.getElementById('voidReasonInput').value.trim();
+    const errorMsg = document.getElementById('voidErrorMsg');
+
+    if (!reason || reason.length < 3) {
+        errorMsg.classList.remove('hidden');
+        document.getElementById('voidReasonInput').classList.add('border-red-600');
+        return;
+    }
+
+    // 🌟 التعديل هنا: نحفظ رقم الطلب قبل إغلاق النافذة لكي لا يضيع 🌟
+    const currentOrderId = orderToVoidId; 
+    
+    closeScaryModal(); // الآن نغلق النافذة بأمان
+    const lang = getCurrentLang();
+    
+    // نرسل الرقم المحفوظ للسيرفر
+    saveAuditAction(currentOrderId, voidI18n[lang].reasonPrefix + reason, voidI18n[lang]);
+}
+// 4. الإرسال للسيرفر
+async function saveAuditAction(orderId, fullReason, t) {
+    try {
+        const res = await fetch(`/api/orders/checkout/${orderId}/`, {
+            method: 'PATCH',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'X-CSRFToken': getCookie('csrftoken') 
+            },
+            body: JSON.stringify({ 
+                is_void: true, 
+                remarks: fullReason,
+                status: 'VOID' // 🌟 إضافة تغيير الحالة إلى VOID لتعكس الإلغاء 🌟
+            })
+        });
+        
+        if (res.ok) {
+            alert(t.successAlert);
+            
+            // 🌟 التعديل هنا: تحديث البيانات محلياً بدلاً من إعادة تحميل الصفحة 🌟
+            const updatedOrder = await res.json();
+            
+            // تحديث الطلب في المصفوفة الرئيسية
+            const orderIndex = allOrders.findIndex(o => o.id === orderId);
+            if (orderIndex !== -1) {
+                allOrders[orderIndex] = updatedOrder;
+            }
+            
+            // إعادة رسم الجدول والعدادات
+            applyFilters();
+            
+        } else {
+            // سحب رسالة الخطأ الحقيقية من السيرفر وعرضها
+            const errorData = await res.json();
+            console.error("Server Error:", errorData);
+            alert(`❌ فشل الإلغاء من السيرفر:\n${JSON.stringify(errorData)}`);
+        }
+    } catch (e) {
+        console.error("Connection error:", e);
+        alert(t.errorAlert);
+    }
+}
+    </script>
+
+    <script>
+        async function enforcePermissions() {
+            try {
+                const res = await fetch('/api/accounts/my-permissions/');
+                const perms = await res.json();
+
+                if (perms.is_superuser === true) return;
+// 1. إذا لم يكن لديه صلاحية الدخول للصفحة الحالية
+                if (perms.can_access_orders === false || perms.error) { // 💡 ملاحظة: غيّر can_access_orders حسب الصفحة (pos في الكاشير، إلخ)
+                    
+                    // 🌟 كود التوجيه الذكي: يبحث عن أول صفحة مسموحة للموظف ليرجعه لها
+                    let fallbackUrl = '/logout/';
+                    let fallbackText = 'تسجيل الخروج';
+                    
+                    if (perms.can_access_pos) { fallbackUrl = '/cashier/'; fallbackText = 'العودة للكاشير'; }
+                    else if (perms.can_access_customers) { fallbackUrl = '/customers/'; fallbackText = 'العودة للعملاء'; }
+                    else if (perms.can_access_orders) { fallbackUrl = '/orders/management/'; fallbackText = 'العودة للطلبات'; }
+
+                    document.body.innerHTML = `
+                        <div class="h-screen w-full flex flex-col items-center justify-center bg-gray-50">
+                            <span class="text-6xl mb-4">🛑</span>
+                            <h1 class="text-3xl font-black text-red-600 mb-2">Access Denied! (غير مصرح لك)</h1>
+                            <p class="text-gray-500 font-bold mb-6">عفواً، ليس لديك الصلاحية لدخول هذه الصفحة.</p>
+                            <div class="flex gap-4">
+                                <button onclick="window.history.back()" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-gray-300 transition">⬅ رجوع للصفحة السابقة</button>
+                                <a href="${fallbackUrl}" class="bg-[#007ec5] text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 transition">🏠 ${fallbackText}</a>
+                            </div>
+                        </div>`;
+                    return;
+                }
+
+                // 2. إخفاء الأزرار الممنوعة 
+                let cssToInject = '';
+                
+                if (!perms.can_access_pos) cssToInject += 'a[href="/cashier/"] { display: none !important; } ';
+                if (!perms.can_access_customers) cssToInject += 'a[href="/customers/"] { display: none !important; } ';
+
+                // منع الإلغاء (Void)، المركز المالي، إضافة قطع، تغيير حالة الفاتورة
+                if (!perms.can_void_order) cssToInject += 'button[title="Cancel Order"] { display: none !important; } ';
+                if (!perms.can_access_finance_center) cssToInject += 'button[onclick*="openFinanceModal"] { display: none !important; } ';
+                if (!perms.can_change_order_status) cssToInject += 'button[onclick*="updateOrderStatus"], button[title="Mark Piece as Ready"], button[title="Mark Piece as Delivered"] { display: none !important; } ';
+                if (!perms.can_add_items_to_order) cssToInject += 'button[onclick*="showAddItemRow"] { display: none !important; } ';
+                
+                // نربط الدفع من داخل الطلبات بنفس صلاحية (سداد الديون)
+                if (!perms.can_pay_debt) cssToInject += 'button[title="Pay Order"] { display: none !important; } ';
+
+                if (cssToInject !== '') {
+                    const style = document.createElement('style');
+                    style.innerHTML = cssToInject;
+                    document.head.appendChild(style);
+                }
+
+            } catch (e) {
+                console.error("Permission check failed", e);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', enforcePermissions);
+
+        function executeExit() {
+            window.location.href = '/logout/';
+        }
+    </script>
+</body>
+</html>

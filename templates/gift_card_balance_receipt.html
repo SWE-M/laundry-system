@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gift Card Balance</title>
+    <style>
+        @page { margin: 0; size: 80mm auto; }
+        body { font-family: 'Arial', sans-serif; width: 72mm; margin: 0 auto; padding: 5mm; font-size: 14px; text-align: center; font-weight: bold; }
+        .logo { width: 85px; height: auto; margin-bottom: 10px; }
+        .title { font-size: 18px; font-weight: 900; border: 1px solid #000; padding: 6px 0; margin: 15px 0; }
+        .card-info { background: #f9f9f9; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
+        .remaining-label { font-size: 12px; color: #444; margin-top: 15px; }
+        .balance-value { font-size: 32px; font-weight: 900; margin: 5px 0 15px 0; }
+    </style>
+</head>
+<body>
+    <img src="" class="logo">
+    <div class="title">CARD BALANCE / رصيد البطاقة</div>
+
+    <div class="card-info">
+        <div>CARD NUMBER / رقم البطاقة</div>
+        <div style="font-size: 24px; letter-spacing: 3px;" id="cardNum">---</div>
+    </div>
+
+    <div class="remaining-label">
+        REMAINING BALANCE / الرصيد المتبقي
+    </div>
+    <div class="balance-value">
+        <span id="balance">0.00</span> QAR
+    </div>
+
+    <div style="font-size: 11px; border-top: 1px dashed #000; padding-top: 10px;">
+        يمكنكم استخدام هذا الرصيد في زيارتكم القادمة.
+        <br>
+        This balance is available for your next visit.
+    </div>
+
+    <div style="margin-top: 15px;"><svg id="barcode"></svg></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <script>
+        window.onload = function() {
+            const data = JSON.parse(localStorage.getItem('lastGiftCard'));
+            if(!data) return;
+            document.getElementById('cardNum').innerText = data.cardNum;
+            document.getElementById('balance').innerText = parseFloat(data.balance).toFixed(2);
+            JsBarcode("#barcode", data.cardNum, { format: "CODE128", width: 2, height: 40, displayValue: false });
+            setTimeout(() => { window.print(); window.close(); }, 500);
+        };
+    </script>
+</body>
+</html>

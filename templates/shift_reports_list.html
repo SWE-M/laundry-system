@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سجل قيود اليومية - مغسلة المرونة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
+        
+        /* 🌟 إعدادات الطباعة الحرارية (الفاتورة 80mm فقط) 🌟 */
+        @media print {
+            body * { visibility: hidden; }
+            .active-print, .active-print * { visibility: visible; }
+            .active-print { 
+                display: block !important; 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 80mm; 
+                padding: 0; 
+                margin: 0; 
+                font-family: sans-serif; 
+                color: #000;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen relative">
+
+    <main class="flex flex-col">
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm">
+            <div class="flex items-center gap-4">
+                <a href="/admin-dashboard/" class="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded hover:bg-blue-700 transition-all" title="العودة للرئيسية">
+                    <span class="text-lg font-bold">➡️</span>
+                </a>
+                <div>
+                    <h2 class="text-xl font-black text-gray-800">تقارير إغلاق الوردية</h2>
+                    <p class="text-[10px] text-gray-500 font-bold">مراجعة يوميات الصندوق ومطابقة الكاشير</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="text-left rtl:text-right">
+                    <p class="text-sm font-bold text-gray-800 leading-none">{{ request.user.username|default:"admin" }}</p>
+                    <p class="text-xs text-gray-500 mt-1">مدير النظام</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg">A</div>
+            </div>
+        </header>
+
+        <div class="p-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right border-collapse">
+                        <thead class="bg-gray-50 text-gray-600 text-xs border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 font-bold">رقم الجلسة</th>
+                                <th class="px-6 py-4 font-bold">الكاشير</th>
+                                <th class="px-6 py-4 font-bold">وقت الإغلاق</th>
+                                <th class="px-6 py-4 font-bold">المبيعات</th>
+                                <th class="px-6 py-4 font-bold">الكاش الفعلي</th>
+                                <th class="px-6 py-4 font-bold text-center">العجز/الزيادة</th>
+                                <th class="px-6 py-4 font-bold text-center">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for report in reports %}
+                            <tr class="hover:bg-blue-50/50 transition-all">
+                                <td class="px-6 py-4 text-sm font-bold text-blue-700">{{ report.session_id }}</td>
+                                <td class="px-6 py-4 text-sm font-bold text-gray-800">{{ report.cashier.username|default:"admin" }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">{{ report.closed_at|date:"H:i Y-m-d" }}</td>
+                                <td class="px-6 py-4 text-sm font-black text-gray-900">QAR {{ report.total_sales }}</td>
+                                <td class="px-6 py-4 text-sm font-black text-emerald-600">QAR {{ report.actual_cash }}</td>
+                                <td class="px-6 py-4 text-center text-sm font-black {% if report.difference < 0 %}text-red-500{% else %}text-emerald-500{% endif %}">
+                                    QAR {{ report.difference }}
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <button onclick="printDetailedReport(this)" 
+                                        data-id="{{ report.session_id }}"
+                                        data-cashier="{{ report.cashier.username|default:'admin' }}"
+                                        data-time="{{ report.closed_at|date:'H:i Y-m-d' }}"
+                                        data-sales="{{ report.total_sales|default:0 }}"
+                                        data-credit="{{ report.credit_sales|default:0 }}"
+                                        data-card="{{ report.card_sales|default:0 }}"
+                                        data-cash="{{ report.cash_sales|default:0 }}"
+                                        data-wallet="{{ report.wallet_sales|default:0 }}"
+                                        data-expenses="{{ report.expenses_cash|default:0 }}"
+                                        data-deleted="{{ report.deleted_orders_amount|default:0 }}"
+                                        data-system="{{ report.expected_cash|default:0 }}"
+                                        data-actual="{{ report.actual_cash|default:0 }}"
+                                        data-diff="{{ report.difference|default:0 }}"
+                                        data-notes="{{ report.notes|default:'لا توجد ملاحظات' }}"
+                                        class="bg-[#1e293b] text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-black transition-all shadow flex items-center gap-2 mx-auto">
+                                        <span>🖨️</span> طباعة
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="px-6 py-24 text-center">
+                                    <div class="text-5xl mb-4 opacity-20">🔒</div>
+                                    <p class="text-gray-500 font-bold text-lg">لا توجد تقارير ورديات مغلقة حتى الآن.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="printShiftReportInvoice" class="hidden text-black font-sans p-3 w-[80mm] mx-auto bg-white" dir="rtl">
+        <div class="text-center mb-4">
+            <h2 class="font-black text-2xl tracking-wider text-[#21355b] uppercase font-sans" dir="ltr">SESSION REPORT</h2>
+            <h3 class="font-bold text-lg mt-0.5 text-[#21355b]" style="font-family: 'Tajawal', sans-serif;">تقرير الجلسة</h3>
+            <p class="font-bold text-[14px] mt-1 text-gray-800 tracking-widest font-sans" id="print-old-id" dir="ltr">SES00000000000</p>
+        </div>
+
+        <div class="text-[12px] font-bold space-y-1 mb-2">
+            <div class="flex justify-between"><span class="text-gray-600">فتح / Opened</span><span>---</span></div>
+            <div class="flex justify-between"><span class="text-gray-600">الوقت / Time</span><span id="print-old-time" dir="ltr">---</span></div>
+            <div class="flex justify-between"><span class="text-gray-600">أمين الصندوق / Cashier</span><span id="print-old-cashier">admin</span></div>
+            <div class="flex justify-between"><span class="text-gray-600">المدة / Duration</span><span>---</span></div>
+        </div>
+
+        <div class="text-[12px] font-bold space-y-1 border-t border-b border-gray-300 py-1.5 mb-2">
+            <div class="flex justify-between"><span class="text-gray-600">طلبات جاهزة / Ready Orders</span><span>0</span></div>
+            <div class="flex justify-between"><span class="text-gray-600">طلبات مستلمة / Delivered Orders</span><span>0</span></div>
+        </div>
+
+        <div class="text-center mb-3">
+            <p class="text-[11px] font-bold text-gray-600 tracking-wide uppercase">إجمالي المبيعات / TOTAL SALES</p>
+            <p class="text-[28px] font-black tracking-tighter mt-1" id="print-old-sales" dir="ltr">QR 0.00</p>
+        </div>
+
+        <div class="text-[13px] font-bold space-y-1.5 border-b border-gray-300 pb-2 mb-2">
+            <div class="flex justify-between text-gray-600"><span>مبيعات آجلة / (Not Paid) Credit Sales</span><span class="text-black" id="print-old-credit" dir="ltr">QR 0.00</span></div>
+            <div class="flex justify-between text-gray-600"><span>دفع بطاقة / Card Payment</span><span class="text-black" id="print-old-card" dir="ltr">QR 0.00</span></div>
+            <div class="flex justify-between text-gray-600"><span>دفع نقدي / Cash Payment</span><span class="text-black" id="print-old-cash" dir="ltr">QR 0.00</span></div>
+            <div class="flex justify-between text-gray-600"><span>رصيد العميل / Customer Balance</span><span class="text-black" id="print-old-wallet" dir="ltr">QR 0.00</span></div>
+            
+            <div class="flex justify-between pt-1 text-gray-600"><span>مصروفات / (Expenses)</span><span class="text-black" id="print-old-exp-total" dir="ltr">QR 0.00</span></div>
+            <div class="flex justify-between text-[11px] text-gray-400 pr-4"><span>نقداً / Cash</span><span class="text-black" id="print-old-exp-cash" dir="ltr">QR 0.00</span></div>
+            
+            <div class="flex justify-between pt-1 text-gray-600"><span>مشتريات / (Purchases)</span><span class="text-black" dir="ltr">QR 0.00</span></div>
+            <div class="flex justify-between text-gray-600"><span>طلبات محذوفة / (Deleted Orders)</span><span class="text-black" id="print-old-del" dir="ltr">QR 0.00</span></div>
+        </div>
+
+        <div class="text-center mb-4">
+            <p class="text-[11px] font-bold text-gray-600 tracking-wide uppercase">إجمالي التحصيل / TOTAL COLLECTION</p>
+            <p class="text-[28px] font-black tracking-tighter mt-1" id="print-old-collection" dir="ltr">QR 0.00</p>
+        </div>
+
+        <div class="border-t border-gray-300 pt-2 mb-4 text-[12px] font-bold">
+            <p class="text-center text-gray-600 mb-1 uppercase tracking-wide">مطابقة الكاش / CASH MATCH</p>
+            <div class="flex justify-between"><span>النظام / System Cash</span><span id="print-old-sys" class="text-black" dir="ltr">QR 0.00</span></div>
+            <div class="flex justify-between"><span>الفعلي / Actual Cash</span><span id="print-old-act" class="text-black" dir="ltr">QR 0.00</span></div>
+            <div class="flex justify-between mt-1 pt-1 border-t border-dashed border-gray-300 text-[13px]">
+                <span>الفرق / Difference</span><span id="print-old-diff" dir="ltr" class="text-black">QR 0.00</span>
+            </div>
+        </div>
+
+        <div class="text-[13px] font-bold mb-4">
+            <p class="text-gray-600 border-b border-gray-300 pb-0.5 mb-1 uppercase">ملاحظات / NOTES:</p>
+            <p id="print-old-notes" class="text-sm">لا توجد ملاحظات</p>
+        </div>
+
+        <div class="text-[13px] font-bold mb-6">
+            <p class="text-gray-600 border-b border-gray-300 pb-0.5 mb-6 uppercase">التوقيع / SIGNATURE:</p>
+            <p class="text-center text-gray-500 border-t border-gray-300 pt-1">التوقيع المعتمد / Authorized Signature</p>
+        </div>
+
+        <div class="text-center text-[10px] text-gray-400 border-t border-gray-300 pt-1">
+            Printed: <span id="print-old-print-time" dir="ltr"></span>
+        </div>
+    </div>
+
+    <script>
+        // 🌟 الدالة المحمية لمعالجة الفواصل العربية والكسور
+        const safeParse = (val) => {
+            if (!val || val === 'None' || val === '') return 0;
+            return parseFloat(String(val).replace(',', '.')) || 0;
+        };
+
+        function printDetailedReport(btnElement) {
+            // 1. سحب البيانات المضمونة
+            const id = btnElement.getAttribute('data-id');
+            const cashier = btnElement.getAttribute('data-cashier');
+            const time = btnElement.getAttribute('data-time');
+            const notes = btnElement.getAttribute('data-notes');
+            
+            // تحويل الأرقام بدقة تامة باستخدام الدالة المحمية
+            const sales = safeParse(btnElement.getAttribute('data-sales'));
+            const credit = safeParse(btnElement.getAttribute('data-credit'));
+            const card = safeParse(btnElement.getAttribute('data-card'));
+            const cash = safeParse(btnElement.getAttribute('data-cash'));
+            const wallet = safeParse(btnElement.getAttribute('data-wallet'));
+            const expenses = safeParse(btnElement.getAttribute('data-expenses'));
+            const deleted = safeParse(btnElement.getAttribute('data-deleted'));
+            const systemCash = safeParse(btnElement.getAttribute('data-system'));
+            const actualCash = safeParse(btnElement.getAttribute('data-actual'));
+            const difference = safeParse(btnElement.getAttribute('data-diff'));
+
+            // حساب إجمالي التحصيل
+            const totalCollection = (cash + card) - expenses;
+
+            // 2. تعبئة الفاتورة المخفية
+            document.getElementById('print-old-id').innerText = id;
+            document.getElementById('print-old-cashier').innerText = cashier;
+            document.getElementById('print-old-time').innerText = time;
+            
+            document.getElementById('print-old-sales').innerText = `QR ${sales.toFixed(2)}`;
+            document.getElementById('print-old-credit').innerText = `QR ${credit.toFixed(2)}`;
+            document.getElementById('print-old-card').innerText = `QR ${card.toFixed(2)}`;
+            document.getElementById('print-old-cash').innerText = `QR ${cash.toFixed(2)}`;
+            document.getElementById('print-old-wallet').innerText = `QR ${wallet.toFixed(2)}`;
+            
+            document.getElementById('print-old-exp-total').innerText = `QR ${expenses.toFixed(2)}`;
+            document.getElementById('print-old-exp-cash').innerText = `QR ${expenses.toFixed(2)}`;
+            document.getElementById('print-old-del').innerText = `QR ${deleted.toFixed(2)}`;
+            
+            document.getElementById('print-old-collection').innerText = `QR ${totalCollection.toFixed(2)}`;
+            
+            document.getElementById('print-old-sys').innerText = `QR ${systemCash.toFixed(2)}`;
+            document.getElementById('print-old-act').innerText = `QR ${actualCash.toFixed(2)}`;
+            
+            // معالجة العجز والزيادة
+            const diffEl = document.getElementById('print-old-diff');
+            if (difference < 0) {
+                diffEl.innerHTML = `QR ${Math.abs(difference).toFixed(2)} <span class="font-normal text-[11px] font-sans" dir="rtl">(عجز)</span>`;
+            } else if (difference > 0) {
+                diffEl.innerHTML = `QR ${difference.toFixed(2)} <span class="font-normal text-[11px] font-sans" dir="rtl">(زيادة)</span>`;
+            } else {
+                diffEl.innerHTML = `QR ${difference.toFixed(2)} <span class="font-normal text-[11px] font-sans" dir="rtl">(مطابق)</span>`;
+            }
+
+            document.getElementById('print-old-notes').innerText = notes && notes !== 'None' ? notes : 'لا توجد ملاحظات / No notes';
+            
+            // توقيت الطباعة
+            const printTime = new Date().toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+            document.getElementById('print-old-print-time').innerText = printTime;
+
+            // 3. تفعيل الطباعة
+            const printDiv = document.getElementById('printShiftReportInvoice');
+            printDiv.classList.add('active-print');
+            window.print();
+            
+            setTimeout(() => printDiv.classList.remove('active-print'), 1000);
+        }
+    </script>
+</body>
+</html>

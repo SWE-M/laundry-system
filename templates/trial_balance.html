@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ميزان المراجعة - مغسلة المرونة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .tab-btn.active { background-color: #007ec5; color: white; }
+        .tab-btn:not(.active) { color: #64748b; background-color: transparent; }
+        .tab-btn:not(.active):hover { background-color: #f8fafc; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: white !important; margin: 0; padding: 0; }
+            main { max-width: 100% !important; padding: 0 !important; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+            .print-header h1 { font-size: 24pt; font-weight: 900; }
+            table { width: 100% !important; border-collapse: collapse !important; }
+            th { background-color: #f8fafc !important; border: 1px solid #ddd !important; -webkit-print-color-adjust: exact; }
+            td { border: 1px solid #eee !important; }
+        }
+        .print-header { display: none; }
+    </style>
+</head>
+<body class="min-h-screen pb-10">
+
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm sticky top-0 z-50 no-print">
+        <div class="flex items-center gap-4">
+            <a href="/admin-dashboard/" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm border border-gray-200">
+                <span>⬅️</span> عودة للرئيسية
+            </a>
+            <div class="h-8 w-px bg-gray-200"></div>
+            <h2 class="text-xl font-black text-gray-800">Trial Balance (ميزان المراجعة)</h2>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="fetchTrialBalance()" class="bg-white border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 transition shadow-sm">🔄 Refresh Report</button>
+            <button onclick="downloadCSV()" class="bg-white border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 transition shadow-sm">📥 Download CSV</button>
+            <button onclick="window.print()" class="bg-[#007ec5] text-white px-5 py-2 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700 transition flex items-center gap-2">🖨️ Print Report</button>
+        </div>
+    </header>
+
+    <main class="max-w-[1300px] mx-auto p-6 space-y-6">
+        
+        <div class="print-header">
+            <h1>AL MARONA LAUNDRY</h1>
+            <h2>Trial Balance (ميزان المراجعة)</h2>
+            <p id="print-date-view" class="font-bold text-sm">As of: ---</p>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6 space-y-6">
+            
+            <div class="flex justify-between items-center no-print">
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 right-3 flex items-center text-gray-400 pointer-events-none">📅</span>
+                        <input type="date" id="reportDate" onchange="updatePrintDate()" class="border border-slate-200 rounded-lg pr-10 pl-4 py-2 text-sm font-bold outline-none focus:border-blue-400 w-48">
+                    </div>
+                    <div class="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="zeroBalanceToggle" onchange="renderTable()" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                        <span class="text-xs font-bold text-slate-600">Include Zero Balances</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-100 p-1 rounded-xl flex">
+                    <button id="detailedTab" onclick="switchTab('detailed')" class="tab-btn active px-8 py-2 rounded-lg text-sm font-black transition-all">Detailed</button>
+                    <button id="summaryTab" onclick="switchTab('summary')" class="tab-btn px-8 py-2 rounded-lg text-sm font-black transition-all">Summary</button>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <h3 id="reportTitle" class="text-2xl font-black text-slate-800">Detailed Trial Balance</h3>
+                <p id="asOfDate" class="text-slate-500 text-sm font-bold">As of: ---</p>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-right" id="trialBalanceTable">
+                    <thead>
+                        <tr class="text-slate-400 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
+                            <th class="p-4">Account</th>
+                            <th class="p-4 text-center">Debit</th>
+                            <th class="p-4 text-center">Credit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tb-body" class="divide-y divide-slate-50 text-slate-700 font-bold">
+                        <tr><td colspan="3" class="p-12 text-center text-slate-300">جاري سحب البيانات المالية... ⏳</td></tr>
+                    </tbody>
+                    <tfoot class="border-t-2 border-slate-100">
+                        <tr class="text-lg font-black text-slate-900 bg-slate-50/50">
+                            <td class="p-6">Total</td>
+                            <td id="total-debit" class="p-6 text-center">0.00</td>
+                            <td id="total-credit" class="p-6 text-center">0.00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentTab = 'detailed';
+        let allAccounts = [];
+
+        // 🌟 1. تحديث التاريخ في الشاشة والطباعة 🌟
+        function updatePrintDate() {
+            const dateVal = document.getElementById('reportDate').value;
+            if(!dateVal) return;
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const formatted = new Date(dateVal).toLocaleDateString('en-US', options);
+            document.getElementById('asOfDate').innerText = "As of: " + formatted;
+            document.getElementById('print-date-view').innerText = "As of: " + formatted;
+            // هنا يمكنك إضافة استدعاء للـ API لجلب بيانات تاريخ محدد مستقبلاً
+            // fetchTrialBalance(dateVal); 
+        }
+
+        // 🌟 2. تبديل نظام العرض (ملخص / مفصل) 🌟
+        function switchTab(tab) {
+            currentTab = tab;
+            // تغيير شكل الأزرار
+            document.getElementById('detailedTab').classList.toggle('active', tab === 'detailed');
+            document.getElementById('summaryTab').classList.toggle('active', tab === 'summary');
+            document.getElementById('reportTitle').innerText = tab === 'detailed' ? 'Detailed Trial Balance' : 'Summary Trial Balance';
+            
+            // إعادة رسم الجدول بناءً على التبويب الجديد
+            renderTable();
+        }
+
+        // 🌟 3. تحميل ملف CSV للإكسل 🌟
+        function downloadCSV() {
+            let csv = [];
+            const rows = document.querySelectorAll("#trialBalanceTable tr");
+            
+            for (let i = 0; i < rows.length; i++) {
+                let row = [], cols = rows[i].querySelectorAll("td, th");
+                for (let j = 0; j < cols.length; j++) {
+                    // تنظيف النص من الفواصل والمسافات الزائدة
+                    let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ").replace(/"/g, '""');
+                    row.push('"' + data + '"');
+                }
+                csv.push(row.join(","));
+            }
+            
+            // إضافة دعم اللغة العربية في الإكسل (\uFEFF)
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + csv.join("\n");
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Trial_Balance_${document.getElementById('reportDate').value}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 🌟 4. جلب البيانات من السيرفر 🌟
+        async function fetchTrialBalance() {
+            document.getElementById('tb-body').innerHTML = `<tr><td colspan="3" class="p-12 text-center text-blue-500 font-bold animate-pulse">جاري تحديث البيانات... ⏳</td></tr>`;
+            try {
+                const startDate = '2000-01-01'; // يمكنك تعديله لاحقاً ليكون من فلاتر الصفحة
+const endDate = document.getElementById('reportDate').value;
+const res = await fetch(`/api/accounts/trial-balance-data/?start=${startDate}&end=${endDate}`);
+                const data = await res.json();
+                allAccounts = Array.isArray(data) ? data : (data.results || []);
+                renderTable(); // رسم الجدول بعد جلب البيانات
+            } catch (e) {
+                console.error(e);
+                document.getElementById('tb-body').innerHTML = `<tr><td colspan="3" class="p-8 text-center text-red-500 font-bold">❌ فشل تحميل البيانات. تأكد من تشغيل السيرفر.</td></tr>`;
+            }
+        }
+
+        // 🌟 5. رسم الجدول وبناء المنطق المحاسبي 🌟
+        function renderTable() {
+            const includeZero = document.getElementById('zeroBalanceToggle').checked;
+            const tbody = document.getElementById('tb-body');
+            
+            // فلترة الأرصدة الصفرية إذا كان الزر مغلقاً
+            let filtered = [...allAccounts];
+            if (!includeZero) {
+                filtered = filtered.filter(acc => parseFloat(acc.balance) !== 0);
+            }
+
+            let totalDebit = 0;
+            let totalCredit = 0;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-12 text-center text-slate-400 font-bold italic">لا توجد حركات مالية مطابقة للفلتر الحالي.</td></tr>`;
+                document.getElementById('total-debit').innerText = "0.00";
+                document.getElementById('total-credit').innerText = "0.00";
+                return;
+            }
+
+            // 🟢 إذا كان العرض (Summary - ملخص) يتم تجميع الحسابات حسب نوعها
+            if (currentTab === 'summary') {
+                let summaryData = {};
+                
+                filtered.forEach(acc => {
+                    let type = acc.account_type || 'OTHER';
+                    if (!summaryData[type]) summaryData[type] = { debit: 0, credit: 0 };
+                    
+                    let bal = parseFloat(acc.balance || 0);
+                    if (['ASSET', 'EXPENSE'].includes(type)) {
+                        summaryData[type].debit += bal;
+                        totalDebit += bal;
+                    } else {
+                        summaryData[type].credit += bal;
+                        totalCredit += bal;
+                    }
+                });
+
+                tbody.innerHTML = Object.keys(summaryData).map(type => {
+                    let deb = summaryData[type].debit;
+                    let cred = summaryData[type].credit;
+                    return `
+                        <tr class="hover:bg-slate-50 transition border-b border-slate-50">
+                            <td class="p-4 text-slate-800 font-black">${type} (Total)</td>
+                            <td class="p-4 text-center text-slate-800 font-bold">${deb > 0 ? deb.toFixed(2) : '0.00'}</td>
+                            <td class="p-4 text-center text-slate-800 font-bold">${cred > 0 ? cred.toFixed(2) : '0.00'}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } 
+            // 🔵 إذا كان العرض (Detailed - مفصل) تظهر كل الحسابات
+            else {
+                tbody.innerHTML = filtered.map(acc => {
+                    const bal = parseFloat(acc.balance || 0);
+                    let debit = 0, credit = 0;
+
+                    if (['ASSET', 'EXPENSE'].includes(acc.account_type)) {
+                        debit = bal;
+                        totalDebit += debit;
+                    } else {
+                        credit = bal;
+                        totalCredit += credit;
+                    }
+
+                    return `
+                        <tr class="hover:bg-slate-50 transition border-b border-slate-50">
+                            <td class="p-4 text-slate-600 font-bold">
+                                <span class="text-slate-400 text-xs">${acc.account_type.substring(0,3)}-${String(acc.id).padStart(4, '0')}</span> - ${acc.name}
+                            </td>
+                            <td class="p-4 text-center text-slate-800 font-bold">${debit > 0 ? debit.toFixed(2) : '0.00'}</td>
+                            <td class="p-4 text-center text-slate-800 font-bold">${credit > 0 ? credit.toFixed(2) : '0.00'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // تحديث الإجماليات أسفل الجدول
+            document.getElementById('total-debit').innerText = totalDebit.toFixed(2);
+            document.getElementById('total-credit').innerText = totalCredit.toFixed(2);
+        }
+
+        // تشغيل مبدئي عند فتح الصفحة
+        window.onload = () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('reportDate').value = today;
+            updatePrintDate();
+            fetchTrialBalance();
+        };
+    </script>
+</body>
+</html>

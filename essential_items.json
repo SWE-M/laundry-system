@@ -1,0 +1,2521 @@
+[
+{
+    "model": "services.category",
+    "pk": 32,
+    "fields": {
+        "name": "MAN",
+        "name_en": null
+    }
+},
+{
+    "model": "services.category",
+    "pk": 33,
+    "fields": {
+        "name": "TOWEL",
+        "name_en": null
+    }
+},
+{
+    "model": "services.category",
+    "pk": 36,
+    "fields": {
+        "name": "WASH",
+        "name_en": null
+    }
+},
+{
+    "model": "services.category",
+    "pk": 37,
+    "fields": {
+        "name": "BLANKET",
+        "name_en": null
+    }
+},
+{
+    "model": "services.category",
+    "pk": 38,
+    "fields": {
+        "name": "JACKET",
+        "name_en": null
+    }
+},
+{
+    "model": "services.category",
+    "pk": 39,
+    "fields": {
+        "name": "WOMEN",
+        "name_en": null
+    }
+},
+{
+    "model": "services.category",
+    "pk": 40,
+    "fields": {
+        "name": "HOUSES",
+        "name_en": null
+    }
+},
+{
+    "model": "services.category",
+    "pk": 43,
+    "fields": {
+        "name": "Uncategorized",
+        "name_en": null
+    }
+},
+{
+    "model": "services.category",
+    "pk": 44,
+    "fields": {
+        "name": "OFFICER UNIFORM",
+        "name_en": null
+    }
+},
+{
+    "model": "services.category",
+    "pk": 45,
+    "fields": {
+        "name": "TABLE CLOTH",
+        "name_en": null
+    }
+},
+{
+    "model": "services.category",
+    "pk": 49,
+    "fields": {
+        "name": "MADICL",
+        "name_en": null
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 634,
+    "fields": {
+        "category": 39,
+        "name": "عباية",
+        "name_en": "Abaya",
+        "washing_price": "10.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "12.00",
+        "washing_express_price": "20.00",
+        "ironing_express_price": "15.00",
+        "dry_cleaning_express_price": "24.00",
+        "image": "items/87542646_T8h9UT3.webp",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 635,
+    "fields": {
+        "category": 36,
+        "name": "مريلة",
+        "name_en": "Apron",
+        "washing_price": "3.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "6.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/images.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 636,
+    "fields": {
+        "category": 36,
+        "name": "حمام البساط",
+        "name_en": "Bath Mat",
+        "washing_price": "6.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "12.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/29.jpg",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 637,
+    "fields": {
+        "category": 33,
+        "name": "فوطة استحمام",
+        "name_en": "Bath Towel",
+        "washing_price": "5.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "0.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/87542649.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 638,
+    "fields": {
+        "category": 33,
+        "name": "فوطة استحمام كبيرة",
+        "name_en": "Bath Towel Large",
+        "washing_price": "7.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "14.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/87542649_ed5YHv4.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 639,
+    "fields": {
+        "category": 33,
+        "name": "فوطة يد",
+        "name_en": "Bath Towel (Small)",
+        "washing_price": "2.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "4.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/87542706.webp",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 640,
+    "fields": {
+        "category": 33,
+        "name": "روب استحمام",
+        "name_en": "Bath robe",
+        "washing_price": "8.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "15.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/20.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 641,
+    "fields": {
+        "category": 37,
+        "name": "غطاءسریر",
+        "name_en": "Bed Cover (Double)",
+        "washing_price": "12.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "15.00",
+        "washing_express_price": "24.00",
+        "ironing_express_price": "16.00",
+        "dry_cleaning_express_price": "30.00",
+        "image": "items/d32a4d21145365d05bce642c8a7e28f3_ZU7qU9t.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 642,
+    "fields": {
+        "category": 37,
+        "name": "غطاءسریر",
+        "name_en": "Bed Cover (Single)",
+        "washing_price": "11.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "15.00",
+        "washing_express_price": "22.00",
+        "ironing_express_price": "16.00",
+        "dry_cleaning_express_price": "30.00",
+        "image": "items/e932aaf8a06e65ff620b5c097ffa1fb8.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 643,
+    "fields": {
+        "category": 43,
+        "name": "شرشف",
+        "name_en": "Bedsheet (Double)",
+        "washing_price": "8.00",
+        "ironing_price": "4.00",
+        "dry_cleaning_price": "10.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 644,
+    "fields": {
+        "category": 43,
+        "name": "شرشف",
+        "name_en": "Bedsheet (Single)",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "8.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 645,
+    "fields": {
+        "category": 37,
+        "name": "شرشف",
+        "name_en": "Bedspread (Double)",
+        "washing_price": "10.00",
+        "ironing_price": "6.00",
+        "dry_cleaning_price": "12.00",
+        "washing_express_price": "20.00",
+        "ironing_express_price": "12.00",
+        "dry_cleaning_express_price": "24.00",
+        "image": "items/87542653.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 646,
+    "fields": {
+        "category": 37,
+        "name": "شرشف",
+        "name_en": "Bedspread Single",
+        "washing_price": "8.00",
+        "ironing_price": "5.00",
+        "dry_cleaning_price": "10.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/87542654.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 647,
+    "fields": {
+        "category": 32,
+        "name": "بشت شتوي",
+        "name_en": "Besht Winter",
+        "washing_price": "25.00",
+        "ironing_price": "10.00",
+        "dry_cleaning_price": "30.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "20.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/download_kwKEjOQ.jpg",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 648,
+    "fields": {
+        "category": 32,
+        "name": "بشت",
+        "name_en": "Besht",
+        "washing_price": "25.00",
+        "ironing_price": "10.00",
+        "dry_cleaning_price": "30.00",
+        "washing_express_price": "50.00",
+        "ironing_express_price": "20.00",
+        "dry_cleaning_express_price": "60.00",
+        "image": "items/34.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 651,
+    "fields": {
+        "category": 43,
+        "name": "بطانية",
+        "name_en": "Blanket (Single)",
+        "washing_price": "8.00",
+        "ironing_price": "4.00",
+        "dry_cleaning_price": "12.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 652,
+    "fields": {
+        "category": 43,
+        "name": "بطانية",
+        "name_en": "Blanket Big",
+        "washing_price": "20.00",
+        "ironing_price": "10.00",
+        "dry_cleaning_price": "30.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 653,
+    "fields": {
+        "category": 43,
+        "name": "بطانية",
+        "name_en": "Blanket Wool",
+        "washing_price": "15.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "25.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 654,
+    "fields": {
+        "category": 38,
+        "name": "بلوزة",
+        "name_en": "Blouse",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/30b2b99f9dd926ca60183c89d92fd6fb.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 655,
+    "fields": {
+        "category": 44,
+        "name": "بدلة",
+        "name_en": "Boiler Suit/ Coveralls",
+        "washing_price": "5.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "10.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/22.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 656,
+    "fields": {
+        "category": 39,
+        "name": "صدرية",
+        "name_en": "Bra",
+        "washing_price": "3.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "6.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/e53419a73d30a741f31190ccfb2cc46f.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 657,
+    "fields": {
+        "category": 36,
+        "name": "قبعات",
+        "name_en": "Cap",
+        "washing_price": "1.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "0.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/download_ciHcyOx.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 658,
+    "fields": {
+        "category": 45,
+        "name": "غطاء",
+        "name_en": "Chair Cover",
+        "washing_price": "5.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 660,
+    "fields": {
+        "category": 43,
+        "name": "ملابس",
+        "name_en": "Children Clothes",
+        "washing_price": "3.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "4.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 661,
+    "fields": {
+        "category": 39,
+        "name": "فستان",
+        "name_en": "Children Dress",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/371d08a54b78636729707ec2d4964145.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 662,
+    "fields": {
+        "category": 43,
+        "name": "غترة",
+        "name_en": "Children Gutra",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 663,
+    "fields": {
+        "category": 43,
+        "name": "سترة",
+        "name_en": "Children Jacket",
+        "washing_price": "4.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 664,
+    "fields": {
+        "category": 43,
+        "name": "قميص",
+        "name_en": "Children Shirt",
+        "washing_price": "3.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 665,
+    "fields": {
+        "category": 43,
+        "name": "اطفال",
+        "name_en": "Children Shorts",
+        "washing_price": "4.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 666,
+    "fields": {
+        "category": 39,
+        "name": "تنورة",
+        "name_en": "Children Skirt",
+        "washing_price": "3.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": "6.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": "10.00",
+        "image": "items/2546.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 667,
+    "fields": {
+        "category": 38,
+        "name": "بدلة رسمية قطعتين",
+        "name_en": "Two-piece Suit",
+        "washing_price": "12.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "15.00",
+        "washing_express_price": "24.00",
+        "ironing_express_price": "12.00",
+        "dry_cleaning_express_price": "30.00",
+        "image": "items/579b86be6265d1531fbd79a0ea876b62.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 668,
+    "fields": {
+        "category": 43,
+        "name": "اطفال",
+        "name_en": "Children Suit",
+        "washing_price": "6.00",
+        "ironing_price": "4.00",
+        "dry_cleaning_price": "8.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 669,
+    "fields": {
+        "category": 43,
+        "name": "بلوفر",
+        "name_en": "Children Sweater/Pullover",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 670,
+    "fields": {
+        "category": 43,
+        "name": "اطفال",
+        "name_en": "Children T-Shirt",
+        "washing_price": "3.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 671,
+    "fields": {
+        "category": 43,
+        "name": "ثوب",
+        "name_en": "Children Thobe",
+        "washing_price": "4.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 672,
+    "fields": {
+        "category": 43,
+        "name": "بنطلون",
+        "name_en": "Children Trouser/ Pants",
+        "washing_price": "3.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 673,
+    "fields": {
+        "category": 43,
+        "name": "معطف",
+        "name_en": "Coat",
+        "washing_price": "15.00",
+        "ironing_price": "10.00",
+        "dry_cleaning_price": "18.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 674,
+    "fields": {
+        "category": 40,
+        "name": "ستائر",
+        "name_en": "Curtains (Large)",
+        "washing_price": "25.00",
+        "ironing_price": "15.00",
+        "dry_cleaning_price": null,
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": null,
+        "image": "items/a66053a9ceaeb2addbc77ea4320fd104.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 675,
+    "fields": {
+        "category": 40,
+        "name": "ستائر",
+        "name_en": "Curtains (Medium)",
+        "washing_price": "20.00",
+        "ironing_price": "10.00",
+        "dry_cleaning_price": "30.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/a66053a9ceaeb2addbc77ea4320fd104_4FQZeD9.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 676,
+    "fields": {
+        "category": 39,
+        "name": "درعا/جلابيه قطعتين",
+        "name_en": "Daraa/Galabieh two piece",
+        "washing_price": "15.00",
+        "ironing_price": "6.00",
+        "dry_cleaning_price": "15.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/25486.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 677,
+    "fields": {
+        "category": 39,
+        "name": "دراعة /جلابية",
+        "name_en": "Daraa/Galabieh",
+        "washing_price": "15.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "20.00",
+        "washing_express_price": "30.00",
+        "ironing_express_price": "12.00",
+        "dry_cleaning_express_price": "40.00",
+        "image": "items/211e91bf137511b730706590aa6e5306.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 678,
+    "fields": {
+        "category": 38,
+        "name": "بالطو",
+        "name_en": "Doctors Coat",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/download_ksJZtWb.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 679,
+    "fields": {
+        "category": 36,
+        "name": "حصيرة",
+        "name_en": "Doormat",
+        "washing_price": "6.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "12.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/29_AP0dmxb.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 680,
+    "fields": {
+        "category": 39,
+        "name": "فستان عادي",
+        "name_en": "Dress (Normal)",
+        "washing_price": "12.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "15.00",
+        "washing_express_price": "20.00",
+        "ironing_express_price": "10.00",
+        "dry_cleaning_express_price": "30.00",
+        "image": "items/a29fd111a2ed9de6992c45a1cf620b61.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 681,
+    "fields": {
+        "category": 39,
+        "name": "فستان (قصیر)",
+        "name_en": "Dress (Short)",
+        "washing_price": "7.00",
+        "ironing_price": "5.00",
+        "dry_cleaning_price": "10.00",
+        "washing_express_price": "14.00",
+        "ironing_express_price": "10.00",
+        "dry_cleaning_express_price": "20.00",
+        "image": "items/abe8e7deeb02f8137d5d42ce2693c356.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 682,
+    "fields": {
+        "category": 39,
+        "name": "مريول",
+        "name_en": "Dungaree/Overall",
+        "washing_price": "12.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "15.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 683,
+    "fields": {
+        "category": 36,
+        "name": "ملحف الاطفال",
+        "name_en": "Duvet (Children)",
+        "washing_price": "8.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "16.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/images_NQlwimY.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 684,
+    "fields": {
+        "category": 37,
+        "name": "ملحف",
+        "name_en": "Duvet (Double)",
+        "washing_price": "12.00",
+        "ironing_price": "6.00",
+        "dry_cleaning_price": "15.00",
+        "washing_express_price": "24.00",
+        "ironing_express_price": "12.00",
+        "dry_cleaning_express_price": "30.00",
+        "image": "items/3b4613dc34d6e7c3e78dca5cc4a1d44f.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 685,
+    "fields": {
+        "category": 37,
+        "name": "ملحف",
+        "name_en": "Duvet (Single)",
+        "washing_price": "8.00",
+        "ironing_price": "4.00",
+        "dry_cleaning_price": "10.00",
+        "washing_express_price": "16.00",
+        "ironing_express_price": "8.00",
+        "dry_cleaning_express_price": "20.00",
+        "image": "items/3b4613dc34d6e7c3e78dca5cc4a1d44f_XnSOTls.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 686,
+    "fields": {
+        "category": 37,
+        "name": "غطاء",
+        "name_en": "Duvet Cover (Double)",
+        "washing_price": "10.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "12.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/d32a4d21145365d05bce642c8a7e28f3.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 687,
+    "fields": {
+        "category": 37,
+        "name": "غطاء",
+        "name_en": "Duvet Cover (Single)",
+        "washing_price": "5.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "10.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/36cb2bf60c37821fdb99520768c77c25.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 688,
+    "fields": {
+        "category": 39,
+        "name": "فساتين السهرة",
+        "name_en": "Evening Dress",
+        "washing_price": null,
+        "ironing_price": "25.00",
+        "dry_cleaning_price": "60.00",
+        "washing_express_price": null,
+        "ironing_express_price": "50.00",
+        "dry_cleaning_express_price": "120.00",
+        "image": "items/05e543bbd6510ab9072f9315f6e399b4.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 689,
+    "fields": {
+        "category": 39,
+        "name": "فستان فاخر",
+        "name_en": "Fancy Dress",
+        "washing_price": "200.00",
+        "ironing_price": "100.00",
+        "dry_cleaning_price": "300.00",
+        "washing_express_price": "400.00",
+        "ironing_express_price": "200.00",
+        "dry_cleaning_express_price": "600.00",
+        "image": "items/be0e36ed2f873466235bd24582be8307_DHlMPSX.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 692,
+    "fields": {
+        "category": 43,
+        "name": "غترة",
+        "name_en": "Gutrah",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 693,
+    "fields": {
+        "category": 36,
+        "name": "قفاز",
+        "name_en": "Hand Gloves",
+        "washing_price": "2.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "4.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/31.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 694,
+    "fields": {
+        "category": 33,
+        "name": "فوطة",
+        "name_en": "Hand Towel Big",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 695,
+    "fields": {
+        "category": 33,
+        "name": "فوطة",
+        "name_en": "Hand Towel",
+        "washing_price": "3.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "4.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 696,
+    "fields": {
+        "category": 40,
+        "name": "منديل",
+        "name_en": "Handkerchief",
+        "washing_price": "1.00",
+        "ironing_price": "1.00",
+        "dry_cleaning_price": "2.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/24.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 697,
+    "fields": {
+        "category": 39,
+        "name": "حجاب/شيله",
+        "name_en": "Hijab/Scarf",
+        "washing_price": "4.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "8.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": "16.00",
+        "image": "items/download.jpg",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 698,
+    "fields": {
+        "category": 39,
+        "name": "شيلة/ حجاب",
+        "name_en": "Hijab/Scarf",
+        "washing_price": "4.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/26.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 699,
+    "fields": {
+        "category": 38,
+        "name": "جاكيت",
+        "name_en": "Jacket",
+        "washing_price": "10.00",
+        "ironing_price": "6.00",
+        "dry_cleaning_price": "12.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/27.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 700,
+    "fields": {
+        "category": 38,
+        "name": "جاكيت جنز",
+        "name_en": "Jeans jacket",
+        "washing_price": "6.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "10.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "5.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/94c757f4cd2cdff4b2e533cacd4b457a.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 701,
+    "fields": {
+        "category": 38,
+        "name": "جينز",
+        "name_en": "Jeans",
+        "washing_price": "4.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/302671a945056551f447531cb5933da8_fJpSvGU.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 702,
+    "fields": {
+        "category": 43,
+        "name": "كورتا",
+        "name_en": "Kurta Pyjama (Set)",
+        "washing_price": "8.00",
+        "ironing_price": "6.00",
+        "dry_cleaning_price": "12.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 703,
+    "fields": {
+        "category": 32,
+        "name": "وزار",
+        "name_en": "Lungi/Wizar",
+        "washing_price": "3.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "4.00",
+        "washing_express_price": "6.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": "8.00",
+        "image": "items/25.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 704,
+    "fields": {
+        "category": 43,
+        "name": "مندیل",
+        "name_en": "Napkin",
+        "washing_price": "1.00",
+        "ironing_price": "1.00",
+        "dry_cleaning_price": "2.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 705,
+    "fields": {
+        "category": 38,
+        "name": "ربطة",
+        "name_en": "Neck Tie",
+        "washing_price": "2.00",
+        "ironing_price": "1.00",
+        "dry_cleaning_price": "2.00",
+        "washing_express_price": "4.00",
+        "ironing_express_price": "2.00",
+        "dry_cleaning_express_price": "4.00",
+        "image": "items/37.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 706,
+    "fields": {
+        "category": 39,
+        "name": "ثوب نوم",
+        "name_en": "Nightgown",
+        "washing_price": "12.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "15.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/download_9Y1pYHp.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 707,
+    "fields": {
+        "category": 44,
+        "name": "قبعة",
+        "name_en": "Officer Uniform Cap",
+        "washing_price": "1.00",
+        "ironing_price": "1.00",
+        "dry_cleaning_price": "2.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/d6f385df18769b55931ce3bf9066b02f.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 708,
+    "fields": {
+        "category": 44,
+        "name": "قميص الزي الرسمي للضابط",
+        "name_en": "Officer Uniform Shirt",
+        "washing_price": "4.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/2522.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 709,
+    "fields": {
+        "category": 44,
+        "name": "بنطلون",
+        "name_en": "Officer Uniform Trouser/Pants",
+        "washing_price": "5.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 710,
+    "fields": {
+        "category": 44,
+        "name": "زي الضابط/الزي العسكري",
+        "name_en": "Officer/Military Uniform",
+        "washing_price": "8.00",
+        "ironing_price": "6.00",
+        "dry_cleaning_price": "12.00",
+        "washing_express_price": "16.00",
+        "ironing_express_price": "12.00",
+        "dry_cleaning_express_price": "24.00",
+        "image": "items/68d6dd955071a8baea9e37cc995cbabd.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 711,
+    "fields": {
+        "category": 38,
+        "name": "معطف",
+        "name_en": "Overcoat Wool",
+        "washing_price": "15.00",
+        "ironing_price": "10.00",
+        "dry_cleaning_price": "18.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/d99b2a7825ed903f1e01efcecd8bee51.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 712,
+    "fields": {
+        "category": 38,
+        "name": "معطف",
+        "name_en": "Overcoat",
+        "washing_price": "15.00",
+        "ironing_price": "10.00",
+        "dry_cleaning_price": "18.00",
+        "washing_express_price": "30.00",
+        "ironing_express_price": "20.00",
+        "dry_cleaning_express_price": "36.00",
+        "image": "items/639226e66e23f99b66195c3b0550a6c4_PNriugD.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 713,
+    "fields": {
+        "category": 43,
+        "name": "لباس",
+        "name_en": "Pajamas",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 714,
+    "fields": {
+        "category": 37,
+        "name": "وسادة كبيرة",
+        "name_en": "Pillow (Large)",
+        "washing_price": "8.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "16.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/02425.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 715,
+    "fields": {
+        "category": 37,
+        "name": "وسادة",
+        "name_en": "Pillow (Small)",
+        "washing_price": "4.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "8.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/254.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 716,
+    "fields": {
+        "category": 37,
+        "name": "غطاء مخدة",
+        "name_en": "Pillow Case",
+        "washing_price": "4.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "8.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/images_d1CF2Xq.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 717,
+    "fields": {
+        "category": 43,
+        "name": "زي",
+        "name_en": "Police Uniform",
+        "washing_price": "8.00",
+        "ironing_price": "6.00",
+        "dry_cleaning_price": "12.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 718,
+    "fields": {
+        "category": 36,
+        "name": "سجادة صلاة",
+        "name_en": "Prayer Mat",
+        "washing_price": "6.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "12.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/aac498026554555511a357cd14d65f73.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 719,
+    "fields": {
+        "category": 38,
+        "name": "بنجابي",
+        "name_en": "Punjabi",
+        "washing_price": "5.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "8.00",
+        "washing_express_price": "10.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": "16.00",
+        "image": "items/28f14a068d478a9083504f38663d265d.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 720,
+    "fields": {
+        "category": 38,
+        "name": "بنطلون",
+        "name_en": "Pyjama Trouser",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/6c1103af1401548879986108ea720b4a.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 721,
+    "fields": {
+        "category": 43,
+        "name": "لحاف",
+        "name_en": "Quilt Large",
+        "washing_price": "18.00",
+        "ironing_price": "14.00",
+        "dry_cleaning_price": "35.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 722,
+    "fields": {
+        "category": 43,
+        "name": "لحاف",
+        "name_en": "Quilt Medium",
+        "washing_price": "16.00",
+        "ironing_price": "12.00",
+        "dry_cleaning_price": "30.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 723,
+    "fields": {
+        "category": 43,
+        "name": "لحاف",
+        "name_en": "Quilt Small",
+        "washing_price": "15.00",
+        "ironing_price": "10.00",
+        "dry_cleaning_price": "25.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 724,
+    "fields": {
+        "category": 43,
+        "name": "بدلة",
+        "name_en": "Safari Suit",
+        "washing_price": "7.00",
+        "ironing_price": "4.00",
+        "dry_cleaning_price": "12.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 725,
+    "fields": {
+        "category": 39,
+        "name": "ساري",
+        "name_en": "Saree",
+        "washing_price": "10.00",
+        "ironing_price": "6.00",
+        "dry_cleaning_price": "12.00",
+        "washing_express_price": "20.00",
+        "ironing_express_price": "12.00",
+        "dry_cleaning_express_price": "24.00",
+        "image": "items/8d55b31a113cf5e050e3b20560e4560d.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 726,
+    "fields": {
+        "category": 43,
+        "name": "سروال",
+        "name_en": "Sarwal Thobe",
+        "washing_price": "3.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "4.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 727,
+    "fields": {
+        "category": 44,
+        "name": "زي مدرسة",
+        "name_en": "School Uniform",
+        "washing_price": "5.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/26578.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 728,
+    "fields": {
+        "category": 39,
+        "name": "شال",
+        "name_en": "Shawl",
+        "washing_price": "4.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "8.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": "16.00",
+        "image": "items/6f14ad30f06936284476ba5bd8da454d.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 729,
+    "fields": {
+        "category": 32,
+        "name": "شماغ",
+        "name_en": "Shimagh",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "5.00",
+        "dry_cleaning_express_price": "10.00",
+        "image": "items/87542741.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 730,
+    "fields": {
+        "category": 38,
+        "name": "قميص",
+        "name_en": "Shirt",
+        "washing_price": "4.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": "10.00",
+        "image": "items/102f59ec5b99c44b8991e8719ea30775.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 731,
+    "fields": {
+        "category": 38,
+        "name": "شورت",
+        "name_en": "Shorts",
+        "washing_price": "4.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": "10.00",
+        "image": "items/01946661c4b97e69ed472b2d0705e0e9.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 732,
+    "fields": {
+        "category": 39,
+        "name": "بلوزة حرير",
+        "name_en": "Silk Blouse",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": "16.00",
+        "image": "items/5c438d6ea075f73af9db5d6355c29fc7.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 733,
+    "fields": {
+        "category": 39,
+        "name": "تنورة عادية",
+        "name_en": "Skirt (Normal)",
+        "washing_price": "6.00",
+        "ironing_price": "4.00",
+        "dry_cleaning_price": "10.00",
+        "washing_express_price": "12.00",
+        "ironing_express_price": "8.00",
+        "dry_cleaning_express_price": "20.00",
+        "image": "items/b2dd77ec774c2b4d5fdab02721d60c30.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 734,
+    "fields": {
+        "category": 39,
+        "name": "تنورة كسرات",
+        "name_en": "Skirt (Pleated)",
+        "washing_price": "6.00",
+        "ironing_price": "4.00",
+        "dry_cleaning_price": "10.00",
+        "washing_express_price": "12.00",
+        "ironing_express_price": "8.00",
+        "dry_cleaning_express_price": "20.00",
+        "image": "items/d5065c17aa64413bf5c0ea0899bfe8b1.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 735,
+    "fields": {
+        "category": 36,
+        "name": "جوارب",
+        "name_en": "Socks",
+        "washing_price": "2.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "0.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 736,
+    "fields": {
+        "category": 45,
+        "name": "غطاء صوفا (كبير)",
+        "name_en": "Sofa Cover (Large)",
+        "washing_price": "20.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "40.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/ec214d6a382d9a2e387438c5f5fbbb64.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 737,
+    "fields": {
+        "category": 45,
+        "name": "غطاء أريكة (متوسط)",
+        "name_en": "Sofa Cover (Medium)",
+        "washing_price": "15.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "30.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/e9ab5b125cbe394e21e5455befd04d10.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 738,
+    "fields": {
+        "category": 45,
+        "name": "غطاء صوفا (صغير)",
+        "name_en": "Sofa Cover (Small)",
+        "washing_price": "5.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "10.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/download_d3VNGLq.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 739,
+    "fields": {
+        "category": 38,
+        "name": "جاكيت",
+        "name_en": "Suit Jacket",
+        "washing_price": "8.00",
+        "ironing_price": "4.00",
+        "dry_cleaning_price": "10.00",
+        "washing_express_price": "16.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": "20.00",
+        "image": "items/28_6mHevpK.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 740,
+    "fields": {
+        "category": 38,
+        "name": "بلوفر",
+        "name_en": "Sweater/Pullover",
+        "washing_price": "8.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "8.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "items/download_UMFpFv8.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 741,
+    "fields": {
+        "category": 38,
+        "name": "تي شيرت",
+        "name_en": "T-shirt",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "5.00",
+        "dry_cleaning_express_price": "10.00",
+        "image": "items/download_fyugwRt.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 742,
+    "fields": {
+        "category": 45,
+        "name": "غطاء طاولة (كبير)",
+        "name_en": "Table Cloth (Large)",
+        "washing_price": "8.00",
+        "ironing_price": "4.00",
+        "dry_cleaning_price": null,
+        "washing_express_price": "16.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": null,
+        "image": "items/20b0c13317fc2a117e56f695fb67f02d.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 743,
+    "fields": {
+        "category": 45,
+        "name": "غطاء طاولة (متوسط)",
+        "name_en": "Table Cloth (Medium)",
+        "washing_price": "6.00",
+        "ironing_price": "4.00",
+        "dry_cleaning_price": null,
+        "washing_express_price": "12.00",
+        "ironing_express_price": "8.00",
+        "dry_cleaning_express_price": null,
+        "image": "items/d551b6942bee4c848cf917509e9fbda8.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 744,
+    "fields": {
+        "category": 45,
+        "name": "غطاء طاولة (صغير)",
+        "name_en": "Table Cloth (Small)",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": null,
+        "washing_express_price": "8.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": null,
+        "image": "items/a0d3c205769e1f0cfebbd669afc7f9a5.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 745,
+    "fields": {
+        "category": 43,
+        "name": "ثوب",
+        "name_en": "Thobe (winter)",
+        "washing_price": "8.00",
+        "ironing_price": "4.00",
+        "dry_cleaning_price": "10.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 746,
+    "fields": {
+        "category": 43,
+        "name": "دشداشا",
+        "name_en": "Thobe",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "8.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 747,
+    "fields": {
+        "category": 38,
+        "name": "بدلة",
+        "name_en": "Three-piece Suit",
+        "washing_price": "15.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "20.00",
+        "washing_express_price": "30.00",
+        "ironing_express_price": "16.00",
+        "dry_cleaning_express_price": "40.00",
+        "image": "items/1d19ef5e44321b5496eae6cd0206b132_7E5rVgr.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 748,
+    "fields": {
+        "category": 43,
+        "name": "منشفة",
+        "name_en": "Towel (Large)",
+        "washing_price": "8.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "12.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 749,
+    "fields": {
+        "category": 43,
+        "name": "منشفة",
+        "name_en": "Towel (Small)",
+        "washing_price": "4.00",
+        "ironing_price": "1.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 750,
+    "fields": {
+        "category": 38,
+        "name": "بدلة رياضية",
+        "name_en": "Tracksuit",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "5.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/cfe68574457c05d424da43b29009d7b8.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 751,
+    "fields": {
+        "category": 38,
+        "name": "بنطلون/سروال",
+        "name_en": "Trousers/pants",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/820a0b6834c1cbf6853213badf826e46.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 752,
+    "fields": {
+        "category": 38,
+        "name": "بدلة",
+        "name_en": "Two-piece Suit",
+        "washing_price": "12.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "15.00",
+        "washing_express_price": "0.00",
+        "ironing_express_price": "0.00",
+        "dry_cleaning_express_price": "0.00",
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 753,
+    "fields": {
+        "category": 43,
+        "name": "فانيلا",
+        "name_en": "Undershirt",
+        "washing_price": "2.00",
+        "ironing_price": "1.00",
+        "dry_cleaning_price": "3.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/87542889_kZPuYsd.jpg",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 754,
+    "fields": {
+        "category": 44,
+        "name": "ملابس داخلیة رجالیة",
+        "name_en": "Underwear/Brief",
+        "washing_price": "3.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": null,
+        "washing_express_price": "6.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": null,
+        "image": "items/df08b8baed62592a27d5d7a5b801542c.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 755,
+    "fields": {
+        "category": 38,
+        "name": "سديري رسمي",
+        "name_en": "vest",
+        "washing_price": "5.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "10.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/ab0ee04f7b049b1177202e604143d3ef.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 756,
+    "fields": {
+        "category": 38,
+        "name": "صدیري",
+        "name_en": "Waistcoat",
+        "washing_price": "3.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": "6.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": "10.00",
+        "image": "items/download_5Nr2Jls.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 757,
+    "fields": {
+        "category": 43,
+        "name": "جاكیت",
+        "name_en": "Winter Jacket",
+        "washing_price": "10.00",
+        "ironing_price": "5.00",
+        "dry_cleaning_price": "15.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 758,
+    "fields": {
+        "category": 43,
+        "name": "LAUNDRY",
+        "name_en": "LAUNDRY",
+        "washing_price": "2.00",
+        "ironing_price": "8.00",
+        "dry_cleaning_price": "4.00",
+        "washing_express_price": null,
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/logo.png",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 761,
+    "fields": {
+        "category": 32,
+        "name": "ثوب",
+        "name_en": "Thobe",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/87542683.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 762,
+    "fields": {
+        "category": 32,
+        "name": "ثوب شتوي",
+        "name_en": "Thobe winter",
+        "washing_price": "8.00",
+        "ironing_price": "4.00",
+        "dry_cleaning_price": "10.00",
+        "washing_express_price": "16.00",
+        "ironing_express_price": "8.00",
+        "dry_cleaning_express_price": "20.00",
+        "image": "items/87542757.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 763,
+    "fields": {
+        "category": 32,
+        "name": "قحفية",
+        "name_en": "Ghafiya",
+        "washing_price": "2.00",
+        "ironing_price": "1.00",
+        "dry_cleaning_price": null,
+        "washing_express_price": "4.00",
+        "ironing_express_price": "2.00",
+        "dry_cleaning_express_price": null,
+        "image": "items/87542702.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 764,
+    "fields": {
+        "category": 32,
+        "name": "غترة صوف",
+        "name_en": "Gutra Wool",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "5.00",
+        "dry_cleaning_express_price": "10.00",
+        "image": "items/87542703.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 765,
+    "fields": {
+        "category": 32,
+        "name": "غترة",
+        "name_en": "Gutra",
+        "washing_price": "4.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "5.00",
+        "washing_express_price": "8.00",
+        "ironing_express_price": "5.00",
+        "dry_cleaning_express_price": "10.00",
+        "image": "items/87542674.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 766,
+    "fields": {
+        "category": 32,
+        "name": "سروال ثوب",
+        "name_en": "Sarwal Thobe",
+        "washing_price": "3.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "4.00",
+        "washing_express_price": "6.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": "8.00",
+        "image": "items/87542738.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 767,
+    "fields": {
+        "category": 32,
+        "name": "فانيلا داخلية",
+        "name_en": "BANIYAN",
+        "washing_price": "3.00",
+        "ironing_price": "2.00",
+        "dry_cleaning_price": "4.00",
+        "washing_express_price": "6.00",
+        "ironing_express_price": "4.00",
+        "dry_cleaning_express_price": "8.00",
+        "image": "items/87542889_luH9MpU.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 768,
+    "fields": {
+        "category": 36,
+        "name": "غسيل شنطة السفر",
+        "name_en": "Travel bag washing",
+        "washing_price": "300.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "600.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/2.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 769,
+    "fields": {
+        "category": 36,
+        "name": "السجاد متر 1",
+        "name_en": "carpet 1M",
+        "washing_price": "10.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "10.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/4.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 770,
+    "fields": {
+        "category": 36,
+        "name": "العاب اطفال",
+        "name_en": "Children\\'s games",
+        "washing_price": "30.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "60.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/8.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 771,
+    "fields": {
+        "category": 36,
+        "name": "غسل حقيبة اليد",
+        "name_en": "Washing a handbag",
+        "washing_price": "35.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "70.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/12.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 772,
+    "fields": {
+        "category": 36,
+        "name": "طاقة ثياب",
+        "name_en": "Clothes energy",
+        "washing_price": "50.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "100.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/15.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 773,
+    "fields": {
+        "category": 36,
+        "name": "حذاء فخم",
+        "name_en": "Luxurious shoes",
+        "washing_price": "200.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "400.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/16.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 774,
+    "fields": {
+        "category": 36,
+        "name": "حذاء",
+        "name_en": "shosp",
+        "washing_price": "50.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "100.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/10.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 775,
+    "fields": {
+        "category": 36,
+        "name": "علَم",
+        "name_en": "flag",
+        "washing_price": "20.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "40.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/17_yluFa7d.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 776,
+    "fields": {
+        "category": 36,
+        "name": "جوارب",
+        "name_en": "Socks",
+        "washing_price": "2.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "4.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/18.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 777,
+    "fields": {
+        "category": 36,
+        "name": "رداء الأشعة السينية",
+        "name_en": "X-ray robe",
+        "washing_price": "1.50",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "3.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/19.jpg",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 778,
+    "fields": {
+        "category": 37,
+        "name": "بطانية كبير",
+        "name_en": "Blanket BIG",
+        "washing_price": "20.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "40.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/b195f17326263f665620aec1c522b78c.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 779,
+    "fields": {
+        "category": 37,
+        "name": "بطانية وسط",
+        "name_en": "Blanket middle",
+        "washing_price": "15.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "30.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/b195f17326263f665620aec1c522b78c_HbV7MEU.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 780,
+    "fields": {
+        "category": 37,
+        "name": "بطانية صغير",
+        "name_en": "Blanket small",
+        "washing_price": "8.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "16.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/b195f17326263f665620aec1c522b78c_pvU05bu.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 781,
+    "fields": {
+        "category": 32,
+        "name": "كود تجريبي",
+        "name_en": "code",
+        "washing_price": "10.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "20.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/لقطة_الشاشة_2026-02-27_035825_gBc2BmZ.jpg",
+        "is_active": false
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 782,
+    "fields": {
+        "category": 45,
+        "name": "Chair Cover غطاء الكرسي",
+        "name_en": "Chair Cover",
+        "washing_price": "5.00",
+        "ironing_price": null,
+        "dry_cleaning_price": null,
+        "washing_express_price": "10.00",
+        "ironing_express_price": null,
+        "dry_cleaning_express_price": null,
+        "image": "items/021.png",
+        "is_active": true
+    }
+},
+{
+    "model": "services.laundryitem",
+    "pk": 783,
+    "fields": {
+        "category": 44,
+        "name": "بنطال/سروال الزي الرسمي للضابط",
+        "name_en": "Officer Uniform Trouser/Pants",
+        "washing_price": "5.00",
+        "ironing_price": "3.00",
+        "dry_cleaning_price": "6.00",
+        "washing_express_price": "10.00",
+        "ironing_express_price": "6.00",
+        "dry_cleaning_express_price": "12.00",
+        "image": "items/25526.jpg",
+        "is_active": true
+    }
+}
+]

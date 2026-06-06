@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Wallet Recharge Receipt</title>
+    <style>
+        @page { margin: 0; size: 80mm auto; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            width: 72mm; 
+            margin: 0 auto; 
+            padding: 5mm; 
+            font-size: 14px; 
+            color: #000;
+            text-align: center;
+            font-weight: bold;
+        }
+        .logo { width: 80px; height: auto; margin-bottom: 10px; }
+        .title { font-size: 18px; font-weight: 900; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 5px 0; margin: 15px 0; }
+        
+        .info-box { text-align: left; margin-bottom: 15px; font-size: 13px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        
+        .amount-box { background: #f4f4f4; border: 1px solid #000; padding: 10px; margin: 15px 0; }
+        .amount-label { font-size: 12px; color: #555; }
+        .amount-value { font-size: 26px; font-weight: 900; }
+
+        .balance-row { display: flex; justify-content: space-between; font-size: 16px; margin-top: 5px; padding-top: 5px; border-top: 1px dashed #000; }
+        
+        .barcode-container { margin-top: 25px; display: flex; justify-content: center; }
+        .footer-text { font-size: 11px; margin-top: 20px; border-top: 1px solid #000; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <img src="">
+    <div style="font-size: 16px;">AL MARONA LAUNDRY</div>
+    <div style="font-size: 14px;">مغسلة المرونة</div>
+    
+    <div class="title">WALLET RECHARGE / شحن محفظة</div>
+
+    <div class="info-box">
+        <div class="info-row"><span>Date / التاريخ:</span> <span id="display-date">---</span></div>
+        <div class="info-row"><span>Customer / العميل:</span> <span id="display-name">---</span></div>
+        <div class="info-row"><span>Phone / الهاتف:</span> <span id="display-phone">---</span></div>
+        <div class="info-row"><span>File / الملف:</span> <span id="display-file">---</span></div>
+    </div>
+
+    <div class="amount-box">
+        <div class="amount-label">RECHARGE AMOUNT / مبلغ الشحن</div>
+        <div class="amount-value"><span id="display-amount">0.00</span> QAR</div>
+    </div>
+
+    <div class="balance-row">
+        <span>NEW BALANCE:</span>
+        <span><span id="display-balance">0.00</span> QAR</span>
+    </div>
+
+    <div class="footer-text">
+        تمت إضافة المبلغ لمحفظتكم بنجاح. شكراً لثقتكم!
+        <br>
+        Funds added successfully. Thank you!
+    </div>
+
+    <div class="barcode-container">
+        <svg id="barcode"></svg>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <script>
+        window.onload = function() {
+            const dataStr = localStorage.getItem('lastWalletRecharge');
+            if(!dataStr) { document.body.innerHTML = "No data found"; return; }
+            
+            const data = JSON.parse(dataStr);
+            document.getElementById('display-date').innerText = data.date;
+            document.getElementById('display-name').innerText = data.name;
+            document.getElementById('display-phone').innerText = data.phone;
+            document.getElementById('display-file').innerText = data.file;
+            document.getElementById('display-amount').innerText = data.amount;
+            document.getElementById('display-balance').innerText = data.newBalance;
+
+            let barcodeVal = data.file !== '---' ? data.file : data.phone;
+            JsBarcode("#barcode", barcodeVal, {
+                format: "CODE128", width: 1.6, height: 40, displayValue: true, fontSize: 12, margin: 0
+            });
+
+            localStorage.removeItem('lastWalletRecharge');
+            setTimeout(() => { window.print(); window.close(); }, 500);
+        };
+    </script>
+</body>
+</html>

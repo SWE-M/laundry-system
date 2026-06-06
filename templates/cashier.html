@@ -1,0 +1,1997 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <title>Laundry System Cashier</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f4f7f6; min-width: 1200px; }
+        ::-webkit-scrollbar { height: 6px; width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+        
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.5); z-index: 100; backdrop-filter: blur(2px); }
+
+        /* ================== إعدادات الطباعة للفواتير 80mm ================== */
+        @media print {
+            @page {
+                size: 80mm auto; /* إجبار المتصفح على مقاس الورق الحراري */
+                margin: 0mm;     /* إلغاء هوامش المتصفح بالكامل */
+            }
+            body {
+                background-color: #fff;
+                margin: 0;
+                padding: 0;
+            }
+            body * { 
+                visibility: hidden; 
+            }
+            .active-print, .active-print * { 
+                visibility: visible; 
+            }
+            .active-print { 
+                display: block !important; 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 80mm !important; 
+                max-width: 80mm !important;
+                padding: 4mm !important; /* مسافة أمان صغيرة من الأطراف */
+                margin: 0 auto; 
+                font-family: 'Arial', sans-serif; 
+                color: #000;
+                background: white !important;
+                -webkit-print-color-adjust: exact; 
+                color-adjust: exact;
+                box-shadow: none !important;
+                border: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden" onclick="closeCustomerDropdown(event)">
+
+    <div class="flex-1 flex flex-col bg-[#f4f7f6] overflow-hidden transition-all duration-300">
+        
+        <header class="bg-white border-b shadow-sm z-10 flex-shrink-0">
+            <div class="flex items-center justify-between px-6 py-3">
+                <div class="flex gap-2 flex-1">
+                    <a href="/cashier/" class="bg-[#007ec5] text-white px-10 py-2 rounded-md font-bold text-sm tracking-wide shadow-inner flex items-center justify-center" data-i18n="tabItems">ITEMS</a>
+                    
+                    <a href="/customers/" class="bg-white text-gray-500 border px-10 py-2 rounded-md font-bold text-sm hover:bg-gray-50 transition flex items-center justify-center" data-i18n="tabCustomers">CUSTOMERS</a>
+                    
+                  <a href="/orders/management/" class="bg-white text-gray-500 border px-10 py-2 rounded-md font-bold text-sm hover:bg-gray-50 transition flex items-center justify-center" data-i18n="tabOrders">ORDERS</a>
+                    
+                    <button onclick="openModal('createGiftCardModal')" class="bg-pink-50 text-pink-600 border border-pink-200 px-6 py-2 rounded-md font-bold text-sm hover:bg-pink-100 transition shadow-sm flex items-center gap-2">
+                        🎁 <span data-i18n="btnGiftCard">Gift Cards</span>
+                    </button>
+                    <button onclick="openModal('rechargeWalletModal')" class="bg-purple-50 text-purple-600 border border-purple-200 px-6 py-2 rounded-md font-bold text-sm hover:bg-purple-100 transition shadow-sm flex items-center gap-2">
+                        ✨ <span>Wallet Recharge</span>
+                    </button>
+                    
+                    <button onclick="openPurchasesModal()" class="bg-white text-gray-600 border border-gray-200 px-6 py-2 rounded-md font-bold text-sm hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 transition flex items-center gap-2 shadow-sm">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+    <span data-i18n="btnPurchases">المشتريات</span>
+</button>
+
+<button onclick="openCloseShiftModal()" class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-md font-bold text-xs hover:bg-indigo-100 hover:border-indigo-300 transition flex items-center gap-1.5 shadow-sm">
+    🔒 <span data-i18n="btnCloseShift">التقفيلة</span>
+</button>
+                </div>
+                <div class="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 mr-2 shadow-sm">
+                        <span class="font-black text-gray-700 text-sm capitalize mx-3" id="current-logged-user">
+    {{ request.user.username|default:"Admin" }}
+</span>
+                    </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="openModal('clearDataModal')" class="w-[42px] h-[38px] flex items-center justify-center bg-white border-2 border-[#81bbf5] text-[#007ec5] rounded-xl hover:bg-blue-50 transition shadow-sm" title="Clear Cache">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                    </button>
+                    <button onclick="openModal('exitModal')" class="w-[42px] h-[38px] flex items-center justify-center bg-white border-2 border-[#fca5a5] text-[#ef4444] rounded-xl hover:bg-red-50 transition shadow-sm" title="Exit / Logout">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    </button>
+                    <button onclick="toggleLanguage()" class="bg-gray-800 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition flex items-center gap-2">
+                        🌐 <span id="lang-btn-text">عربي</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <div class="bg-white px-6 py-4 border-b flex-shrink-0">
+            <div class="relative mb-4">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+                <input type="text" id="item-search" onkeyup="filterItems()" data-i18n-placeholder="searchItems" placeholder="Search items..." class="w-full border rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#007ec5]">
+            </div>
+            
+            <div class="relative group mt-2">
+                <button onclick="scrollCategories(-300)" class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 shadow-md w-8 h-8 rounded-full flex items-center justify-center text-[#007ec5] font-bold hover:bg-[#007ec5] hover:text-white transition opacity-0 group-hover:opacity-100">&#10094;</button>
+                <div id="category-filters" class="no-scrollbar flex gap-2 overflow-x-auto py-2 px-8 w-full scroll-smooth"></div>
+                <button onclick="scrollCategories(300)" class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 shadow-md w-8 h-8 rounded-full flex items-center justify-center text-[#007ec5] font-bold hover:bg-[#007ec5] hover:text-white transition opacity-0 group-hover:opacity-100">&#10095;</button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-bold text-gray-700 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-[#007ec5]"></span>
+                    <span data-i18n="availableItems">Available Items</span>
+                </h2>
+                <span id="items-count" class="text-sm text-gray-500 bg-white border px-3 py-1 rounded-full shadow-sm">0 items</span>
+            </div>
+            
+            <div id="items-grid" class="grid grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 transition-all">
+                <p class="text-gray-500 col-span-4" data-i18n="loading">Loading menu...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="order-sidebar" class="hidden w-[420px] flex-shrink-0 bg-[#f8f9fa] shadow-[-4px_0_15px_rgba(0,0,0,0.08)] flex-col border-l border-gray-200 z-20 transition-all duration-300">
+        
+        <div class="p-4 border-b bg-white flex justify-between items-center shadow-sm z-10">
+            <h2 class="font-bold text-[#565cc0] flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-[#565cc0]"></span>
+                <span data-i18n="orderSummary">Order Summary</span>
+            </h2>
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500 font-bold" data-i18n="expressMode">Express Mode</span>
+                <div class="relative inline-block w-10 h-5 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" id="toggle-express" onchange="updateUI()" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300"/>
+                    <label for="toggle-express" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
+                </div>
+            </div>
+        </div>
+        
+        <div id="cart-items" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+
+      <div class="p-2.5 bg-white border-t border-gray-200 shadow-[0_-4px_10px_rgba(0,0,0,0.02)] flex flex-col gap-2">
+            
+            <div class="relative w-full" id="customer-dropdown-container">
+                <div class="flex items-center gap-1.5">
+                    <div class="flex-1 relative border rounded-md px-2 py-1.5 flex items-center justify-between bg-white focus-within:ring-1 focus-within:ring-[#007ec5] focus-within:border-[#007ec5]">
+                        <input type="text" id="customer-search-input" onkeyup="filterCustomers()" onclick="toggleCustomerDropdown(event)" data-i18n-placeholder="selectCustomer" placeholder="Search by name or phone..." class="w-full text-xs outline-none text-gray-700 bg-transparent">
+                        <button class="text-gray-400 text-xs transition transform" id="dropdown-arrow">▼</button>
+                    </div>
+                    <button onclick="openModal('newCustomerModal')" class="w-8 h-8 border rounded-md text-emerald-500 hover:bg-emerald-50 flex items-center justify-center font-bold text-lg transition shadow-sm">+</button>
+                    <button onclick="openModal('remarksModal')" class="w-8 h-8 border rounded-md text-gray-500 hover:bg-gray-50 flex items-center justify-center transition shadow-sm">📝</button>
+                </div>
+                
+                <ul id="customer-list-dropdown" class="hidden absolute top-full left-0 right-20 mt-1 bg-white border border-gray-200 shadow-xl max-h-48 overflow-y-auto rounded-md z-50 divide-y divide-gray-50">
+                    <li class="p-2 text-xs text-gray-500 text-center" data-i18n="loading">Loading...</li>
+                </ul>
+            </div>
+            
+            <div id="customer-info" class="hidden text-[11px] bg-blue-50 border border-blue-100 p-1.5 rounded flex justify-between items-center shadow-inner">
+                <p class="font-bold text-gray-700"><span data-i18n="customerLabel">Customer: </span> <span id="cust-name-display" class="text-[#007ec5]">---</span></p>
+                <p class="font-bold text-gray-700"><span data-i18n="walletLabel">Wallet: </span> <span id="cust-balance" class="text-purple-600 text-xs">0.00</span> <span class="currency-label text-[9px]">QAR</span></p>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+                <span class="text-[11px] text-gray-600 font-bold w-20" data-i18n="deliveryDate">Delivery Date</span>
+                <input type="datetime-local" class="flex-1 border border-gray-200 rounded-md px-2 py-1 text-xs text-gray-700 outline-none focus:border-blue-500 shadow-sm">
+                <button onclick="openModal('referenceModal')" class="w-8 h-8 border border-gray-200 rounded-md text-gray-500 hover:bg-gray-50 flex items-center justify-center shadow-sm">🏷️</button>
+            </div>
+
+            <div class="bg-blue-50 p-1.5 rounded-lg border border-blue-100 shadow-inner flex flex-col gap-1.5">
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-bold text-gray-600" data-i18n="clothesState">Clothes State:</span>
+                    <div class="flex bg-white rounded-md border p-0.5 gap-1">
+                        <button onclick="setProcessing('HANGER')" id="btn-hanger" class="px-2 py-0.5 text-[10px] font-bold rounded transition-all bg-gray-100 text-gray-400">👕 Hanger</button>
+                        <button onclick="setProcessing('FOLDED')" id="btn-folded" class="px-2 py-0.5 text-[10px] font-bold rounded transition-all bg-blue-500 text-white shadow-sm">🧺 Folded</button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-bold text-gray-600" data-i18n="deliveryMethod">Delivery Method:</span>
+                    <div class="flex bg-white rounded-md border p-0.5 gap-1">
+                        <button onclick="setLogistics('PICKUP')" id="btn-pickup" class="px-2 py-0.5 text-[10px] font-bold rounded transition-all bg-blue-500 text-white shadow-sm">🏪 Pickup</button>
+                        <button onclick="setLogistics('DELIVERY')" id="btn-delivery" class="px-2 py-0.5 text-[10px] font-bold rounded transition-all bg-gray-100 text-gray-400">🚚 Delivery</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-2 rounded-lg border border-gray-100 shadow-inner flex flex-col gap-1">
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="text-gray-500 font-bold" data-i18n="totalItems">Total Items</span>
+                    <span class="text-gray-500"><span id="total-qty" class="text-gray-800 font-bold mx-6">0</span> <span data-i18n="subtotal" class="font-bold">Subtotal</span> <span id="subtotal-price" class="text-gray-800 font-bold ml-1">0.00 <span class="text-[9px] currency-label">QAR</span></span></span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-500 font-bold" data-i18n="discount">Discount</span>
+                    <div class="flex items-center gap-1.5">
+                        <div class="flex border rounded overflow-hidden shadow-sm">
+                            <button class="px-2 py-0.5 bg-gray-200 text-[10px] font-bold text-gray-700" data-i18n="amount">Amount</button>
+                            <button class="px-2 py-0.5 bg-white text-[10px] text-gray-400 font-bold">%</button>
+                        </div>
+                        <div class="relative w-14">
+                            <input type="number" id="discount-input" oninput="updateUI()" min="0" max="100" class="w-full border rounded text-center px-1 py-0.5 text-xs outline-none focus:border-blue-500" placeholder="0">
+                        </div>
+                        <span class="text-gray-400 text-[10px] font-bold currency-label">QAR</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-end border-t border-gray-200 pt-1 mt-0.5">
+                    <span class="font-bold text-gray-800 text-sm" data-i18n="totalLabel">Total</span>
+                    <span id="grand-total" class="font-bold text-[#007ec5] text-xl drop-shadow-sm leading-none">0.00 <span class="text-[10px] currency-label">QAR</span></span>
+                </div>
+            </div>
+            
+            
+            
+            <div class="mb-2">
+                <button onclick="processPayment('PENDING')" class="w-full border-2 border-[#10b981] text-[#10b981] bg-white py-2.5 rounded-lg font-bold hover:bg-emerald-50 transition shadow-sm text-sm flex items-center justify-center gap-2">
+                    <span class="text-lg">+</span> Create Order
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-1.5">
+                <button onclick="processPayment('CASH')" class="bg-[#10b981] text-white py-2 rounded-lg font-bold hover:bg-emerald-600 transition shadow-md text-xs" data-i18n="btnCash">💵 Cash</button>
+                <button onclick="processPayment('CARD')" class="bg-[#007ec5] text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition shadow-md text-xs" data-i18n="btnCard">💳 Card</button>
+                <button onclick="processPayment('WALLET')" class="w-full bg-[#8b5cf6] text-white py-2 rounded-lg font-bold hover:bg-purple-600 transition shadow-md text-xs" data-i18n="btnWallet">✨ Wallet</button>
+                <button onclick="openModal('giftCardPaymentModal')" class="w-full bg-pink-500 text-white py-2 rounded-lg font-bold hover:bg-pink-600 transition shadow-md text-xs" data-i18n="btnGiftCardPay">🎁 Gift Card</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="newCustomerModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-[480px] p-6 relative border-l-4 border-emerald-500">
+            <button onclick="closeModal('newCustomerModal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold text-xl leading-none">&times;</button>
+            <div class="text-center mb-5">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg> 
+                    Create New Customer
+                </h3>
+            </div>
+            <div class="space-y-4">
+                <div><label class="block text-xs font-bold text-gray-700 mb-1">Name <span class="text-red-500">*</span></label><input type="text" id="newCustName" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"></div>
+                <div><label class="block text-xs font-bold text-gray-700 mb-1">File Number</label><input type="text" id="newCustFile" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"></div>
+                <div><label class="block text-xs font-bold text-gray-700 mb-1">Phone Number <span class="text-red-500">*</span></label><input type="text" id="newCustPhone" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Fold Type</label>
+                        <select id="newCustFold" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 bg-white text-gray-700"><option value="Folded">Folded</option><option value="Hanged">Hanged</option></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Customer Category</label>
+                        <select id="newCustCategory" class="w-full border border-gray-200 rounded-md px-2 py-2 text-sm focus:outline-none focus:border-emerald-500 bg-white text-gray-600"><option value="" disabled selected>Select..</option><option value="Uncategorized">Uncategorized</option><option value="Aldobi">Aldobi</option><option value="Cleano">Cleano</option><option value="Monthly">Monthly</option></select>
+                    </div>
+                </div>
+                <div><label class="block text-xs font-bold text-gray-700 mb-1">Address</label><textarea id="newCustAddress" rows="2" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 resize-none"></textarea></div>
+            </div>
+            <button onclick="saveNewCustomer()" class="w-full mt-6 bg-emerald-500 text-white py-2.5 rounded-md font-bold hover:bg-emerald-600 transition shadow-sm">Create Customer</button>
+        </div>
+    </div>
+
+    <div id="remarksModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center"><div class="bg-white rounded-lg shadow-xl w-[450px] p-6 relative"><button onclick="closeModal('remarksModal')" class="absolute top-4 right-4 text-gray-400 font-bold text-xl">&times;</button><h3 class="text-lg font-bold text-gray-800 mb-2">Order Remarks</h3><textarea id="remarksInput" rows="4" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:border-[#007ec5]"></textarea><div class="flex justify-end gap-2 mt-5"><button onclick="saveRemarks()" class="px-5 py-2 bg-[#007ec5] text-white rounded-md font-bold text-sm">Save Remarks</button></div></div></div>
+    
+    <div id="referenceModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center"><div class="bg-white rounded-lg shadow-xl w-[450px] p-6 relative"><button onclick="closeModal('referenceModal')" class="absolute top-4 right-4 text-gray-400 font-bold text-xl">&times;</button><h3 class="text-lg font-bold text-gray-800 mb-2">Reference Number</h3><input type="text" id="referenceInput" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:border-[#007ec5]"><div class="flex justify-end gap-2 mt-5"><button onclick="saveReference()" class="px-5 py-2 bg-[#007ec5] text-white rounded-md font-bold text-sm">Save Reference</button></div></div></div>
+
+    <div id="clearDataModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50"><div class="bg-white rounded-xl shadow-2xl w-[450px] p-6 relative"><h3 class="text-xl font-bold text-gray-800 mb-2">Clear cookies?</h3><div class="flex justify-end gap-3 mt-4"><button onclick="closeModal('clearDataModal')" class="px-5 py-2 border rounded-lg font-bold text-sm">Cancel</button><button onclick="executeClearData()" class="px-5 py-2 bg-[#007ec5] text-white rounded-lg font-bold text-sm">Clear data</button></div></div></div>
+
+    <div id="exitModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50"><div class="bg-white rounded-xl shadow-2xl w-[450px] p-6 relative"><h3 class="text-xl font-bold text-gray-800 mb-2">Are you sure you want to exit?</h3><div class="flex justify-end gap-3 mt-4"><button onclick="closeModal('exitModal')" class="px-5 py-2 border rounded-lg font-bold text-sm">Cancel</button><button onclick="executeExit()" class="px-5 py-2 bg-[#ef4444] text-white rounded-lg font-bold text-sm">Exit</button></div></div></div>
+
+    <div id="createGiftCardModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-[450px] p-6 relative border-t-4 border-pink-500">
+            <button onclick="closeModal('createGiftCardModal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold text-xl leading-none">&times;</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-1 flex items-center gap-2">🎁 Issue Gift Card</h3>
+            <p class="text-xs text-gray-500 mb-5">Create a new gift card. A unique number will be generated automatically.</p>
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-700 mb-1">Purchaser (Customer)</label>
+                <div class="relative border rounded-md px-3 py-2 flex items-center justify-between bg-white focus-within:ring-1 focus-within:ring-pink-500">
+                    <input type="text" id="gift-buyer-search" onkeyup="filterGiftBuyers()" onclick="toggleGiftBuyerDropdown(event)" placeholder="Search by name or phone..." class="w-full text-sm outline-none text-gray-700 bg-transparent">
+                </div>
+                <ul id="gift-buyer-dropdown" class="hidden absolute mt-1 w-[400px] bg-white border border-gray-200 shadow-xl max-h-40 overflow-y-auto rounded-md z-50 divide-y divide-gray-50"></ul>
+            </div>
+            <div id="selected-buyer-info" class="hidden mb-4 p-2 bg-pink-50 border border-pink-100 rounded text-sm text-pink-700 font-bold flex justify-between">
+                <span>Selected: <span id="buyer-name-display"></span></span>
+                <button onclick="clearSelectedBuyer()" class="text-pink-400 hover:text-pink-600">&times;</button>
+            </div>
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-700 mb-1">Card Amount (Balance) <span class="text-red-500">*</span></label>
+                <div class="relative">
+                    <input type="number" id="giftCardAmount" min="1" class="w-full border border-gray-300 rounded-md px-3 py-2 text-lg font-bold text-gray-800 focus:outline-none focus:border-pink-500 pl-10" placeholder="0.00">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold currency-label">QAR</span>
+                </div>
+            </div>
+            <button onclick="submitNewGiftCard()" class="w-full bg-pink-500 text-white py-3 rounded-lg font-bold hover:bg-pink-600 transition shadow-md">Generate Card</button>
+        </div>
+    </div>
+
+    <div id="giftCardSuccessModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-[400px] p-8 relative text-center">
+            <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">✓</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Card Created!</h3>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 my-6">
+                <p class="text-sm text-gray-500 mb-1">Gift Card Number</p>
+                <p id="generated-card-number" class="text-3xl font-bold text-pink-600 tracking-widest mb-3">1000X</p>
+                <div class="flex justify-between text-sm font-bold text-gray-700 border-t pt-2">
+                    <span>Balance:</span><span id="generated-card-balance" class="text-green-600">0.00 QAR</span>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeModal('giftCardSuccessModal')" class="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition">Close</button>
+                <button onclick="printGiftCard()" class="flex-1 bg-gray-800 text-white py-2.5 rounded-lg font-bold hover:bg-gray-900 transition flex justify-center items-center gap-2">🖨️ Print</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="giftCardPaymentModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-[400px] p-6 relative border-t-4 border-pink-500">
+            <button onclick="closeModal('giftCardPaymentModal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold text-xl leading-none">&times;</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-1">Pay with Gift Card</h3>
+            <p class="text-xs text-gray-500 mb-5">Enter card number to check balance and pay.</p>
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-700 mb-1">Gift Card Number</label>
+                <div class="flex gap-2">
+                    <input type="text" id="paymentGiftCardNumber" class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-lg font-bold tracking-widest text-center focus:outline-none focus:border-pink-500" placeholder="e.g. 10001">
+                    <button onclick="checkGiftCardBalance()" class="bg-gray-100 border border-gray-300 px-4 rounded-md font-bold text-gray-700 hover:bg-gray-200">Check</button>
+                </div>
+            </div>
+            <div id="gift-card-balance-info" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mb-5">
+                <p class="text-xs text-gray-500 flex justify-between">Owner: <span id="gc-owner" class="font-bold text-gray-800">---</span></p>
+                <p class="text-xs text-gray-500 flex justify-between mt-1">Available Balance: <span id="gc-balance" class="font-bold text-green-600 text-sm">0.00</span></p>
+            </div>
+            <button id="btn-confirm-gc-payment" disabled onclick="processPayment('GIFT_CARD')" class="w-full bg-pink-500 text-white py-3 rounded-lg font-bold hover:bg-pink-600 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                Confirm Payment
+            </button>
+        </div>
+    </div>
+<div id="rechargeWalletModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-[450px] p-6 relative border-t-4 border-purple-500">
+            <button onclick="closeModal('rechargeWalletModal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold text-xl leading-none">&times;</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-1 flex items-center gap-2">✨ Recharge Wallet</h3>
+            <p class="text-xs text-gray-500 mb-5">Add funds to a customer's wallet balance.</p>
+
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-700 mb-1">Customer <span class="text-red-500">*</span></label>
+                <div class="relative border rounded-md px-3 py-2 flex items-center justify-between bg-white focus-within:ring-1 focus-within:ring-purple-500">
+                    <input type="text" id="wallet-customer-search" onkeyup="filterWalletCustomers()" onclick="toggleWalletCustomerDropdown(event)" placeholder="Search by name or phone..." class="w-full text-sm outline-none text-gray-700 bg-transparent">
+                </div>
+                <ul id="wallet-customer-dropdown" class="hidden absolute mt-1 w-[400px] bg-white border border-gray-200 shadow-xl max-h-40 overflow-y-auto rounded-md z-50 divide-y divide-gray-50"></ul>
+            </div>
+
+            <div id="selected-wallet-customer-info" class="hidden mb-4 p-2 bg-purple-50 border border-purple-100 rounded text-sm text-purple-700 font-bold flex justify-between">
+                <span>Selected: <span id="wallet-customer-name-display"></span></span>
+                <button onclick="clearWalletCustomer()" class="text-purple-400 hover:text-purple-600">&times;</button>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-700 mb-1">Recharge Amount <span class="text-red-500">*</span></label>
+                <div class="relative">
+                    <input type="number" id="walletRechargeAmount" min="1" class="w-full border border-gray-300 rounded-md px-3 py-2 text-lg font-bold text-gray-800 focus:outline-none focus:border-purple-500 pl-10" placeholder="0.00">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold currency-label">QAR</span>
+                </div>
+            </div>
+
+            <button onclick="submitWalletRecharge()" class="w-full bg-purple-500 text-white py-3 rounded-lg font-bold hover:bg-purple-600 transition shadow-md">Recharge Now</button>
+        </div>
+    </div>
+
+    <div id="walletSuccessModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-[400px] p-8 relative text-center">
+            <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">✓</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Wallet Recharged!</h3>
+            
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 my-6">
+                <p class="text-sm text-gray-500 mb-1">Recharged Amount</p>
+                <p id="recharged-amount-display" class="text-3xl font-bold text-purple-600 tracking-widest mb-3">0.00 QAR</p>
+                <div class="flex justify-between text-sm font-bold text-gray-700 border-t pt-2">
+                    <span>New Balance:</span><span id="new-wallet-balance-display" class="text-green-600">0.00 QAR</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="closeModal('walletSuccessModal')" class="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition">Close</button>
+                <button onclick="printWalletReceipt()" class="flex-1 bg-gray-800 text-white py-2.5 rounded-lg font-bold hover:bg-gray-900 transition flex justify-center items-center gap-2">🖨️ Print</button>
+            </div>
+        </div>
+    </div>
+    <div id="loadingOverlay" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-white"></div>
+    </div>
+
+    <div id="orderSuccessModal" class="hidden fixed inset-0 z-[150] modal-overlay flex items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl w-[400px] p-8 text-center">
+            <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">✓</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Order Success!</h3>
+            <p class="text-gray-500 text-sm mb-6">The order has been recorded</p>
+            <div class="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-6 space-y-2 text-sm text-gray-700">
+                <div class="flex justify-between"><span>Order ID:</span><span id="summary-order-id" class="font-bold text-gray-900">#---</span></div>
+                <div class="flex justify-between"><span>Customer:</span><span id="summary-customer" class="font-bold">---</span></div>
+                <div class="flex justify-between"><span>Total:</span><span id="summary-total" class="font-bold text-blue-600">0.00 QAR</span></div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeModal('orderSuccessModal')" class="flex-1 py-3 border border-gray-200 rounded-xl font-bold text-gray-500 hover:bg-gray-50 transition">Close</button>
+                <button onclick="printOrderInvoice()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg flex justify-center items-center gap-2">🖨️ Print Receipt</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printableInvoice" class="hidden text-black font-sans text-sm p-4 w-[80mm] mx-auto bg-white">
+        <div class="text-center mb-4">
+            <h2 class="font-bold text-xl mb-1">AL MARONA LAUNDRY</h2>
+            <h3 class="font-bold text-lg mb-1" style="font-family: 'Tajawal', sans-serif;">مغسلة المرونة</h3>
+            <p class="text-xs">Al Duhail, Doha, Qatar</p>
+            <p class="text-xs">Tel: +974 5188 8455</p>
+        </div>
+        <div class="border-t border-b border-black py-2 mb-2 text-xs space-y-1">
+            <div class="flex justify-between"><span class="font-bold">Order / طلب #:</span><span id="print-order-id" class="font-bold">---</span></div>
+            <div class="flex justify-between"><span>Date / التاريخ:</span><span id="print-date">---</span></div>
+            <div class="flex justify-between"><span>Status / الحالة:</span><span>PENDING / قيد الانتظار</span></div>
+            <div class="flex justify-between"><span>Quantity / عدد:</span><span id="print-qty">---</span></div>
+            <div class="flex justify-between"><span>Prepared / المستلم:</span><span id="print-prepared-by">Admin</span></div>
+            
+            <div class="flex justify-between border-t border-dashed border-black mt-1 pt-1"><span class="font-bold">Customer / العميل:</span><span id="print-customer-name" class="font-bold">---</span></div>
+            <div class="flex justify-between"><span class="font-bold">Phone / الهاتف:</span><span id="print-customer-phone" class="font-bold">---</span></div>
+            <div class="flex justify-between"><span>Code / الرمز:</span><span id="print-customer-code">---</span></div>
+        </div>
+        <table class="w-full text-[11px] mb-2 border-collapse border border-black">
+            <thead>
+                <tr class="border-b border-black">
+                    <th class="text-left p-1 border-r border-black">Item / العنصر</th>
+                    <th class="text-center p-1 border-r border-black">Qty<br>الكمية</th>
+                    <th class="text-center p-1 border-r border-black">Unit<br>الوحدة</th>
+                    <th class="text-right p-1">Total<br>المجموع</th>
+                </tr>
+            </thead>
+            <tbody id="print-items-tbody"></tbody>
+        </table>
+        <div class="border-t border-black pt-1 text-xs space-y-1 mb-2">
+            <div class="flex justify-between"><span>Subtotal / المجموع الجزئي:</span><span id="print-subtotal">---</span></div>
+            <div class="flex justify-between font-bold text-sm"><span>TOTAL / المجموع:</span><span id="print-total">---</span></div>
+            <div class="flex justify-between text-gray-700"><span>Previous Balance / الرصيد السابق:</span><span id="print-prev-balance">---</span></div>
+            <div class="flex justify-between font-bold text-[15px] mt-1 border-t border-black pt-1"><span>TOTAL DUE / المجموع المستحق:</span><span id="print-total-due">---</span></div>
+        </div>
+        <div class="border-t border-dashed border-black pt-2 mb-2 text-xs font-bold flex flex-col gap-1">
+            <div><span id="check-hanger">☐</span> Hanger / الملابس المعلقة</div>
+            <div><span id="check-folded">☐</span> Folded / الملابس المطوية</div>
+            <div><span id="check-delivery">☐</span> Delivery / التوصيل</div>
+            <div><span id="check-pickup">☐</span> Pickup / الاستلام</div>
+        </div>
+        
+        <div class="text-center border-t border-b border-dashed border-black py-2 my-3">
+            <h1 id="print-large-order-id" class="text-2xl font-black tracking-wider">---</h1>
+        </div>
+
+        <div class="text-[10px] text-center mb-4 leading-tight" style="font-family: 'Tajawal', sans-serif;">
+            <p>لن تكون المغسلة مسؤولة عن الملابس التي لم يطالب بها أصحابها خلال 3 شهور.</p>
+            <p>المغسلة غير مسؤولة عن أي انكماش أو بهتان للألوان. يرجى التأكد من صحة الملابس قبل إيداعها المغسلة وعند استلامها.</p>
+            <p class="mt-2 font-sans">The Laundry Will Not Be Responsible For Bundles Not Claimed Within 3 Months.</p>
+            <p class="font-sans">The Laundry Is Not Responsible For Shrinkage, Damage Or Non-Fastness Of Colours. Please Be Sure Of The Number Of Your Article Prior To Depositing And Collection.</p>
+        </div>
+        <div class="text-center flex flex-col items-center justify-center">
+            <svg id="print-barcode"></svg>
+        </div>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+       
+
+        const i18n = {
+            en: {
+                btnPurchases: "Purchases", btnCloseShift: "Close Shift",
+                tabItems: "ITEMS", tabCustomers: "CUSTOMERS", tabOrders: "ORDERS", btnGiftCard: "Gift Cards",
+                searchItems: "Search items...", allCategories: "All Items",
+                availableItems: "Available Items", loading: "Loading...",
+                orderSummary: "Order Summary", expressMode: "Express Mode",
+                selectCustomer: "Search by name or phone...", customerLabel: "Customer: ", walletLabel: "Wallet: ",
+                deliveryDate: "Delivery Date", totalItems: "Total Items", subtotal: "Subtotal",
+                clothesState: "Clothes State:", deliveryMethod: "Delivery Method:",
+                discount: "Discount", amount: "Amount", totalLabel: "Total",
+                qtyLabel: "Quantity", unitPriceLabel: "Unit Price", totalRowLabel: "Total",
+                normal: "Normal", express: "Express",
+                currency: "QAR", btnCash: "💵 Cash", btnCard: "💳 Card", btnWallet: "✨ Wallet", btnGiftCardPay: "🎁 Gift Card",
+                dryCleaning: "Dry Cleaning", ironing: "Ironing", washing: "Washing",
+                alertEmptyCart: "Cart is empty!", alertSelectCustomer: "Select a customer to use wallet!",
+                alertSuccess: "Order completed successfully! 🎉", alertError: "Error: "
+                
+                
+            },
+            ar: {
+                btnPurchases: "المشتريات", btnCloseShift: "التقفيلة",
+                tabItems: "الملابس", tabCustomers: "العملاء", tabOrders: "الطلبات", btnGiftCard: "بطاقات الهدايا",
+                searchItems: "ابحث عن قطعة...", allCategories: "الكل",
+                availableItems: "الأصناف المتاحة", loading: "جاري التحميل...",
+                orderSummary: "ملخص الطلب", expressMode: "خدمة سريعة",
+                selectCustomer: "ابحث بالاسم أو الجوال...", customerLabel: "العميل: ", walletLabel: "المحفظة: ",
+                deliveryDate: "تاريخ التسليم", totalItems: "القطع", subtotal: "المجموع",
+                clothesState: "حالة الملابس:", deliveryMethod: "طريقة الاستلام:",
+                discount: "الخصم", amount: "مبلغ", totalLabel: "الإجمالي",
+                qtyLabel: "الكمية", unitPriceLabel: "السعر", totalRowLabel: "المجموع",
+                normal: "عادي", express: "مستعجل",
+                currency: "ر.ق", btnCash: "💵 كاش", btnCard: "💳 شبكة", btnWallet: "✨ محفظة", btnGiftCardPay: "🎁 بطاقة هدية",
+                dryCleaning: "غسيل جاف", ironing: "كوي", washing: "غسيل عادي",
+                alertEmptyCart: "السلة فارغة!", alertSelectCustomer: "اختر عميل للدفع من المحفظة!",
+                alertSuccess: "تم الدفع بنجاح! 🎉", alertError: "خطأ: "
+                
+                
+            }
+        };
+
+        let currentLang = 'en'; 
+        let cart = [];
+        let allItems = []; 
+        let currentCategory = 'all';
+        let allCategories = [];
+        
+        let allCustomers = [];
+        let selectedCustomerId = null;
+        let selectedCustomerObj = null;
+
+        let globalOrderRemarks = "";
+        let globalOrderReference = "";
+        let giftCardBuyerId = null;
+        let currentGiftCardNumber = "";
+        
+        let currentProcessingType = 'FOLDED';
+        let currentLogisticsType = 'PICKUP';
+
+        function setProcessing(type) {
+            currentProcessingType = type;
+            document.getElementById('btn-hanger').className = type === 'HANGER' ? 'px-3 py-1 text-[10px] font-bold rounded transition-all bg-blue-500 text-white shadow-sm' : 'px-3 py-1 text-[10px] font-bold rounded transition-all bg-gray-100 text-gray-400';
+            document.getElementById('btn-folded').className = type === 'FOLDED' ? 'px-3 py-1 text-[10px] font-bold rounded transition-all bg-blue-500 text-white shadow-sm' : 'px-3 py-1 text-[10px] font-bold rounded transition-all bg-gray-100 text-gray-400';
+        }
+
+        function setLogistics(type) {
+            currentLogisticsType = type;
+            document.getElementById('btn-pickup').className = type === 'PICKUP' ? 'px-3 py-1 text-[10px] font-bold rounded transition-all bg-blue-500 text-white shadow-sm' : 'px-3 py-1 text-[10px] font-bold rounded transition-all bg-gray-100 text-gray-400';
+            document.getElementById('btn-delivery').className = type === 'DELIVERY' ? 'px-3 py-1 text-[10px] font-bold rounded transition-all bg-blue-500 text-white shadow-sm' : 'px-3 py-1 text-[10px] font-bold rounded transition-all bg-gray-100 text-gray-400';
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'ar' : 'en';
+            const root = document.getElementById('html-root');
+            root.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            root.lang = currentLang;
+
+            document.getElementById('lang-btn-text').innerText = currentLang === 'en' ? 'عربي' : 'English';
+            // سطر الترجمة الصحيح
+            const pBtn = document.getElementById('txt-purchase');
+            if(pBtn) pBtn.innerText = currentLang === 'ar' ? 'المشتريات' : 'Purchases';
+            document.querySelectorAll('[data-i18n]').forEach(el => el.innerText = i18n[currentLang][el.getAttribute('data-i18n')]);
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.placeholder = i18n[currentLang][el.getAttribute('data-i18n-placeholder')]);
+            document.querySelectorAll('.currency-label').forEach(el => el.innerText = i18n[currentLang].currency);
+
+            renderCategoryFilters(allCategories);
+            renderItems();
+            updateUI();
+            if(allCustomers.length > 0) renderCustomerDropdown(allCustomers);
+        }
+
+        function scrollCategories(amount) {
+            const container = document.getElementById('category-filters');
+            const isRtl = document.getElementById('html-root').dir === 'rtl';
+            container.scrollBy({ left: isRtl ? -amount : amount, behavior: 'smooth' });
+        }
+
+        async function fetchInitialData() {
+            try {
+                // 1. جلب التصنيفات من السيرفر
+                const catRes = await fetch('/api/services/categories/');
+                if (catRes.ok) {
+                    const catData = await catRes.json();
+                    allCategories = Array.isArray(catData) ? catData : (catData.results || []);
+                    renderCategoryFilters(allCategories);
+                }
+
+                // 2. جلب الأصناف
+                const itemsRes = await fetch('/api/services/items/');
+                if (itemsRes.ok) {
+                    const itemsData = await itemsRes.json();
+                    allItems = Array.isArray(itemsData) ? itemsData : (itemsData.results || []);
+                    renderItems();
+                }
+
+                // 3. جلب العملاء
+                const custRes = await fetch('/api/accounts/search/');
+                if (custRes.ok) {
+                    const custData = await custRes.json();
+                    allCustomers = Array.isArray(custData) ? custData : (custData.results || []);
+                }
+            } catch(e) { console.log("Error fetching initial data", e); }
+        }
+
+        // تم تمرير مصفوفة التصنيفات من السيرفر إلى هذه الدالة
+        function renderCategoryFilters(categories = []) {
+            const catContainer = document.getElementById('category-filters');
+            
+            // زر "الكل" الأساسي
+            let html = `<button onclick="filterByCategory('all')" class="cat-btn flex-shrink-0 ${currentCategory === 'all' ? 'bg-[#007ec5] text-white border-[#007ec5]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'} border px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition shadow-sm">${i18n[currentLang].allCategories}</button>`;
+            
+            // باقي التصنيفات من السيرفر
+            categories.forEach(c => {
+                const catName = c.name; // نعتمد على الاسم المحفوظ في الداتابيز
+                const catId = String(c.id);
+                const isActive = currentCategory === catId;
+                
+                html += `<button onclick="filterByCategory('${catId}')" class="cat-btn flex-shrink-0 ${isActive ? 'bg-[#007ec5] text-white border-[#007ec5]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'} border px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition shadow-sm">${catName}</button>`;
+            });
+            
+            if (catContainer) {
+                catContainer.innerHTML = html;
+            }
+        }
+
+        function filterByCategory(catKey) { currentCategory = catKey; renderCategoryFilters(allCategories); renderItems(); }
+        function filterItems() { renderItems(); }
+
+        function renderItems() {
+            const grid = document.getElementById('items-grid');
+            const searchTerm = document.getElementById('item-search').value.toLowerCase();
+            
+            const filteredItems = allItems.filter(item => {
+                // الفلترة بالتصنيف الجديد (عن طريق ID بدلاً من الاسم)
+                const itemCatId = String(item.category || item.category_id);
+                const matchCat = (currentCategory === 'all') || (itemCatId === currentCategory);
+                
+                const matchSearch = item.name.toLowerCase().includes(searchTerm) || (item.name_en && item.name_en.toLowerCase().includes(searchTerm));
+                
+                return matchCat && matchSearch;
+            });
+
+            document.getElementById('items-count').innerText = `${filteredItems.length} items`;
+            // ... (باقي الكود كما هو لا تغيره) ...
+
+            if(filteredItems.length === 0) {
+                grid.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center py-16 opacity-50"><div class="text-6xl mb-4">👕</div><p class="text-gray-500 font-bold">No items found.</p></div>`;
+                return;
+            }
+
+            grid.innerHTML = filteredItems.map(item => {
+                const nameDisplay = currentLang === 'en' ? (item.name_en || item.name) : item.name;
+                const catDisplay = currentLang === 'en' ? (item.category_name_en || item.category_name) : item.category_name;
+                
+                let priceButtons = '';
+                if(item.dry_cleaning_price) priceButtons += `<div onclick="addToCart('${nameDisplay}', 'dryCleaning', ${item.dry_cleaning_price}, ${item.id})" class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 transition px-1 -mx-1 rounded"><span class="text-gray-500 text-[13px]">${i18n[currentLang].dryCleaning}:</span><span class="text-[#004b7c] font-bold text-sm">${parseFloat(item.dry_cleaning_price).toFixed(2)} ${i18n[currentLang].currency}</span></div>`;
+                
+                if(item.ironing_price) priceButtons += `<div onclick="addToCart('${nameDisplay}', 'ironing', ${item.ironing_price}, ${item.id})" class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 transition px-1 -mx-1 rounded"><span class="text-gray-500 text-[13px]">${i18n[currentLang].ironing}:</span><span class="text-[#004b7c] font-bold text-sm">${parseFloat(item.ironing_price).toFixed(2)} ${i18n[currentLang].currency}</span></div>`;
+                
+                if(item.washing_price) priceButtons += `<div onclick="addToCart('${nameDisplay}', 'washing', ${item.washing_price}, ${item.id})" class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 transition px-1 -mx-1 rounded"><span class="text-gray-500 text-[13px]">${i18n[currentLang].washing}:</span><span class="text-[#004b7c] font-bold text-sm">${parseFloat(item.washing_price).toFixed(2)} ${i18n[currentLang].currency}</span></div>`;
+
+                // سطر برمجي ذكي للصور
+                const placeholder = `
+                    <div class="w-full h-full bg-gray-50 flex items-center justify-center">
+                        <svg class="w-16 h-16 text-gray-200" fill="currentColor" viewBox="0 0 24 24"><path d="M21.435 6.435l-3.35-3.35A1.995 1.995 0 0016.671 2.5H7.329c-.53 0-1.039.211-1.414.586l-3.35 3.35A1.995 1.995 0 002.5 7.85v11.65A2.502 2.502 0 005 22h14a2.502 2.502 0 002.5-2.5V7.85c0-.53-.211-1.039-.565-1.415zM12 4.5c1.38 0 2.5 1.12 2.5 2.5h-5c0-1.38 1.12-2.5 2.5-2.5z"/></svg>
+                    </div>`;
+
+                const imageHTML = item.image 
+                    ? `<img src="${item.image}" class="w-full h-full object-contain p-2" alt="item">` 
+                    : placeholder;
+
+                // تصميم الكرت المطابق تماماً للداشبورد 100%
+                return `
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full hover:shadow-lg hover:border-blue-300 transition-all duration-300 cursor-pointer">
+                    <div class="h-44 bg-white relative flex items-center justify-center border-b border-gray-100 overflow-hidden">
+                        <span class="absolute top-3 right-3 bg-white px-2.5 py-0.5 rounded text-[11px] text-[#007ec5] font-bold border border-[#007ec5] shadow-sm z-10">${catDisplay || 'Uncategorized'}</span>
+                        <div class="absolute inset-0 z-20 bg-[#007ec5]/5 flex items-center justify-center opacity-0 hover:opacity-100 transition duration-300"></div>
+                        ${imageHTML}
+                    </div>
+                    <div class="p-4 flex flex-col flex-1 bg-white">
+                        <h3 class="font-bold text-gray-900 text-lg leading-tight truncate mb-0.5" title="${nameDisplay}">${nameDisplay}</h3>
+                        <p class="text-[13px] text-gray-400 mb-4 truncate h-5">${currentLang === 'en' ? item.name : (item.name_en || '')}</p>
+                        
+                        <div class="mt-auto space-y-2">
+                            ${priceButtons}
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function saveRemarks() { globalOrderRemarks = document.getElementById('remarksInput').value; closeModal('remarksModal'); }
+        function saveReference() { globalOrderReference = document.getElementById('referenceInput').value; closeModal('referenceModal'); }
+
+        function executeClearData() {
+            localStorage.clear(); sessionStorage.clear();
+            document.cookie.split(";").forEach(function(c) { document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); });
+            window.location.reload(true);
+        }
+
+       function executeExit() {
+            // توجيه مباشر لرابط الخروج النظيف اللي سويناه
+            window.location.href = '/logout/';
+        }
+//.......
+        async function saveNewCustomer() {
+            const name = document.getElementById('newCustName').value.trim();
+            const phone = document.getElementById('newCustPhone').value.trim();
+            const fileNumber = document.getElementById('newCustFile').value.trim();
+            const foldType = document.getElementById('newCustFold').value;
+            const category = document.getElementById('newCustCategory').value;
+            const address = document.getElementById('newCustAddress').value.trim();
+            
+            if(!name || !phone) return alert("Please fill out both Name and Phone Number.");
+
+            // بناء البيانات بشكل ذكي (لا نرسل الحقول الفارغة لتجنب أخطاء الباك اند)
+            const newCustomerData = { name: name, phone: phone, fold_type: foldType };
+            
+            if (fileNumber) newCustomerData.file_number = fileNumber;
+            if (address) newCustomerData.address = address;
+            // إرسال التصنيف فقط إذا اختار المستخدم قيمة حقيقية غير "Select.."
+            if (category && category !== "Select..") newCustomerData.customer_category = category;
+
+            try {
+                const response = await fetch('/api/accounts/search/', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }, 
+                    body: JSON.stringify(newCustomerData) 
+                });
+                
+                if (response.ok) {
+                    // تحديث قائمة العملاء في الكاشير
+                    try { 
+                        const custRes = await fetch('/api/accounts/search/'); 
+                        allCustomers = await custRes.json(); 
+                    } catch(e) {}
+                    
+                    const realCustomer = await response.json();
+                    allCustomers.push(realCustomer);
+                    
+                    // اختيار العميل تلقائياً في السلة بعد إضافته
+                    selectCustomer(realCustomer.id, realCustomer.name, realCustomer.phone, realCustomer.wallet_balance || 0, realCustomer.file_number);
+                    
+                    // إغلاق النافذة وتفريغ الحقول للمرة القادمة
+                    closeModal('newCustomerModal'); 
+                    document.getElementById('newCustName').value = '';
+                    document.getElementById('newCustPhone').value = '';
+                    document.getElementById('newCustFile').value = '';
+                    document.getElementById('newCustAddress').value = '';
+                    
+                    alert("Customer created successfully! ✅");
+                } else { 
+                    // هنا سيظهر لك الخطأ الحقيقي من قاعدة البيانات (مثل: "رقم الجوال موجود مسبقاً")
+                    const errDetail = await response.json();
+                    alert("Error: " + JSON.stringify(errDetail)); 
+                }
+            } catch (e) { 
+                alert("Network error occurred"); 
+            }
+        }
+
+        function toggleCustomerDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('customer-list-dropdown');
+            const arrow = document.getElementById('dropdown-arrow');
+            if(dropdown.classList.contains('hidden')) { dropdown.classList.remove('hidden'); arrow.style.transform = 'rotate(180deg)'; renderCustomerDropdown(allCustomers); } 
+            else { dropdown.classList.add('hidden'); arrow.style.transform = 'rotate(0deg)'; }
+        }
+
+        function closeCustomerDropdown(event) {
+            const dropdown = document.getElementById('customer-list-dropdown');
+            const container = document.getElementById('customer-dropdown-container');
+            const arrow = document.getElementById('dropdown-arrow');
+            if(container && !container.contains(event.target)) { dropdown.classList.add('hidden'); arrow.style.transform = 'rotate(0deg)'; }
+        }
+
+        function filterCustomers() {
+            const query = document.getElementById('customer-search-input').value.toLowerCase();
+            const dropdown = document.getElementById('customer-list-dropdown');
+            if(dropdown.classList.contains('hidden')) { dropdown.classList.remove('hidden'); document.getElementById('dropdown-arrow').style.transform = 'rotate(180deg)'; }
+            const filtered = allCustomers.filter(c => (c.name && c.name.toLowerCase().includes(query)) || (c.phone && c.phone.includes(query)));
+            renderCustomerDropdown(filtered);
+        }
+
+        function renderCustomerDropdown(customers) {
+            const list = document.getElementById('customer-list-dropdown');
+            if(customers.length === 0) return list.innerHTML = `<li class="p-3 text-sm text-gray-500 text-center">No results found</li>`;
+            const isRtl = currentLang === 'ar';
+            list.innerHTML = customers.map(c => `
+                <li onclick="selectCustomer(${c.id}, '${c.name}', '${c.phone}', ${c.wallet_balance}, '${c.file_number || ''}')" class="px-4 py-2.5 hover:bg-blue-50 cursor-pointer transition text-left flex flex-col">
+                    <span class="font-bold text-gray-900 text-sm dir-ltr tracking-wide text-left">${c.phone}</span>
+                    <span class="text-xs text-gray-500 mt-0.5 text-${isRtl ? 'right' : 'left'}">${c.name}</span>
+                </li>
+            `).join('');
+        }
+
+        function selectCustomer(id, name, phone, balance, code) {
+            selectedCustomerId = id;
+            selectedCustomerObj = { id, name, phone, balance, code }; // حفظ كائن العميل كاملاً
+            document.getElementById('customer-search-input').value = `${phone} - ${name}`;
+            document.getElementById('cust-name-display').innerText = name;
+            document.getElementById('cust-balance').innerText = parseFloat(balance).toFixed(2);
+            document.getElementById('customer-info').classList.remove('hidden');
+            document.getElementById('customer-info').classList.add('flex');
+            document.getElementById('customer-list-dropdown').classList.add('hidden');
+            document.getElementById('dropdown-arrow').style.transform = 'rotate(0deg)';
+        }
+
+        // ================== وظائف بطاقات الهدايا ==================
+        function toggleGiftBuyerDropdown(event) { event.stopPropagation(); document.getElementById('gift-buyer-dropdown').classList.remove('hidden'); renderGiftBuyerDropdown(allCustomers); }
+        function filterGiftBuyers() { const query = document.getElementById('gift-buyer-search').value.toLowerCase(); document.getElementById('gift-buyer-dropdown').classList.remove('hidden'); const filtered = allCustomers.filter(c => (c.name && c.name.toLowerCase().includes(query)) || (c.phone && c.phone.includes(query))); renderGiftBuyerDropdown(filtered); }
+        function renderGiftBuyerDropdown(customers) { const list = document.getElementById('gift-buyer-dropdown'); if(customers.length === 0) return list.innerHTML = `<li class="p-3 text-sm text-gray-500 text-center">No results</li>`; list.innerHTML = customers.map(c => `<li onclick="selectGiftBuyer(${c.id}, '${c.name}', '${c.phone}')" class="px-4 py-2 hover:bg-pink-50 cursor-pointer transition border-b"><span class="font-bold text-gray-900">${c.phone}</span> - <span class="text-sm text-gray-600">${c.name}</span></li>`).join(''); }
+        function selectGiftBuyer(id, name, phone) { giftCardBuyerId = id; document.getElementById('gift-buyer-search').value = ""; document.getElementById('gift-buyer-dropdown').classList.add('hidden'); document.getElementById('buyer-name-display').innerText = `${name} (${phone})`; document.getElementById('selected-buyer-info').classList.remove('hidden'); }
+        function clearSelectedBuyer() { giftCardBuyerId = null; document.getElementById('selected-buyer-info').classList.add('hidden'); }
+async function submitNewGiftCard() {
+            const amount = parseFloat(document.getElementById('giftCardAmount').value);
+            if (!amount || amount <= 0) return alert("Please enter a valid amount.");
+            const payload = { initial_amount: amount.toFixed(2), customer: giftCardBuyerId };
+            try {
+                const response = await fetch('/api/orders/giftcards/', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }, body: JSON.stringify(payload) });
+                if(response.ok) {
+                    const data = await response.json(); closeModal('createGiftCardModal');
+                    
+                    // حفظ بيانات العميل لتمريرها إلى نافذة الطباعة
+                    const buyer = allCustomers.find(c => c.id === giftCardBuyerId);
+                    window.lastGiftCardBuyerName = buyer ? buyer.name : 'عميل نقدي / Cash';
+                    window.lastGiftCardBuyerFile = (buyer && buyer.file_number) ? buyer.file_number : '---';
+
+                    document.getElementById('generated-card-number').innerText = data.card_number;
+                    document.getElementById('generated-card-balance').innerText = `${data.balance} QAR`;
+                    openModal('giftCardSuccessModal'); document.getElementById('giftCardAmount').value = ""; clearSelectedBuyer();
+                } else { alert("Error creating gift card."); }
+            } catch(e) { alert("Network error"); }
+        }
+
+        function printGiftCard() {
+            const cardNum = document.getElementById('generated-card-number').innerText;
+            const balance = document.getElementById('generated-card-balance').innerText.replace(' QAR', '');
+            
+            // جلب بيانات العميل المحفوظة
+            const buyerName = window.lastGiftCardBuyerName || 'عميل نقدي / Cash';
+            const buyerFile = window.lastGiftCardBuyerFile || '---';
+
+            const giftData = {
+                cardNum: cardNum,
+                balance: balance,
+                name: buyerName,
+                file: buyerFile
+            };
+            
+            localStorage.setItem('lastGiftCard', JSON.stringify(giftData));
+            window.open('/gift-card-receipt/', '_blank', 'width=400,height=600');
+        }
+
+        async function checkGiftCardBalance() {
+            const cardInput = document.getElementById('paymentGiftCardNumber').value.trim();
+            if(!cardInput) return alert("Enter card number first.");
+            try {
+                const response = await fetch(`/api/orders/giftcards/check-balance/?card_number=${cardInput}`);
+                const data = await response.json();
+                if(response.ok) {
+                    document.getElementById('gc-owner').innerText = data.customer_name;
+                    document.getElementById('gc-balance').innerText = `${data.balance} QAR`;
+                    document.getElementById('gift-card-balance-info').classList.remove('hidden');
+                    currentGiftCardNumber = data.card_number; document.getElementById('btn-confirm-gc-payment').disabled = false;
+                } else { alert(data.error || "Card not found or inactive."); document.getElementById('gift-card-balance-info').classList.add('hidden'); document.getElementById('btn-confirm-gc-payment').disabled = true; }
+            } catch(e) { alert("Network error"); }
+        }
+
+        // ==========================================================
+        function addToCart(itemName, serviceKey, unitPrice, id) {
+            document.getElementById('order-sidebar').classList.remove('hidden');
+            document.getElementById('order-sidebar').classList.add('flex');
+            
+            // 🌟 التعديل هنا: استخدمنا unshift بدلاً من push ليظهر الصنف الجديد في الأعلى 🌟
+            cart.unshift({ id, name: itemName, service: serviceKey, unitPrice: parseFloat(unitPrice), quantity: 1, isExpress: false });
+            
+            updateUI();
+        }
+
+        function updateCartItem(index, field, value) {
+            if(field === 'quantity') cart[index].quantity = parseInt(value) || 1;
+            if(field === 'unitPrice') cart[index].unitPrice = parseFloat(value) || 0;
+            if(field === 'isExpress') cart[index].isExpress = value;
+            updateUI();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            if(cart.length === 0) {
+                document.getElementById('order-sidebar').classList.add('hidden');
+                document.getElementById('order-sidebar').classList.remove('flex');
+            }
+            updateUI();
+        }
+
+        function updateUI() {
+            const cartDiv = document.getElementById('cart-items');
+            const isGlobalExpress = document.getElementById('toggle-express').checked;
+            const discountPercent = parseFloat(document.getElementById('discount-input').value) || 0;
+            let totalQty = 0; let subtotal = 0;
+            
+            cartDiv.innerHTML = cart.map((item, index) => {
+                const applyExpress = isGlobalExpress || item.isExpress;
+                const activeUnitPrice = applyExpress ? (item.unitPrice * 2) : item.unitPrice;
+                const itemTotal = item.quantity * activeUnitPrice;
+                totalQty += item.quantity; subtotal += itemTotal;
+                const badgeHTML = applyExpress ? `<span class="border border-orange-300 text-orange-600 bg-orange-50 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide shadow-sm">${i18n[currentLang].express}</span>` : '';
+                
+                return `
+                <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm relative transition-all">
+                    <div class="flex justify-between items-start mb-0.5">
+                        <h3 class="font-bold text-gray-800 text-[14px]">${item.name}</h3>
+                        <div class="flex items-center gap-2">${badgeHTML} <button onclick="removeFromCart(${index})" class="text-gray-400 hover:text-red-500 font-bold text-lg leading-none transition">&times;</button></div>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mb-2">${i18n[currentLang][item.service]}</p>
+                    <div class="grid grid-cols-4 gap-2 items-end">
+                        <div class="col-span-1 flex flex-col gap-1">
+                            <label class="flex items-center gap-1.5 cursor-pointer text-[11px] ${!item.isExpress ? 'text-blue-500 font-bold' : 'text-gray-500 font-medium'}">
+                                <input type="radio" name="speed_${index}" ${!item.isExpress ? 'checked' : ''} onchange="updateCartItem(${index}, 'isExpress', false)" class="w-3.5 h-3.5 accent-blue-500 cursor-pointer"> ${i18n[currentLang].normal}
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-[11px] ${item.isExpress ? 'text-orange-600 font-bold' : 'text-orange-500 font-medium'}">
+                                <input type="radio" name="speed_${index}" ${item.isExpress ? 'checked' : ''} onchange="updateCartItem(${index}, 'isExpress', true)" class="w-3.5 h-3.5 accent-orange-500 cursor-pointer"> ${i18n[currentLang].express}
+                            </label>
+                        </div>
+                        <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-500 mb-1">${i18n[currentLang].qtyLabel}</label><input type="number" value="${item.quantity}" onchange="updateCartItem(${index}, 'quantity', this.value)" min="1" class="w-full bg-white border border-gray-200 rounded-md py-1 px-1 text-center text-xs font-bold text-gray-700 outline-none focus:border-blue-500"></div>
+                        <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-500 mb-1">${i18n[currentLang].unitPriceLabel}</label><input type="number" value="${item.unitPrice}" onchange="updateCartItem(${index}, 'unitPrice', this.value)" min="0" step="0.5" class="w-full bg-white border border-gray-200 rounded-md py-1 px-1 text-center text-xs font-bold text-gray-700 outline-none focus:border-blue-500"></div>
+                        <div class="col-span-1 text-right pb-0.5"><label class="block text-[10px] font-bold text-gray-500 mb-1">${i18n[currentLang].totalRowLabel}</label><p class="font-bold text-[#565cc0] text-[15px] leading-none">${itemTotal.toFixed(2)} <span class="text-[9px] font-normal currency-label">${i18n[currentLang].currency}</span></p></div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            const discountAmount = subtotal * (discountPercent / 100);
+            const grandTotal = subtotal - discountAmount;
+
+            document.getElementById('total-qty').innerText = totalQty;
+            document.getElementById('subtotal-price').innerHTML = `${subtotal.toFixed(2)} <span class="text-[10px] currency-label">${i18n[currentLang].currency}</span>`;
+            document.getElementById('grand-total').innerHTML = `${grandTotal.toFixed(2)} <span class="text-xs currency-label">${i18n[currentLang].currency}</span>`;
+            document.querySelectorAll('.currency-label').forEach(el => el.innerText = i18n[currentLang].currency);
+        }
+
+        function buildReceiptTemplate(orderId, orderData, cartItems, subtotal, grandTotal, paymentMethod) {
+            const orderIdStr = String(orderId).padStart(4, '0');
+            document.getElementById('print-order-id').innerText = orderIdStr;
+            document.getElementById('print-large-order-id').innerText = orderIdStr; // الرقم الكبير
+            
+            const now = new Date();
+            document.getElementById('print-date').innerText = now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+            
+            const totalQty = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+            document.getElementById('print-qty').innerText = totalQty;
+
+            // جلب اسم الكاشير (يمكن ربطه لاحقاً بدجانغو، حالياً سنضع User)
+            document.getElementById('print-prepared-by').innerText = 'Cashier'; 
+
+            // بيانات العميل
+            let cName = 'Cash Customer';
+            let cPhone = '---';
+            let cCode = '---';
+            let prevBalance = '0.00';
+            
+            if (selectedCustomerObj) {
+                cName = selectedCustomerObj.name;
+                cPhone = selectedCustomerObj.phone;
+                cCode = selectedCustomerObj.code || '---';
+                prevBalance = parseFloat(selectedCustomerObj.balance || 0);
+            }
+            
+            document.getElementById('print-customer-name').innerText = cName;
+            document.getElementById('print-customer-phone').innerText = cPhone;
+            document.getElementById('print-customer-code').innerText = cCode;
+
+            // بناء الجدول
+            const isGlobalExpress = document.getElementById('toggle-express').checked;
+            const tbody = document.getElementById('print-items-tbody');
+            tbody.innerHTML = cartItems.map(item => {
+                const applyExpress = isGlobalExpress || item.isExpress;
+                const uPrice = applyExpress ? (item.unitPrice * 2) : item.unitPrice;
+                const tPrice = uPrice * item.quantity;
+                const expressLabel = applyExpress ? '<br><span class="text-[9px] text-gray-500">(Express)</span>' : '';
+                return `
+                    <tr class="border-b border-gray-300">
+                        <td class="p-1 border-r border-gray-300 font-bold">${item.name} ${expressLabel}</td>
+                        <td class="text-center p-1 border-r border-gray-300">${item.quantity}</td>
+                        <td class="text-center p-1 border-r border-gray-300">${uPrice.toFixed(2)}</td>
+                        <td class="text-right p-1 font-bold">${tPrice.toFixed(2)}</td>
+                    </tr>`;
+            }).join('');
+
+            // الحسابات
+            document.getElementById('print-subtotal').innerText = `${subtotal.toFixed(2)} QAR`;
+            document.getElementById('print-total').innerText = `${grandTotal.toFixed(2)} QAR`;
+
+            // حساب الرصيد المتبقي (Due) بناءً على طريقة الدفع
+           // حساب الرصيد المتبقي (Due) بناءً على طريقة الدفع
+            let totalDue = grandTotal; 
+            
+            if (paymentMethod === 'PENDING') {
+                // إضافة جديدة: طلب معلق لم يتم دفعه بعد
+                document.getElementById('print-prev-balance').innerText = `---`;
+                document.getElementById('print-total-due').innerText = `UNPAID (${grandTotal.toFixed(2)} QAR)`;
+            } else if (paymentMethod === 'WALLET' && selectedCustomerObj) {
+                // إذا دفع بالمحفظة، المتبقي من محفظته هو الرصيد السابق ناقص الفاتورة
+                document.getElementById('print-prev-balance').innerText = `${prevBalance.toFixed(2)} QAR`;
+                const remaining = prevBalance - grandTotal;
+                document.getElementById('print-total-due').innerText = `WALLET (${remaining.toFixed(2)} QAR)`;
+            } else if (paymentMethod === 'CASH' || paymentMethod === 'CARD') {
+                // دفع نقدي أو بطاقة (خالص)
+                document.getElementById('print-prev-balance').innerText = `---`;
+                document.getElementById('print-total-due').innerText = `PAID (${paymentMethod})`;
+            } else if (paymentMethod === 'GIFT_CARD') {
+                document.getElementById('print-prev-balance').innerText = `Gift Card`;
+                document.getElementById('print-total-due').innerText = `PAID (Gift Card)`;
+            }
+
+            // خيارات التجهيز
+            document.getElementById('check-hanger').innerHTML = currentProcessingType === 'HANGER' ? '☑' : '☐';
+            document.getElementById('check-folded').innerHTML = currentProcessingType === 'FOLDED' ? '☑' : '☐';
+            document.getElementById('check-delivery').innerHTML = currentLogisticsType === 'DELIVERY' ? '☑' : '☐';
+            document.getElementById('check-pickup').innerHTML = currentLogisticsType === 'PICKUP' ? '☑' : '☐';
+
+            // الباركود
+            JsBarcode("#print-barcode", orderIdStr, {
+                format: "CODE128",
+                width: 1.5,
+                height: 40,
+                displayValue: true,
+                fontSize: 12,
+                margin: 0
+            });
+        }
+
+        function printOrderInvoice() {
+            window.print();
+        }
+
+        async function processPayment(method) {
+            if (cart.length === 0) return alert(i18n[currentLang].alertEmptyCart);
+            
+            // 🌟 هذا هو الشرط الإضافي لمنع العملية بدون اختيار عميل 🌟
+            if (!selectedCustomerId) {
+                alert(currentLang === 'ar' ? "الرجاء اختيار عميل أو إنشاء عميل جديد أولاً!" : "Please select or create a customer first!");
+                return;
+            }
+
+            if (method === 'WALLET' && !selectedCustomerId) return alert(i18n[currentLang].alertSelectCustomer);
+            if (method === 'GIFT_CARD' && !currentGiftCardNumber) return alert("Please check a valid gift card first!");
+            
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            
+            const isGlobalExpress = document.getElementById('toggle-express').checked;
+            const discountPercent = parseFloat(document.getElementById('discount-input').value) || 0;
+            
+            let finalSubtotal = 0;
+            const processedItems = cart.map(i => {
+                const applyExpress = isGlobalExpress || i.isExpress;
+                const activeUnitPrice = applyExpress ? (i.unitPrice * 2) : i.unitPrice;
+                finalSubtotal += (i.quantity * activeUnitPrice);
+                return { item: i.id, quantity: i.quantity, price: activeUnitPrice, is_express: applyExpress };
+            });
+            
+            const grandTotal = finalSubtotal - (finalSubtotal * (discountPercent / 100));
+
+            const orderData = {
+                branch: 1, 
+                customer: selectedCustomerId, 
+                total_amount: grandTotal.toFixed(2),
+                discount_percentage: discountPercent,
+                remarks: globalOrderRemarks,
+                reference: globalOrderReference,
+                processing_type: currentProcessingType,
+                logistics_type: currentLogisticsType,
+                items: processedItems,
+                // إذا كان الطلب 'PENDING' نرسل مصفوفة مدفوعات فارغة
+                payments: method === 'PENDING' ? [] : [{ method: method, amount: grandTotal.toFixed(2) }]
+            };
+
+            if (method === 'GIFT_CARD') orderData.gift_card_number = currentGiftCardNumber;
+
+            try {
+                const response = await fetch('/api/orders/checkout/', {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }, 
+                    body: JSON.stringify(orderData)
+                });
+
+                if (response.ok) {
+                    const resultData = await response.json();
+                    
+                    
+                
+                    
+                    document.getElementById('summary-order-id').innerText = String(resultData.id || '000').padStart(4, '0');
+                    document.getElementById('summary-customer').innerText = document.getElementById('cust-name-display').innerText !== '---' ? document.getElementById('cust-name-display').innerText : 'Cash Customer';
+                    document.getElementById('summary-total').innerText = `${grandTotal.toFixed(2)} QAR`;
+
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    openModal('orderSuccessModal');
+                    
+                    cart = []; globalOrderRemarks = ""; globalOrderReference = "";
+                    document.getElementById('discount-input').value = "";
+                    document.getElementById('toggle-express').checked = false;
+                    
+                    updateUI();
+                    document.getElementById('order-sidebar').classList.add('hidden'); 
+                    document.getElementById('order-sidebar').classList.remove('flex');
+                    document.getElementById('customer-search-input').value = ''; 
+                    document.getElementById('customer-info').classList.add('hidden'); 
+                    document.getElementById('customer-info').classList.remove('flex');
+                    selectedCustomerId = null;
+                    selectedCustomerObj = null; // تفريغ بيانات العميل
+                    setProcessing('FOLDED'); setLogistics('PICKUP'); 
+                    
+                    closeModal('giftCardPaymentModal');
+                    document.getElementById('paymentGiftCardNumber').value = "";
+                    document.getElementById('gift-card-balance-info').classList.add('hidden');
+                    document.getElementById('btn-confirm-gc-payment').disabled = true;
+                    currentGiftCardNumber = "";
+                    
+                } else {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    const err = await response.json(); 
+                    alert("Error: " + JSON.stringify(err));
+                }
+            } catch(e) {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                alert("Network Error!");
+            }
+        }
+// ================== وظائف شحن المحفظة (Wallet Recharge) ==================
+        let walletRechargeCustomerId = null;
+        let lastWalletReceiptData = {};
+
+        function toggleWalletCustomerDropdown(event) { event.stopPropagation(); document.getElementById('wallet-customer-dropdown').classList.remove('hidden'); renderWalletCustomerDropdown(allCustomers); }
+        function filterWalletCustomers() { const query = document.getElementById('wallet-customer-search').value.toLowerCase(); document.getElementById('wallet-customer-dropdown').classList.remove('hidden'); const filtered = allCustomers.filter(c => (c.name && c.name.toLowerCase().includes(query)) || (c.phone && c.phone.includes(query))); renderWalletCustomerDropdown(filtered); }
+        
+        function renderWalletCustomerDropdown(customers) {
+            const list = document.getElementById('wallet-customer-dropdown');
+            if(customers.length === 0) return list.innerHTML = `<li class="p-3 text-sm text-gray-500 text-center">No results</li>`;
+            list.innerHTML = customers.map(c => `<li onclick="selectWalletCustomer(${c.id}, '${c.name}', '${c.phone}', ${c.wallet_balance || 0}, '${c.file_number || '---'}')" class="px-4 py-2 hover:bg-purple-50 cursor-pointer transition border-b"><span class="font-bold text-gray-900">${c.phone}</span> - <span class="text-sm text-gray-600">${c.name}</span> <span class="text-xs text-green-500 font-bold ml-2">(${parseFloat(c.wallet_balance||0).toFixed(2)} QAR)</span></li>`).join('');
+        }
+
+        function selectWalletCustomer(id, name, phone, balance, fileNum) {
+            walletRechargeCustomerId = id;
+            document.getElementById('wallet-customer-search').value = "";
+            document.getElementById('wallet-customer-dropdown').classList.add('hidden');
+            document.getElementById('wallet-customer-name-display').innerText = `${name} (${phone})`;
+            document.getElementById('selected-wallet-customer-info').classList.remove('hidden');
+            
+            // حفظ بيانات العميل للطباعة لاحقاً
+            lastWalletReceiptData = { name: name, phone: phone, file_number: fileNum };
+        }
+
+        function clearWalletCustomer() { walletRechargeCustomerId = null; document.getElementById('selected-wallet-customer-info').classList.add('hidden'); }
+
+       async function submitWalletRecharge() {
+            if (!walletRechargeCustomerId) return alert("Please select a customer.");
+            const amount = parseFloat(document.getElementById('walletRechargeAmount').value);
+            if (!amount || amount <= 0) return alert("Please enter a valid amount.");
+
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+
+            try {
+                const customer = allCustomers.find(c => c.id === walletRechargeCustomerId);
+                const currentBalance = parseFloat(customer.wallet_balance) || 0;
+                const newBalance = currentBalance + amount;
+
+                const response = await fetch(`/api/accounts/search/${walletRechargeCustomerId}/`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ wallet_balance: newBalance.toFixed(2) })
+                });
+
+                if(response.ok) {
+                    const index = allCustomers.findIndex(c => c.id === walletRechargeCustomerId);
+                    if(index !== -1) allCustomers[index].wallet_balance = newBalance;
+
+                    if (selectedCustomerId === walletRechargeCustomerId) {
+                        document.getElementById('cust-balance').innerText = newBalance.toFixed(2);
+                    }
+
+                    // 🌟 تجهيز البيانات للنظام المركزي الجديد 🌟
+                    lastWalletReceiptData = {
+                        name: customer.name,
+                        phone: customer.phone,
+                        file_number: customer.file_number || '---',
+                        rechargeAmount: amount.toFixed(2),
+                        newBalance: newBalance.toFixed(2),
+                        date: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })
+                    };
+
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    closeModal('rechargeWalletModal');
+
+                    document.getElementById('recharged-amount-display').innerText = `${amount.toFixed(2)} QAR`;
+                    document.getElementById('new-wallet-balance-display').innerText = `${newBalance.toFixed(2)} QAR`;
+                    openModal('walletSuccessModal');
+                    
+                    document.getElementById('walletRechargeAmount').value = "";
+                    clearWalletCustomer();
+                } else {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    alert("Failed to update wallet balance.");
+                }
+            } catch(e) {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                alert("Network error.");
+            }
+        }
+
+      // 🖨️ تعديل دالة الطباعة لفتح الصفحة الحقيقية بدلاً من القسم الفارغ
+function printOrderInvoice() {
+    // جلب رقم الطلب الذي تم إنشاؤه للتو
+    const orderId = window.lastCreatedOrderId;
+    
+    if (orderId) {
+        // فتح رابط الطباعة الخاص بدجانغو (يتوجه لملف receipt.html)
+        // تأكد أن هذا الرابط مطابق للـ URL في ملف urls.py الخاص بك
+        window.open(`/api/orders/print/${orderId}/`, '_blank', 'width=400,height=600');
+    } else {
+        alert("لم يتم العثور على رقم الطلب للطباعة!");
+    }
+    
+    closeModal('orderSuccessModal');
+}
+        // 💰 دالة معالجة الدفع والطلب (النسخة النهائية مع شرط العميل الإجباري)
+        async function processPayment(method) {
+            // 1. التحقق من وجود أصناف في السلة
+            if (cart.length === 0) return alert(i18n[currentLang].alertEmptyCart);
+            
+            // 2. 🌟 منع إنشاء الطلب أو الدفع بدون اختيار عميل (طلبك الجديد) 🌟
+            if (!selectedCustomerId) {
+                const msg = currentLang === 'ar' ? "الرجاء اختيار عميل أو إنشاء عميل جديد أولاً!" : "Please select or create a customer first!";
+                alert(msg);
+                return;
+            }
+
+            // 3. التحقق من شروط الدفع الخاصة (المحفظة وبطاقة الهدية)
+            if (method === 'WALLET' && !selectedCustomerId) return alert(i18n[currentLang].alertSelectCustomer);
+            if (method === 'GIFT_CARD' && !currentGiftCardNumber) return alert("Please check a valid gift card first!");
+            
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            
+            const isGlobalExpress = document.getElementById('toggle-express').checked;
+            const discountPercent = parseFloat(document.getElementById('discount-input').value) || 0;
+            
+            let finalSubtotal = 0;
+            const processedItems = cart.map(i => {
+                const applyExpress = isGlobalExpress || i.isExpress;
+                const activeUnitPrice = applyExpress ? (i.unitPrice * 2) : i.unitPrice;
+                finalSubtotal += (i.quantity * activeUnitPrice);
+                return { item: i.id, quantity: i.quantity, price: activeUnitPrice, is_express: applyExpress };
+            });
+            
+            const grandTotal = finalSubtotal - (finalSubtotal * (discountPercent / 100));
+
+            const orderData = {
+                branch: 1, 
+                customer: selectedCustomerId, 
+                total_amount: grandTotal.toFixed(2),
+                discount_percentage: discountPercent,
+                remarks: globalOrderRemarks,
+                reference: globalOrderReference,
+                processing_type: currentProcessingType,
+                logistics_type: currentLogisticsType,
+                items: processedItems,
+                payments: method === 'PENDING' ? [] : [{ method: method, amount: grandTotal.toFixed(2) }]
+            };
+
+            if (method === 'GIFT_CARD') orderData.gift_card_number = currentGiftCardNumber;
+
+            try {
+                const response = await fetch('/api/orders/checkout/', {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }, 
+                    body: JSON.stringify(orderData)
+                });
+
+                if (response.ok) {
+                    const resultData = await response.json();
+                    window.lastCreatedOrderId = resultData.id;
+                    
+                    document.getElementById('summary-order-id').innerText = String(resultData.id || '000').padStart(4, '0');
+                    document.getElementById('summary-customer').innerText = document.getElementById('cust-name-display').innerText;
+                    document.getElementById('summary-total').innerText = `${grandTotal.toFixed(2)} QAR`;
+
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    openModal('orderSuccessModal');
+                    
+                    // تصفير السلة والواجهة
+                    cart = []; globalOrderRemarks = ""; globalOrderReference = "";
+                    document.getElementById('discount-input').value = "";
+                    document.getElementById('toggle-express').checked = false;
+                    updateUI();
+                    document.getElementById('order-sidebar').classList.add('hidden'); 
+                    document.getElementById('customer-search-input').value = ''; 
+                    document.getElementById('customer-info').classList.add('hidden'); 
+                    selectedCustomerId = null;
+                    selectedCustomerObj = null;
+                } else {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    const err = await response.json(); 
+                    alert("Error: " + JSON.stringify(err));
+                }
+            } catch(e) {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                alert("Network Error!");
+            }
+        }
+        fetchInitialData();
+
+        // 🖨️ دالة طباعة إيصال شحن المحفظة (النظام المركزي الجديد)
+        function printWalletReceipt() {
+            if (!lastWalletReceiptData.name) return alert("No recharge data found!");
+
+            const rechargeData = {
+                name: lastWalletReceiptData.name,
+                phone: lastWalletReceiptData.phone,
+                file: lastWalletReceiptData.file_number,
+                amount: lastWalletReceiptData.rechargeAmount,
+                newBalance: lastWalletReceiptData.newBalance,
+                date: lastWalletReceiptData.date
+            };
+            
+            // حفظ في التخزين المحلي للمتصفح ليقرأه ملف HTML المستقل
+            localStorage.setItem('lastWalletRecharge', JSON.stringify(rechargeData));
+            
+            // فتح صفحة الطباعة التي أنشأناها (wallet_recharge_receipt.html)
+            window.open('/wallet-recharge-receipt/', '_blank', 'width=400,height=600');
+            closeModal('walletSuccessModal');
+        }
+        function openPurchasesModal() {
+            document.getElementById('purchasesModal').classList.remove('hidden');
+            document.getElementById('expDate').valueAsDate = new Date();
+            loadExpenseCategories(); 
+            loadBranches(); 
+            loadVendors(); // استدعاء الموردين
+        }
+
+// 🌟 دالة جلب الفئات (معدلة لاختيار أول فئة تلقائياً بالخفاء) 🌟
+async function loadExpenseCategories() {
+    try {
+        const res = await fetch('/api/reports/categories/?_ts=' + new Date().getTime());
+        if (res.ok) {
+            const data = await res.json();
+            const categories = Array.isArray(data) ? data : (data.results || []);
+            const select = document.getElementById('expCategory'); 
+            
+            if (select && categories.length > 0) {
+                select.innerHTML = ''; // تفريغ القائمة
+                categories.forEach(cat => { 
+                    select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`; 
+                });
+                // السحر هنا: نختار أول فئة تلقائياً عشان ما يضرب الباك إند
+                select.value = categories[0].id; 
+            }
+        }
+    } catch (e) { 
+        console.error("Error loading categories:", e); 
+    }
+}
+async function loadBranches() {
+    try {
+        const res = await fetch('/api/branches/?_ts=' + new Date().getTime()); 
+        if (res.ok) {
+            const data = await res.json();
+            const select = document.getElementById('expLocation');
+            select.innerHTML = '<option value="" disabled selected>اختر الموقع...</option>';
+            const branches = Array.isArray(data) ? data : (data.results || []);
+            branches.forEach(branch => {
+                select.innerHTML += `<option value="${branch.id}">${branch.name}</option>`;
+            });
+        }
+    } catch (e) { console.error("Error loading branches:", e); }
+}
+async function loadVendors() {
+    try {
+        // المسار الصحيح اللي يكلم الباك إند
+        const res = await fetch('/api/accounts/active-vendors/');
+        if (res.ok) {
+            const vendors = await res.json();
+            const select = document.getElementById('expVendor');
+            if (select) {
+                select.innerHTML = '<option value="">-- No Supplier --</option>';
+                vendors.forEach(v => {
+                    select.innerHTML += `<option value="${v.company_name}">${v.company_name}</option>`;
+                });
+            }
+        }
+    } catch (e) { 
+        console.error("Error loading vendors:", e); 
+    }
+}
+
+async function saveExpense() {
+            const vendorName = document.getElementById('expVendor').value;
+            const originalDesc = document.getElementById('expDesc').value;
+            
+            // دمج اسم المورد مع الوصف
+            const finalDescription = vendorName ? `[${vendorName}] - ${originalDesc}` : originalDesc;
+
+            const data = {
+                date: document.getElementById('expDate').value,
+                category: document.getElementById('expCategory').value,
+                location: document.getElementById('expLocation').value,
+                description: finalDescription,
+                total_amount: document.getElementById('expTotal').value,
+                paid_amount: document.getElementById('expPaid').value,
+                payment_method: document.getElementById('expMethod').value,
+                notes: document.getElementById('expNotes').value
+            };
+
+            // حماية أقوى عشان الزر ما يعلق لو الكاشير نسى الوصف
+            if (!originalDesc || !data.payment_method || !data.location) {
+                alert(currentLang === 'ar' ? "⚠️ يرجى تعبئة كافة الحقول المطلوبة!" : "⚠️ Please fill all required fields!");
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/reports/save-expense/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    const responseData = await res.json();
+                    
+                    const expId = responseData.id ? `EXP${String(responseData.id).padStart(6, '0')}` : `EXP${Math.floor(Math.random() * 900000 + 100000)}`;
+                    
+                    // 🌟 الحماية السحرية عشان اسم الفئة ما يوقف السكربت 🌟
+                    const catSelect = document.getElementById('expCategory');
+                    const catName = (catSelect.selectedIndex >= 0) ? catSelect.options[catSelect.selectedIndex].text : 'مصروفات';
+                    
+                    const branchSelect = document.getElementById('expLocation');
+                    const branchName = (branchSelect.selectedIndex >= 0) ? branchSelect.options[branchSelect.selectedIndex].text : 'Main Branch';
+                    
+                    const total = parseFloat(data.total_amount) || 0;
+                    const paid = parseFloat(data.paid_amount) || 0;
+                    const rem = total - paid;
+                    const status = rem > 0 ? 'Due / مستحق' : 'Paid / مدفوع';
+                    
+                    let payMethodText = data.payment_method;
+                    if(data.payment_method === 'CASH') payMethodText = 'Cash / نقداً';
+                    if(data.payment_method === 'CARD') payMethodText = 'Card / شبكة';
+
+                    document.getElementById('success-exp-total').innerText = `${total.toFixed(2)} QAR`;
+                    document.getElementById('success-exp-desc').innerText = finalDescription;
+
+                    document.getElementById('print-exp-id').innerText = expId;
+                    document.getElementById('print-exp-branch').innerText = branchName;
+                    document.getElementById('print-exp-date').innerText = new Date(data.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+                    const displayVendor = vendorName ? vendorName : 'بدون مورد (Cash)';
+                    document.getElementById('print-exp-vendor').innerText = displayVendor;
+                    document.getElementById('print-exp-desc').innerText = finalDescription;
+                    document.getElementById('print-exp-notes').innerText = data.notes || '---';
+                    document.getElementById('print-exp-amount').innerText = `QR ${total.toFixed(2)}`;
+                    document.getElementById('print-exp-method').innerText = payMethodText;
+                    document.getElementById('print-exp-paid').innerText = `QR ${paid.toFixed(2)}`;
+                    document.getElementById('print-exp-rem').innerText = `QR ${rem.toFixed(2)}`;
+                    document.getElementById('print-exp-status').innerText = status;
+                    
+                    const cashierName = document.getElementById('current-logged-user') ? document.getElementById('current-logged-user').innerText.trim() : 'Admin';
+                    document.getElementById('print-exp-cashier').innerText = cashierName;
+
+                    const now = new Date();
+                    document.getElementById('print-exp-time').innerText = now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+
+                    // 🌟 استخدمنا دالة الإغلاق الصحيحة اللي ما تخرب الدنيا 🌟
+                    closeModal('purchasesModal');
+                    
+                    document.getElementById('expDesc').value = '';
+                    document.getElementById('expNotes').value = '';
+                    document.getElementById('expTotal').value = '0.00';
+                    document.getElementById('expPaid').value = '0.00';
+                    document.getElementById('expVendor').value = ''; // تصفير المورد للمرة الجاية
+                    
+                    openModal('expenseSuccessModal');
+
+                } else {
+                    const err = await res.json();
+                    alert("❌ Error: " + JSON.stringify(err));
+                }
+            } catch (e) { 
+                console.error("Save error:", e); 
+                alert("حدث خطأ في الاتصال، يرجى المحاولة مرة أخرى.");
+            }
+        }
+
+        // 🖨️ دالة تشغيل الطباعة الخاصة بالمصروفات
+        function printExpenseInvoice() {
+            // تفعيل كلاس الطباعة لسند المصروفات فقط
+            if(document.getElementById('printableInvoice')) document.getElementById('printableInvoice').classList.remove('active-print');
+            document.getElementById('printExpenseInvoice').classList.add('active-print');
+            
+            window.print();
+            
+            // إخفاء كلاس الطباعة بعد الانتهاء
+            setTimeout(() => {
+                document.getElementById('printExpenseInvoice').classList.remove('active-print');
+            }, 1000);
+            
+            closeModal('expenseSuccessModal');
+        }
+        
+    </script>
+   <div id="purchasesModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[150] bg-black/60 backdrop-blur-sm">
+        <div class="bg-white w-[500px] rounded-2xl shadow-2xl overflow-hidden border border-gray-200 animate-fade-in-up">
+            <div class="bg-[#e11d48] px-6 py-4 flex items-center justify-between text-white">
+                <div>
+                    <h3 class="font-black text-xl flex items-center gap-2">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                        <span id="purchaseModalTitle">Add New Expense</span>
+                    </h3>
+                    <p class="text-xs opacity-80 font-bold mt-1">Quick expense entry from POS</p>
+                </div>
+                <button onclick="closeModal('purchasesModal')" class="text-white hover:rotate-90 transition text-2xl font-bold">&times;</button>
+            </div>
+
+            <select id="expCategory" class="hidden"></select>
+
+            <div class="p-6 grid grid-cols-2 gap-4 bg-gray-50">
+                <div class="col-span-1">
+                    <label class="block text-[10px] font-black text-gray-500 uppercase mb-1">📅 Expense Date *</label>
+                    <input type="date" id="expDate" class="w-full border border-gray-300 rounded-lg p-2 text-sm font-bold shadow-sm">
+                </div>
+                <div class="col-span-1">
+                    <label class="block text-[10px] font-black text-gray-500 uppercase mb-1">🏢 Supplier / المورد (اختياري)</label>
+                    <select id="expVendor" class="w-full border border-gray-300 rounded-lg p-2 text-sm font-bold shadow-sm outline-none">
+                        <option value="">-- No Supplier --</option>
+                    </select>
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-[10px] font-black text-gray-500 uppercase mb-1">📝 Description *</label>
+                    <input type="text" id="expDesc" placeholder="Brief description of the expense" class="w-full border border-gray-300 rounded-lg p-2 text-sm font-bold shadow-sm">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-[10px] font-black text-gray-500 uppercase mb-1">📓 Additional Notes</label>
+                    <textarea id="expNotes" rows="2" placeholder="Any additional details" class="w-full border border-gray-300 rounded-lg p-2 text-sm font-bold shadow-sm"></textarea>
+                </div>
+                <div class="col-span-1">
+                    <label class="block text-[10px] font-black text-gray-500 uppercase mb-1">💰 Expense Amount *</label>
+                    <div class="flex"><span class="bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg px-3 py-2 text-xs font-bold text-gray-500 uppercase currency-label">QAR</span><input type="number" id="expTotal" class="w-full border border-gray-300 rounded-r-lg p-2 text-sm font-bold" value="0.00"></div>
+                </div>
+                <div class="col-span-1">
+                    <label class="block text-[10px] font-black text-gray-500 uppercase mb-1">💵 Paid Amount *</label>
+                    <div class="flex"><span class="bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg px-3 py-2 text-xs font-bold text-gray-500 uppercase currency-label">QAR</span><input type="number" id="expPaid" class="w-full border border-gray-300 rounded-r-lg p-2 text-sm font-bold" value="0.00"></div>
+                </div>
+                <div class="col-span-1">
+                    <label class="block text-[10px] font-black text-gray-500 uppercase mb-1">📍 Location</label>
+                    <select id="expLocation" class="w-full border border-gray-300 rounded-lg p-2 text-sm font-bold outline-none shadow-sm">
+                        <option value="">Select Location</option>
+                    </select>
+                </div>
+                <div class="col-span-1">
+                    <label class="block text-[10px] font-black text-gray-500 uppercase mb-1">💳 Payment Method *</label>
+                    <select id="expMethod" class="w-full border border-gray-300 rounded-lg p-2 text-sm font-bold shadow-sm">
+                        <option value="">Select Method</option>
+                        <option value="CASH">Cash</option>
+                        <option value="CARD">Card</option>
+                        <option value="BANK_TRANSFER">Bank Transfer</option>
+                        <option value="FAWRAN">Fawran</option>
+                        <option value="CHECK">Check</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-white border-t border-gray-100 flex justify-end gap-3">
+                <button onclick="closeModal('purchasesModal')" class="px-6 py-2 border border-gray-300 text-gray-600 font-bold rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button onclick="saveExpense()" class="px-8 py-2 bg-[#e11d48] hover:bg-red-700 text-white font-black rounded-lg shadow-lg flex items-center gap-2 transition hover:scale-105">Save Expense</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="expenseSuccessModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[200]">
+        <div class="bg-white rounded-xl shadow-2xl w-[400px] p-8 relative text-center border-t-4 border-red-500">
+            <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">✓</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Expense Saved!</h3>
+            <p class="text-sm text-gray-500 mb-4">تم تسجيل المصروف بنجاح</p>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 my-4">
+                <p class="text-xs text-gray-500 mb-1">Total Amount / المبلغ</p>
+                <p id="success-exp-total" class="text-3xl font-black text-red-600 mb-2">0.00 QAR</p>
+                <p id="success-exp-desc" class="text-sm font-bold text-gray-700">---</p>
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button onclick="closeModal('expenseSuccessModal')" class="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-50 transition">Close</button>
+                <button onclick="printExpenseInvoice()" class="flex-1 bg-gray-800 text-white py-3 rounded-lg font-black hover:bg-gray-900 transition flex justify-center items-center gap-2 shadow-lg">🖨️ Print Voucher</button>
+            </div>
+        </div>
+    </div>
+
+   <div id="printExpenseInvoice" class="hidden text-black font-sans text-[13px] w-[80mm] mx-auto bg-white">
+        <div class="text-center mb-3">
+            <h2 class="font-black text-xl tracking-wide uppercase">EXPENSE VOUCHER</h2>
+            <h3 class="font-bold text-lg mt-1" style="font-family: 'Tajawal', sans-serif;">سند صرف</h3>
+            <p class="font-black text-lg mt-1 tracking-widest" id="print-exp-id">EXP000000</p>
+        </div>
+        
+        <div class="text-center mb-4">
+            <h2 class="font-black text-xl mb-1">Al Marona Laundry</h2>
+            <p class="text-xs font-bold" id="print-exp-branch">Main Branch</p>
+        </div>
+
+        <div class="border-t-2 border-b-2 border-dashed border-black py-2 mb-3 space-y-1.5 text-xs">
+            <div class="flex justify-between"><span class="text-gray-800">Date / التاريخ</span><span id="print-exp-date" class="font-bold">---</span></div>
+            <div class="flex justify-between"><span class="text-gray-800">Supplier / المورد</span><span id="print-exp-vendor" class="font-bold">---</span></div>
+            <div class="mt-2"><span class="block mb-0.5 text-gray-800">Description / الوصف:</span><div id="print-exp-desc" class="font-bold">---</div></div>
+            <div class="mt-2"><span class="block mb-0.5 text-gray-800">Notes / ملاحظات:</span><div id="print-exp-notes" class="font-bold">---</div></div>
+        </div>
+
+        <div class="text-center py-2 my-4 border-t-2 border-b-2 border-dashed border-black">
+            <p class="text-[12px] font-bold tracking-widest mb-1 mt-2 uppercase">المبلغ / AMOUNT</p>
+            <p class="text-3xl font-black tracking-wider mb-2" id="print-exp-amount">QR 0.00</p>
+        </div>
+
+        <div class="pt-2 text-xs space-y-2 mb-6 font-bold">
+            <div class="flex justify-between"><span>Payment / الدفع</span><span id="print-exp-method">---</span></div>
+            <div class="flex justify-between"><span>Paid / المدفوع</span><span id="print-exp-paid">QR 0.00</span></div>
+            <div class="flex justify-between"><span>Remaining / المتبقي</span><span id="print-exp-rem">QR 0.00</span></div>
+            <div class="flex justify-between mt-3 pt-2 border-t border-black"><span>Status / الحالة</span><span id="print-exp-status">---</span></div>
+            <div class="flex justify-between mt-2"><span>Cashier / أمين الصندوق</span><span id="print-exp-cashier">Admin</span></div>
+        </div>
+
+        <div class="text-center text-[10px] text-gray-600 mt-6 pt-2 border-t border-black">
+            Printed: <span id="print-exp-time"></span>
+        </div>
+    </div>
+
+    <script>
+        async function enforcePermissions() {
+            try {
+                const res = await fetch('/api/accounts/my-permissions/');
+                const perms = await res.json();
+                userPermissions = perms;
+
+                // 1. إذا كان المدير (Superuser) مسموح له كل شيء، نوقف الدالة هنا.
+                if (perms.is_superuser === true) return;
+
+               // 1. منع الدخول بالكامل إذا لم يكن لديه صلاحية العملاء
+                if (perms.can_access_customers === false || perms.error) {
+                    
+                    let fallbackUrl = '/logout/';
+                    let fallbackText = 'تسجيل الخروج';
+                    
+                    if (perms.can_access_pos) { fallbackUrl = '/cashier/'; fallbackText = 'العودة للكاشير'; }
+                    else if (perms.can_access_orders) { fallbackUrl = '/orders/management/'; fallbackText = 'العودة للطلبات'; }
+
+                    document.body.innerHTML = `
+                        <div class="h-screen w-full flex flex-col items-center justify-center bg-gray-50">
+                            <span class="text-6xl mb-4">🛑</span>
+                            <h1 class="text-3xl font-black text-red-600 mb-2">Access Denied! (غير مصرح لك)</h1>
+                            <p class="text-gray-500 font-bold mb-6">عفواً، ليس لديك الصلاحية لدخول شاشة العملاء.</p>
+                            <div class="flex gap-4">
+                                <button onclick="window.history.back()" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-bold shadow-sm hover:bg-gray-300 transition">⬅ رجوع للصفحة السابقة</button>
+                                <a href="${fallbackUrl}" class="bg-[#007ec5] text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 transition">🏠 ${fallbackText}</a>
+                            </div>
+                        </div>`;
+                    return;
+                }
+
+                // 3. إخفاء التبويبات العلوية (العملاء، الطلبات)
+                if (!perms.can_access_customers) {
+                    const custTab = document.querySelector('a[href="/customers/"]');
+                    if(custTab) custTab.style.display = 'none';
+                }
+                if (!perms.can_access_orders) {
+                    const ordTab = document.querySelector('a[href="/orders/management/"]');
+                    if(ordTab) ordTab.style.display = 'none';
+                }
+
+                // 4. إخفاء أزرار الكاشير العلوية (بطاقات، محفظة، مشتريات)
+                if (!perms.can_sell_gift_cards) {
+                    const gcBtn = document.querySelector('button[onclick*="createGiftCardModal"]');
+                    if(gcBtn) gcBtn.style.display = 'none';
+                }
+                if (!perms.can_recharge_wallet) {
+                    const walletBtn = document.querySelector('button[onclick*="rechargeWalletModal"]');
+                    if(walletBtn) walletBtn.style.display = 'none';
+                }
+                if (!perms.can_add_expenses) {
+                    const expBtn = document.querySelector('button[onclick*="openPurchasesModal"]');
+                    if(expBtn) expBtn.style.display = 'none';
+                }
+
+                // 5. إخفاء زر إنشاء عميل جديد من داخل الكاشير
+                if (!perms.can_add_new_customer) {
+                    const addCustBtn = document.querySelector('button[onclick*="newCustomerModal"]');
+                    if(addCustBtn) addCustBtn.style.display = 'none';
+                }
+
+                // 6. تعطيل حقل الخصم (Discount)
+                if (!perms.can_apply_discount) {
+                    const discountInput = document.getElementById('discount-input');
+                    if(discountInput) {
+                        discountInput.disabled = true;
+                        discountInput.placeholder = "مغلق";
+                        discountInput.title = "ليس لديك صلاحية لتطبيق خصم";
+                    }
+                }
+
+                // 7. إخفاء أزرار الدفع بالمحفظة وبطاقة الهدية
+                if (!perms.can_pay_with_wallet_gc) {
+                    const payWalletBtn = document.querySelector('button[onclick*="processPayment(\\\'WALLET\\\')"]');
+                    const payGcBtn = document.querySelector('button[onclick*="giftCardPaymentModal"]');
+                    if(payWalletBtn) payWalletBtn.style.display = 'none';
+                    if(payGcBtn) payGcBtn.style.display = 'none';
+                }
+
+            } catch (e) {
+                console.error("Permission check failed", e);
+            }
+        }
+
+        // تشغيل نظام الحماية فور تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', enforcePermissions);
+        
+    </script>
+    <div id="expenseSuccessModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[200]">
+        <div class="bg-white rounded-xl shadow-2xl w-[400px] p-8 relative text-center border-t-4 border-red-500">
+            <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">✓</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Expense Saved!</h3>
+            <p class="text-sm text-gray-500 mb-4">تم تسجيل المصروف بنجاح</p>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 my-4">
+                <p class="text-xs text-gray-500 mb-1">Total Amount / المبلغ</p>
+                <p id="success-exp-total" class="text-3xl font-black text-red-600 mb-2">0.00 QAR</p>
+                <p id="success-exp-desc" class="text-sm font-bold text-gray-700">---</p>
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button onclick="closeModal('expenseSuccessModal')" class="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-50 transition">Close</button>
+                <button onclick="printExpenseInvoice()" class="flex-1 bg-gray-800 text-white py-3 rounded-lg font-black hover:bg-gray-900 transition flex justify-center items-center gap-2 shadow-lg">🖨️ Print Voucher</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printExpenseInvoice" class="hidden text-black font-sans text-[13px] p-4 w-[80mm] mx-auto bg-white">
+        <div class="text-center mb-3">
+            <h2 class="font-black text-xl tracking-wide">EXPENSE VOUCHER</h2>
+            <h3 class="font-bold text-lg mt-1" style="font-family: 'Tajawal', sans-serif;">سند صرف</h3>
+            <p class="font-bold text-lg mt-1 tracking-widest" id="print-exp-id">EXP000000</p>
+        </div>
+        
+        <div class="text-center mb-3">
+            <h2 class="font-bold text-xl mb-1">Al Marona Laundry</h2>
+            <p class="text-xs font-bold" id="print-exp-branch">Main Branch</p>
+        </div>
+
+        <div class="border-t border-b border-black py-2 mb-3 space-y-1.5 text-xs">
+            <div class="flex justify-between"><span>Date / التاريخ</span><span id="print-exp-date" class="font-bold">---</span></div>
+            <div class="flex justify-between"><span>Category / الفئة</span><span id="print-exp-cat" class="font-bold">---</span></div>
+            <div class="mt-2"><span class="font-bold block mb-0.5">Description / الوصف:</span><div id="print-exp-desc" class="pl-2">---</div></div>
+            <div class="mt-2"><span class="font-bold block mb-0.5">Notes / ملاحظات:</span><div id="print-exp-notes" class="pl-2">---</div></div>
+        </div>
+
+        <div class="text-center border-t-2 border-b-2 border-dashed border-black py-3 my-3 bg-gray-50">
+            <p class="text-[11px] font-bold mb-1">المبلغ / AMOUNT</p>
+            <p class="text-2xl font-black tracking-wider" id="print-exp-amount">QR 0.00</p>
+        </div>
+
+        <div class="text-xs space-y-2 mb-4">
+            <div class="flex justify-between"><span>Payment / الدفع</span><span id="print-exp-method" class="font-bold">---</span></div>
+            <div class="flex justify-between"><span>Paid / المدفوع</span><span id="print-exp-paid">QR 0.00</span></div>
+            <div class="flex justify-between"><span>Remaining / المتبقي</span><span id="print-exp-rem">QR 0.00</span></div>
+            <div class="flex justify-between mt-2 pt-2 border-t border-dashed border-gray-400 font-bold"><span>Status / الحالة</span><span id="print-exp-status">---</span></div>
+            <div class="flex justify-between mt-2"><span>Cashier / أمين الصندوق</span><span id="print-exp-cashier" class="font-bold">Admin</span></div>
+        </div>
+
+        <div class="text-center text-[10px] mt-6 pt-2 border-t border-black">
+            Printed: <span id="print-exp-time"></span>
+        </div>
+    </div>
+
+    <div id="closeShiftModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-[200] bg-black/60 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-[450px] overflow-hidden border-t-4 border-indigo-600">
+            <div class="p-6 text-center border-b border-gray-100 bg-indigo-50/30">
+                <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">🔒</div>
+                <h3 class="font-black text-gray-800 text-xl" data-i18n="btnCloseShift">التقفيلة (End of Shift)</h3>
+                <p class="text-xs text-gray-500 mt-1 font-bold">يرجى إدخال المبالغ الفعلية الموجودة في الدرج</p>
+            </div>
+            <div class="p-6 space-y-4 bg-white">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">المبلغ النقدي الفعلي (Actual Cash) *</label>
+                    <div class="relative">
+                        <input type="number" id="actualCashInput" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-lg font-black text-gray-800 focus:outline-none focus:border-indigo-500 pl-12" placeholder="0.00">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">QAR</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">إجمالي شبكة الصراف (Actual Card) *</label>
+                    <div class="relative">
+                        <input type="number" id="actualCardInput" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-lg font-black text-gray-800 focus:outline-none focus:border-indigo-500 pl-12" placeholder="0.00">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">QAR</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">ملاحظات التقفيلة (Notes)</label>
+                    <textarea id="shiftNotesInput" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" placeholder="أي ملاحظات أو أسباب לעجز/زيادة..."></textarea>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-2">
+                <button onclick="closeModal('closeShiftModal')" class="flex-1 bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-50 transition shadow-sm">إلغاء (Cancel)</button>
+                <button onclick="submitCloseShift()" class="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-black hover:bg-indigo-700 transition shadow-md flex justify-center items-center gap-2">
+                    🖨️ تقفيل وطباعة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printShiftReportInvoice" class="hidden text-black font-sans p-3 w-[80mm] mx-auto bg-white">
+        <div class="text-center mb-4">
+            <h2 class="font-black text-xl tracking-wider text-gray-700">SESSION REPORT</h2>
+            <h3 class="font-bold text-lg mt-0.5 text-gray-600" style="font-family: 'Tajawal', sans-serif;">تقرير الجلسة</h3>
+            <p class="font-bold text-[15px] mt-1 text-gray-600 tracking-widest" id="print-shift-id">SES00000000000</p>
+        </div>
+
+        <div class="text-[12px] font-bold space-y-1 mb-2">
+            <div class="flex justify-between"><span class="text-gray-600">فتح / Opened</span><span id="print-shift-opened">---</span></div>
+            <div class="flex justify-between"><span class="text-gray-600">الوقت / Time</span><span id="print-shift-time">---</span></div>
+            <div class="flex justify-between"><span class="text-gray-600">أمين الصندوق / Cashier</span><span id="print-shift-cashier">---</span></div>
+            <div class="flex justify-between"><span class="text-gray-600">المدة / Duration</span><span id="print-shift-duration">---</span></div>
+        </div>
+
+        <div class="text-[12px] font-bold space-y-1 border-t border-b border-gray-400 py-1.5 mb-2">
+            <div class="flex justify-between"><span class="text-gray-600">طلبات جاهزة / Ready Orders</span><span id="print-shift-ready">0</span></div>
+            <div class="flex justify-between"><span class="text-gray-600">طلبات مستلمة / Delivered Orders</span><span id="print-shift-delivered">0</span></div>
+        </div>
+
+        <div class="text-center mb-3">
+            <p class="text-[11px] font-bold text-gray-600 tracking-wide uppercase">إجمالي المبيعات / TOTAL SALES</p>
+            <p class="text-3xl font-black tracking-tighter mt-1" id="print-shift-total-sales">QR 0.00</p>
+        </div>
+
+        <div class="text-[13px] font-bold space-y-1.5 border-b border-gray-400 pb-2 mb-2">
+            <div class="flex justify-between text-gray-600"><span>مبيعات آجلة / (Not Paid) Credit Sales</span><span class="text-black" id="print-shift-credit">QR 0.00</span></div>
+            <div class="flex justify-between text-gray-600"><span>دفع بطاقة / Card Payment</span><span class="text-black" id="print-shift-card">QR 0.00</span></div>
+            <div class="flex justify-between text-gray-600"><span>دفع نقدي / Cash Payment</span><span class="text-black" id="print-shift-cash">QR 0.00</span></div>
+            <div class="flex justify-between text-gray-600"><span>رصيد العميل / Customer Balance</span><span class="text-black" id="print-shift-wallet">QR 0.00</span></div>
+            
+            <div class="flex justify-between pt-1 text-gray-600"><span>مصروفات / (Expenses)</span><span class="text-black" id="print-shift-exp-total">QR 0.00</span></div>
+            <div class="flex justify-between text-[11px] text-gray-500 pl-4"><span dir="rtl">نقداً / Cash</span><span class="text-black" id="print-shift-exp-cash">QR 0.00</span></div>
+            
+            <div class="flex justify-between pt-1 text-gray-600"><span>مشتريات / (Purchases)</span><span class="text-black" id="print-shift-pur">QR 0.00</span></div>
+            <div class="flex justify-between text-gray-600"><span>طلبات محذوفة / (Deleted Orders)</span><span class="text-black" id="print-shift-del">QR 0.00</span></div>
+        </div>
+
+        <div class="text-center mb-4">
+            <p class="text-[11px] font-bold text-gray-600 tracking-wide uppercase">إجمالي التحصيل / TOTAL COLLECTION</p>
+            <p class="text-3xl font-black tracking-tighter mt-1" id="print-shift-collection">QR 0.00</p>
+        </div>
+
+        <div class="border-t border-gray-400 pt-2 mb-4 text-[12px] font-bold">
+            <p class="text-center text-gray-600 mb-1 uppercase tracking-wide">مطابقة الكاش / Cash Match</p>
+            <div class="flex justify-between"><span>النظام / System Cash</span><span id="print-shift-sys-cash" class="text-black">QR 0.00</span></div>
+            <div class="flex justify-between"><span>الفعلي / Actual Cash</span><span id="print-shift-act-cash" class="text-black">QR 0.00</span></div>
+            <div class="flex justify-between mt-1 pt-1 border-t border-dashed border-gray-300 text-[13px]">
+                <span>الفرق / Difference</span><span id="print-shift-diff-cash" dir="ltr" class="text-black">QR 0.00</span>
+            </div>
+        </div>
+
+        <div class="text-[13px] font-bold mb-4">
+            <p class="text-gray-600 border-b border-gray-400 pb-0.5 mb-1 uppercase">ملاحظات / NOTES:</p>
+            <p id="print-shift-notes" class="text-sm">لا توجد ملاحظات / No notes</p>
+        </div>
+
+        <div class="text-[13px] font-bold mb-6">
+            <p class="text-gray-600 border-b border-gray-400 pb-0.5 mb-6 uppercase">التوقيع / SIGNATURE:</p>
+            <p class="text-center text-gray-500 border-t border-gray-400 pt-1">التوقيع المعتمد / Authorized Signature</p>
+        </div>
+
+        <div class="text-center text-[10px] text-gray-500 border-t border-gray-400 pt-1">
+            Printed: <span id="print-shift-print-time"></span>
+        </div>
+    </div>
+
+    <script>
+        // دوال فتح وإغلاق وطباعة التقفيلة
+        function openCloseShiftModal() {
+            document.getElementById('actualCashInput').value = '';
+            document.getElementById('actualCardInput').value = '';
+            document.getElementById('shiftNotesInput').value = '';
+            openModal('closeShiftModal');
+        }
+
+       async function submitCloseShift() {
+            const actualCash = parseFloat(document.getElementById('actualCashInput').value) || 0;
+            const actualCard = parseFloat(document.getElementById('actualCardInput').value) || 0;
+            const notes = document.getElementById('shiftNotesInput').value || 'لا توجد ملاحظات / No notes';
+
+            if (actualCash === 0 && actualCard === 0 && document.getElementById('actualCashInput').value === '') {
+                alert(currentLang === 'ar' ? "يرجى إدخال المبالغ النقدية والشبكة الموجودة في الدرج." : "Please enter the actual cash and card amounts.");
+                return;
+            }
+
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+
+            try {
+                // جلب البيانات الحقيقية من السيرفر
+                const res = await fetch('/api/orders/close-shift/');
+                
+                // 🌟 حماية إضافية: إذا كان الرد 500 نعرض تفاصيل الخطأ بدلاً من الانهيار
+                if (!res.ok) {
+                    const errorDetail = await res.text();
+                    throw new Error(`Server Error (${res.status}): ${errorDetail}`);
+                }
+                
+                const realData = await res.json();
+
+                // 🌟 حماية الـ toFixed: دالة مساعدة لضمان أن كل قيمة هي رقم فعلي
+                const safeFloat = (val) => {
+                    const num = parseFloat(val);
+                    return isNaN(num) ? 0.00 : num;
+                };
+
+                // تعبئة الفاتورة المخفية بأمان تام
+                document.getElementById('print-shift-id').innerText = realData.sessionId || 'SES-Error';
+                document.getElementById('print-shift-opened').innerText = realData.openedDate || '---';
+                document.getElementById('print-shift-time').innerText = realData.time || '---';
+                document.getElementById('print-shift-cashier').innerText = realData.cashier || 'Admin';
+                document.getElementById('print-shift-duration').innerText = realData.duration || '---';
+                document.getElementById('print-shift-ready').innerText = realData.readyOrders || 0;
+                document.getElementById('print-shift-delivered').innerText = realData.deliveredOrders || 0;
+                
+                document.getElementById('print-shift-total-sales').innerText = `QR ${safeFloat(realData.totalSales).toFixed(2)}`;
+                document.getElementById('print-shift-credit').innerText = `QR ${safeFloat(realData.creditSales).toFixed(2)}`;
+                document.getElementById('print-shift-card').innerText = `QR ${safeFloat(realData.cardPayment).toFixed(2)}`;
+                document.getElementById('print-shift-cash').innerText = `QR ${safeFloat(realData.cashPayment).toFixed(2)}`;
+                document.getElementById('print-shift-wallet').innerText = `QR ${safeFloat(realData.customerBalance).toFixed(2)}`;
+                document.getElementById('print-shift-exp-total').innerText = `QR ${safeFloat(realData.expensesCash).toFixed(2)}`; // مؤقتاً استخدمنا expensesCash
+                document.getElementById('print-shift-exp-cash').innerText = `QR ${safeFloat(realData.expensesCash).toFixed(2)}`;
+                document.getElementById('print-shift-pur').innerText = `QR 0.00`; // مشتريات (ليست من السيرفر حالياً)
+                document.getElementById('print-shift-del').innerText = `QR ${safeFloat(realData.deletedOrders).toFixed(2)}`;
+                document.getElementById('print-shift-collection').innerText = `QR ${safeFloat(realData.totalCollection).toFixed(2)}`;
+                
+                // الحسابات الخاصة بالمطابقة
+                const expectedCash = safeFloat(realData.cashPayment) - safeFloat(realData.expensesCash);
+                const difference = actualCash - expectedCash;
+
+                document.getElementById('print-shift-sys-cash').innerText = `QR ${expectedCash.toFixed(2)}`;
+                document.getElementById('print-shift-act-cash').innerText = `QR ${actualCash.toFixed(2)}`;
+                
+                const diffEl = document.getElementById('print-shift-diff-cash');
+                diffEl.innerText = `QR ${difference.toFixed(2)}`;
+                if (difference < 0) { diffEl.innerHTML += ' <span class="text-[10px]">(عجز)</span>'; }
+                else if (difference > 0) { diffEl.innerHTML += ' <span class="text-[10px]">(زيادة)</span>'; }
+                else { diffEl.innerHTML += ' <span class="text-[10px]">(مطابق)</span>'; }
+
+                document.getElementById('print-shift-notes').innerText = notes;
+                document.getElementById('print-shift-print-time').innerText = new Date().toLocaleString('en-US');
+
+                // إرسال أمر الإغلاق للسيرفر لحفظ التقرير في الداتابيز
+                const postRes = await fetch('/api/orders/close-shift/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ 
+                        actual_cash: actualCash, 
+                        actual_card: actualCard, 
+                        expected_cash: expectedCash, 
+                        difference: difference, 
+                        notes: notes, 
+                        system_data: realData 
+                    })
+                });
+
+                if (!postRes.ok) {
+                    console.warn("فشل حفظ التقرير في قاعدة البيانات، ولكن سيتم طباعة الإيصال.");
+                }
+
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                closeModal('closeShiftModal');
+
+                // الطباعة
+                const printDiv = document.getElementById('printShiftReportInvoice');
+                printDiv.classList.add('active-print');
+                window.print();
+                setTimeout(() => printDiv.classList.remove('active-print'), 1000);
+
+                // تسجيل الخروج التلقائي
+                setTimeout(() => { executeExit(); }, 2000);
+
+            } catch (e) {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                alert("حدث خطأ أثناء الاتصال بالسيرفر: " + e.message);
+                console.error("Shift Error:", e);
+            }
+        }
+    </script>
+</body>
+</html>

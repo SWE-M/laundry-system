@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Customers Management - Almarona</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f4f7f6; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); z-index: 100; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-white border-b shadow-sm z-10 flex-shrink-0 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <a href="/admin-dashboard/" class="text-gray-500 hover:text-blue-600 font-bold text-xl transition">⬅ Back</a>
+            <h1 class="text-2xl font-black text-gray-800 flex items-center gap-2"><span>👥</span> Customers Management</h1>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="printCustomers(false)" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-2">
+                🖨️ Print All
+            </button>
+            <button onclick="printCustomers(true)" class="bg-white border border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-2">
+                ⚠️ Print Outstanding
+            </button>
+            <button onclick="openCustomerModal()" class="bg-[#007ec5] hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+                + New Customer
+            </button>
+        </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <div class="grid grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
+                <span class="text-gray-500 text-sm font-bold flex justify-between">Total Customers <span>👥</span></span>
+                <span class="text-2xl font-black text-gray-800 mt-2" id="stat-total">0</span>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
+                <span class="text-gray-500 text-sm font-bold flex justify-between">Outstanding Amount <span>💲</span></span>
+                <span class="text-2xl font-black text-gray-800 mt-2">QAR <span id="stat-amount">0.00</span></span>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
+                <span class="text-gray-500 text-sm font-bold flex justify-between">Outstanding Customers <span>⚠️</span></span>
+                <span class="text-2xl font-black text-gray-800 mt-2" id="stat-out-cust">0</span>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
+                <span class="text-gray-500 text-sm font-bold flex justify-between">Average Balance <span>📈</span></span>
+                <span class="text-2xl font-black text-gray-800 mt-2">QAR <span id="stat-avg">0.00</span></span>
+            </div>
+        </div>
+
+        <div class="relative max-w-md">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+            <input type="text" id="search-input" onkeyup="renderTable()" placeholder="Search customers..." class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-[#007ec5] shadow-sm">
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <table class="w-full text-left text-sm text-gray-600">
+                <thead class="bg-gray-50 border-b border-gray-200 text-gray-500 font-bold">
+                    <tr>
+                        <th class="px-4 py-3">Name</th>
+                        <th class="px-4 py-3">File Number</th>
+                        <th class="px-4 py-3">Phone Number</th>
+                        <th class="px-4 py-3">Address</th>
+                        <th class="px-4 py-3">Category</th>
+                        <th class="px-4 py-3">Fold Type</th>
+                        <th class="px-4 py-3">Account Balance</th>
+                        <th class="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customers-table" class="divide-y divide-gray-100">
+                    <tr><td colspan="8" class="text-center py-4 text-gray-400">Loading customers...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="customerModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl w-[600px] max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <div>
+                    <h3 class="font-black text-gray-800 text-xl" id="modal-title">Edit Customer</h3>
+                    <p class="text-xs text-gray-500 mt-1">Update the customer details below.</p>
+                </div>
+                <button onclick="closeCustomerModal()" class="text-gray-400 hover:text-red-500 text-2xl font-bold transition">&times;</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 bg-white">
+                <form id="customerForm" class="space-y-5">
+                    <input type="hidden" id="customerId">
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Name (required)</label>
+                        <input type="text" id="custName" class="w-full border-2 border-blue-400 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">File Number <span class="text-xs font-normal text-gray-400 float-right mt-0.5">Optional</span></label>
+                            <input type="text" id="custFile" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#007ec5]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Phone Number (required)</label>
+                            <input type="text" id="custPhone" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#007ec5]">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Fold Type</label>
+                            <select id="custFold" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#007ec5]">
+                                <option value="Folded">Folded</option>
+                                <option value="Hanged">Hanged</option>
+                            </select>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Customer Category</label>
+                                <select id="custCategory" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#007ec5]">
+                                    <option value="Uncategorized">Uncategorized</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Or create new category:</label>
+                                <input type="text" id="newCustCategory" placeholder="Type new category..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 focus:border-[#007ec5]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Address</label>
+                            <input type="text" id="custAddress" placeholder="Enter address" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#007ec5]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Initial Wallet Balance (QAR)</label>
+                            <input type="number" step="0.5" id="custBalance" placeholder="0.00" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#007ec5]">
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="px-6 py-4 bg-white border-t border-gray-200 flex justify-end gap-3">
+                <button onclick="closeCustomerModal()" class="px-6 py-2 border border-gray-300 text-gray-600 font-bold rounded-lg hover:bg-gray-50 transition shadow-sm">Cancel</button>
+                <button onclick="saveCustomer()" id="btnSave" class="px-8 py-2 bg-[#007ec5] hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition">Update Customer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allCustomers = [];
+        let categories = [];
+
+        async function fetchInitialData() {
+            try {
+                const catRes = await fetch('/api/accounts/categories/');
+                if (catRes.ok) {
+                    const catData = await catRes.json();
+                    categories = Array.isArray(catData) ? catData : (catData.results || []);
+                    populateCategories();
+                }
+
+                const res = await fetch('/api/accounts/search/');
+                if (res.ok) {
+                    const data = await res.json();
+                    allCustomers = Array.isArray(data) ? data : (data.results || []);
+                    updateStats();
+                    renderTable();
+                }
+            } catch (error) { console.error("Error loading data", error); }
+        }
+
+        function updateStats() {
+            const total = allCustomers.length;
+            let outstandingAmount = 0;
+            let outstandingCount = 0;
+
+            allCustomers.forEach(c => {
+                let bal = parseFloat(c.wallet_balance) || 0;
+                if (bal > 0) {
+                    outstandingAmount += bal;
+                    outstandingCount++;
+                }
+            });
+
+            let avg = outstandingCount > 0 ? (outstandingAmount / outstandingCount) : 0;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-amount').innerText = outstandingAmount.toFixed(2);
+            document.getElementById('stat-out-cust').innerText = outstandingCount;
+            document.getElementById('stat-avg').innerText = avg.toFixed(2);
+        }
+
+        function renderTable() {
+            const table = document.getElementById('customers-table');
+            const search = document.getElementById('search-input').value.toLowerCase();
+            
+            const filtered = allCustomers.filter(c => {
+                return (c.name || '').toLowerCase().includes(search) || 
+                       (c.phone || '').includes(search) || 
+                       (c.file_number || '').includes(search);
+            });
+
+            if (filtered.length === 0) {
+                table.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-gray-500 font-bold">No customers found.</td></tr>`;
+                return;
+            }
+
+            table.innerHTML = filtered.map(c => {
+                let bal = parseFloat(c.wallet_balance) || 0;
+                let balClass = bal > 0 ? 'text-red-600 font-bold' : 'text-gray-800';
+                
+                return `
+                <tr class="hover:bg-blue-50/50 transition border-b border-gray-100 last:border-0">
+                    <td class="px-4 py-3 font-bold text-[#007ec5]">${c.name || '---'}</td>
+                    <td class="px-4 py-3">${c.file_number || '---'}</td>
+                    <td class="px-4 py-3">${c.phone || '---'}</td>
+                    <td class="px-4 py-3 truncate max-w-[150px]">${c.address || ''}</td>
+                    <td class="px-4 py-3"><span class="bg-gray-100 border text-gray-600 text-[10px] px-2 py-0.5 rounded font-bold">${c.customer_category || 'Uncategorized'}</span></td>
+                    <td class="px-4 py-3">${c.fold_type || 'Folded'}</td>
+                    <td class="px-4 py-3 ${balClass}">QAR ${bal.toFixed(2)}</td>
+                    <td class="px-4 py-3 text-right space-x-1">
+                        <button onclick="openEditModal(${c.id})" class="text-gray-500 hover:text-blue-600 border border-gray-200 px-3 py-1.5 rounded bg-white shadow-sm text-xs font-bold transition">✏️ Edit</button>
+                        <button onclick="deleteCustomer(${c.id})" class="text-white hover:bg-red-700 bg-red-500 border border-red-600 px-3 py-1.5 rounded shadow-sm text-xs font-bold transition">🗑️ Delete</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function populateCategories(selectedName = 'Uncategorized') {
+            const select = document.getElementById('custCategory');
+            select.innerHTML = '<option value="Uncategorized">Uncategorized</option>';
+            categories.forEach(c => {
+                const isSelected = (selectedName === c.name) ? 'selected' : '';
+                select.innerHTML += `<option value="${c.name}" ${isSelected}>${c.name}</option>`;
+            });
+        }
+
+        function openCustomerModal() {
+            document.getElementById('customerModal').classList.remove('hidden');
+            document.getElementById('customerForm').reset();
+            document.getElementById('customerId').value = '';
+            document.getElementById('modal-title').innerText = 'Add New Customer';
+            document.getElementById('btnSave').innerText = 'Save Customer';
+            populateCategories(); 
+        }
+
+        function closeCustomerModal() {
+            document.getElementById('customerModal').classList.add('hidden');
+        }
+
+        function openEditModal(id) {
+            const c = allCustomers.find(x => String(x.id) === String(id));
+            if (!c) return;
+
+            openCustomerModal();
+            document.getElementById('modal-title').innerText = 'Edit Customer';
+            document.getElementById('btnSave').innerText = 'Update Customer';
+
+            document.getElementById('customerId').value = c.id;
+            document.getElementById('custName').value = c.name || '';
+            document.getElementById('custFile').value = c.file_number || '';
+            document.getElementById('custPhone').value = c.phone || '';
+            document.getElementById('custFold').value = c.fold_type || 'Folded';
+            document.getElementById('custAddress').value = c.address || '';
+            document.getElementById('custBalance').value = parseFloat(c.wallet_balance) || 0;
+            populateCategories(c.customer_category);
+        }
+
+        async function saveCustomer() {
+            const id = document.getElementById('customerId').value;
+            const name = document.getElementById('custName').value.trim();
+            const phone = document.getElementById('custPhone').value.trim();
+            const newCatName = document.getElementById('newCustCategory').value.trim();
+            let finalCategory = document.getElementById('custCategory').value;
+
+            if (!name || !phone) {
+                alert("Name and Phone Number are required.");
+                return;
+            }
+
+            const btn = document.getElementById('btnSave');
+            btn.innerText = 'Saving...'; btn.disabled = true;
+
+            if (newCatName) {
+                try {
+                    const catRes = await fetch('/api/accounts/categories/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                        body: JSON.stringify({ name: newCatName })
+                    });
+                    if (catRes.ok) finalCategory = newCatName;
+                } catch(e) {}
+            }
+
+            const payload = {
+                name: name,
+                file_number: document.getElementById('custFile').value.trim(),
+                phone: phone,
+                fold_type: document.getElementById('custFold').value,
+                customer_category: finalCategory,
+                address: document.getElementById('custAddress').value.trim(),
+                wallet_balance: document.getElementById('custBalance').value || 0
+            };
+
+            const url = id ? `/api/accounts/search/${id}/` : `/api/accounts/search/`;
+            const method = id ? 'PATCH' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert('✅ Saved successfully!');
+                    closeCustomerModal();
+                    fetchInitialData();
+                } else {
+                    const err = await res.json();
+                    alert('❌ Error: ' + JSON.stringify(err));
+                }
+            } catch (e) { alert('Network Error'); } 
+            finally { btn.innerText = id ? 'Update Customer' : 'Save Customer'; btn.disabled = false; }
+        }
+
+        async function deleteCustomer(id) {
+            if(!confirm("Are you sure you want to delete this customer?")) return;
+            try {
+                const res = await fetch(`/api/accounts/search/${id}/`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                });
+                if(res.ok) fetchInitialData();
+                else alert("Failed to delete");
+            } catch(e) { alert("Error deleting"); }
+        }
+
+        // 🌟 نظام الطباعة الاحترافي المباشر المحدث 🌟
+        function printCustomers(onlyOutstanding) {
+            let dataToPrint = allCustomers;
+            let title = "Customers List";
+            let totalAmount = 0;
+
+            if (onlyOutstanding) {
+                dataToPrint = allCustomers.filter(c => (parseFloat(c.wallet_balance) || 0) > 0);
+                title = "Outstanding Customers List";
+            }
+
+            totalAmount = dataToPrint.reduce((sum, c) => sum + (parseFloat(c.wallet_balance) || 0), 0);
+            const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+            let rowsHtml = dataToPrint.map(c => {
+                let bal = parseFloat(c.wallet_balance) || 0;
+                let balColor = bal > 0 ? 'color: #dc2626;' : 'color: #1f2937;'; 
+                return `
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>${c.name || '---'}</strong></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${c.phone || '---'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${c.file_number || '---'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${c.customer_category || 'Uncategorized'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee; ${balColor} font-weight: bold;">QAR ${bal.toFixed(2)}</td>
+                </tr>`;
+            }).join('');
+
+            const printWindow = window.open('', '_blank', 'width=900,height=650');
+            if (!printWindow) {
+                alert("⚠️ Please allow pop-ups for this website to print the report.");
+                return;
+            }
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${title}</title>
+                    <style>
+                        body { font-family: 'Arial', sans-serif; padding: 40px; color: #333; }
+                        h1 { text-align: center; margin-bottom: 5px; color: #111; font-size: 24px; }
+                        .subtitle { text-align: center; font-size: 14px; color: #666; margin-bottom: 30px; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+                        th { background-color: #f8f9fa; font-weight: bold; color: #111; padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd; }
+                        .total-row { font-size: 16px; font-weight: bold; text-align: right; margin-top: 20px; padding-top: 20px; border-top: 2px solid #333; }
+                        .total-amount { color: #dc2626; margin-left: 10px; }
+                        @media print { body { padding: 0; } }
+                    </style>
+                </head>
+                <body>
+                    <h1>${title}</h1>
+                    <div class="subtitle">Generated on ${currentDate} | Total Customers: ${dataToPrint.length}</div>
+                    <table>
+                        <thead>
+                            <tr><th>Name</th><th>Phone Number</th><th>File Number</th><th>Category</th><th>Balance</th></tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml.length > 0 ? rowsHtml : '<tr><td colspan="5" style="text-align:center; padding: 20px;">No customers found.</td></tr>'}
+                        </tbody>
+                    </table>
+                    <div class="total-row">
+                        ${onlyOutstanding ? 'Total Outstanding:' : 'Total Wallet Balance:'} 
+                        <span class="total-amount">QAR ${totalAmount.toFixed(2)}</span>
+                    </div>
+                    <script>
+                        setTimeout(() => { window.print(); window.close(); }, 500);
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        window.onload = fetchInitialData;
+    </script>
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ledger Report | كشف الحساب</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { font-family: 'Inter', 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        /* 🖨️ إعدادات الطباعة المطابقة لملف Laundry01.pdf 🖨️ */
+        @media print {
+            body > *:not(#printArea) { display: none !important; }
+            body { background-color: white; }
+            #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #000; }
+            .inv-table { border-collapse: collapse; width: 100%; font-size: 11px; font-family: sans-serif; margin-bottom: 20px;}
+            .inv-table th, .inv-table td { border: 2px solid #000 !important; padding: 6px 8px; text-align: left; }
+            .inv-table th { font-weight: bold; background-color: #fff !important; }
+            .border-thick { border-top: 3px solid #000 !important; border-bottom: 3px solid #000 !important; }
+            @page { size: A4; margin: 15mm; }
+        }
+    </style>
+</head>
+<body class="text-[#0f172a] h-screen overflow-hidden flex flex-col">
+
+    <div class="flex-1 overflow-y-auto p-8 scrollbar-hide">
+        
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                Ledger Report <span class="text-lg text-slate-400 font-medium">| كشف الحساب</span>
+            </h1>
+            
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="fetchData()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+    🔄 Refresh <span class="text-[10px] text-slate-400 font-normal">تحديث</span>
+</button>
+                <button onclick="exportCSV()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+                    📥 Download CSV <span class="text-[10px] text-slate-400 font-normal">تصدير</span>
+                </button>
+                <button onclick="window.print()" class="border border-slate-300 bg-white text-slate-700 px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition shadow-sm rounded-lg">
+                    🖨️ Print Report <span class="text-[10px] text-slate-400 font-normal">طباعة</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex gap-4 mb-6">
+            <select id="customerFilter" class="w-72 border border-slate-300 rounded-lg px-4 py-2.5 bg-white text-sm font-bold text-slate-700 outline-none cursor-pointer shadow-sm" onchange="fetchData()">
+                <option value="all">All Customers | كل العملاء</option>
+                {% for c in customers %}
+                <option value="{{ c.id }}">{{ c.name }} ({{ c.phone }})</option>
+                {% endfor %}
+            </select>
+            
+            <div class="relative w-72">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">📅</span>
+                <input type="text" id="dateRange" class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:border-blue-500 outline-none cursor-pointer bg-white font-bold text-slate-700 shadow-sm" readonly>
+            </div>
+        </div>
+
+        <div class="bg-[#f8fafc] border border-slate-200 rounded-xl p-6 mb-6">
+            <h2 class="text-xl font-black text-slate-800 text-center mb-6" id="ui-acc-name">Account Name</h2>
+            <div class="flex justify-between items-end">
+                <div class="text-sm text-slate-600 font-medium leading-loose">
+                    <p>Account Code <span class="text-[10px] text-slate-400">(كود الحساب)</span>: <span id="ui-acc-code" class="font-mono text-slate-800">---</span></p>
+                    <p>Account Group <span class="text-[10px] text-slate-400">(مجموعة الحساب)</span>: <span id="ui-acc-group" class="text-slate-800">---</span></p>
+                </div>
+                <div class="text-right text-sm text-slate-600 font-medium leading-loose">
+                    <p>Opening Balance <span class="text-[10px] text-slate-400">(الرصيد الافتتاحي)</span>: QAR <span id="ui-acc-open">0.00</span></p>
+                    <p class="text-lg text-slate-800 mt-2 font-black border-t border-slate-200 pt-2">Current Balance <span class="text-[10px] text-slate-400">(الرصيد الحالي)</span>: QAR <span id="ui-acc-cur">0.00</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-2 mb-4">
+            <button onclick="switchTab('table')" id="tab-table" class="px-5 py-2 text-sm font-bold rounded-lg bg-[#0ea5e9] text-white transition">Table View</button>
+            <button onclick="switchTab('chart')" id="tab-chart" class="px-5 py-2 text-sm font-bold rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 transition">Chart View</button>
+        </div>
+
+        <div class="bg-[#f8fafc] border border-slate-200 rounded-t-xl p-5 flex justify-between text-sm font-bold text-slate-700">
+            <div>
+                <p>Period Start: <span id="ui-sum-start" class="font-mono">---</span></p>
+                <p class="mt-2">Period End: <span id="ui-sum-end" class="font-mono">---</span></p>
+            </div>
+            <div class="text-right">
+                <p>Total Debits <span class="text-[10px] text-slate-400">(إجمالي المدين)</span>: QAR <span id="ui-sum-deb" class="font-mono text-red-600">0.00</span></p>
+                <p class="mt-2">Total Credits <span class="text-[10px] text-slate-400">(إجمالي الدائن)</span>: QAR <span id="ui-sum-cred" class="font-mono text-green-600">0.00</span></p>
+            </div>
+        </div>
+
+        <div class="bg-white border border-t-0 border-slate-200 rounded-b-xl shadow-sm overflow-hidden">
+            
+            <div id="view-table">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-white text-slate-500 font-bold border-b-2 border-slate-100 text-xs">
+                        <tr>
+                            <th class="px-6 py-4">Date <span class="block text-[9px] text-slate-400">التاريخ</span></th>
+                            <th class="px-6 py-4">Reference <span class="block text-[9px] text-slate-400">المرجع</span></th>
+                            <th class="px-6 py-4">Particulars <span class="block text-[9px] text-slate-400">التفاصيل</span></th>
+                            <th class="px-6 py-4">Description <span class="block text-[9px] text-slate-400">الوصف</span></th>
+                            <th class="px-6 py-4 text-right">Debit <span class="block text-[9px] text-slate-400">مدين (+)</span></th>
+                            <th class="px-6 py-4 text-right">Credit <span class="block text-[9px] text-slate-400">دائن (-)</span></th>
+                            <th class="px-6 py-4 text-right text-slate-800">Balance <span class="block text-[9px] text-slate-400">الرصيد</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledgerTbody" class="divide-y divide-slate-100">
+                        <tr><td colspan="7" class="p-10 text-center text-slate-500 font-bold">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="view-chart" class="hidden p-6 h-[400px]">
+                <canvas id="ledgerChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="printArea" class="hidden font-sans bg-white p-4">
+        
+        <div class="flex justify-between items-start mb-6">
+            <div class="text-left flex flex-col gap-0 border-b-2 border-black pb-2 pr-10">
+                <img src="/static/images/logo.png" alt="Logo" class="h-14 object-contain mb-1 w-max">
+                <h1 class="text-xl font-black text-black uppercase tracking-widest">AL MARONA LAUNDRY</h1>
+                <h2 class="text-lg font-black text-black">مغسلة المرونة</h2>
+                <p class="text-[11px] text-black font-bold mt-1">Al Duhail, Doha, Qatar</p>
+                <p class="text-[11px] text-black font-bold">Tel: +974 5188 8455</p>
+                <p class="text-[11px] text-black font-bold">C.R. No.: 201365</p>
+            </div>
+            
+            <div class="text-right flex flex-col items-end">
+                <h1 class="text-2xl font-black text-black uppercase tracking-wider mb-2">PENDING ORDERS INVOICE</h1> <p class="text-[12px] font-medium">Print Date: <span id="p-print-date">---</span></p> <p class="text-[12px] font-medium">Period: <span id="p-period">---</span></p> <p class="text-[12px] font-medium">Total Orders: <span id="p-tot-ord">1</span></p> </div>
+        </div>
+
+        <table class="w-full text-xs font-bold mb-4 border-thick">
+            <tr>
+                <td class="p-2 w-24">Customer:</td>
+                <td class="p-2" id="p-cust-phone1">---</td>
+                <td class="p-2 w-20">File No:</td>
+                <td class="p-2" id="p-file-no">---</td>
+                <td class="p-2 w-20">Phone:</td>
+                <td class="p-2" id="p-cust-phone2">---</td>
+            </tr>
+            <tr>
+                <td class="p-2">Address:</td>
+                <td class="p-2" id="p-address">N/A</td>
+                <td class="p-2"></td>
+                <td class="p-2"></td>
+                <td class="p-2">Account:</td>
+                <td class="p-2" id="p-account">---</td>
+            </tr>
+        </table>
+
+        <table class="inv-table">
+            <thead>
+                <tr>
+                    <th class="w-16">Order #</th>
+                    <th class="w-20">Date</th>
+                    <th>Item</th>
+                    <th class="w-20">Service</th>
+                    <th class="w-10 text-center">Qty</th>
+                    <th class="w-20 text-right">Unit Price</th>
+                    <th class="w-20 text-right">Item Total</th>
+                    <th class="w-24 text-right">Order Total</th>
+                    <th class="w-16 text-right">Discount</th>
+                </tr>
+            </thead>
+            <tbody id="printInvoiceTbody">
+                </tbody>
+        </table>
+
+        <div class="flex justify-end border-thick pt-2 pb-2 mb-8">
+            <div class="w-64 text-sm font-bold text-right">
+                <div class="flex justify-between mb-1"><span>Total Items:</span><span id="p-tot-items">0</span></div>
+                <div class="flex justify-between mb-2"><span>Subtotal:</span><span id="p-subtotal">QAR 0.00</span></div>
+                <div class="flex justify-between text-base font-black"><span>GRAND TOTAL:</span><span id="p-grand-total">QAR 0.00</span></div>
+            </div>
+        </div>
+
+        <p class="text-center text-xs text-gray-500 font-medium">Thank you for your business!</p> </div>
+
+    <script>
+        let myChart = null;
+
+        // إعداد التقويم
+        flatpickr("#dateRange", {
+            mode: "range",
+            defaultDate: [new Date(new Date().setDate(new Date().getDate() - 30)), new Date()],
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) {
+                if(selectedDates.length === 2) fetchData();
+            }
+        });
+
+        // التبديل بين الجدول والشارت
+        function switchTab(tab) {
+            document.getElementById('view-table').classList.add('hidden');
+            document.getElementById('view-chart').classList.add('hidden');
+            
+            document.getElementById('tab-table').className = "px-5 py-2 text-sm font-bold rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 transition";
+            document.getElementById('tab-chart').className = "px-5 py-2 text-sm font-bold rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 transition";
+
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).className = "px-5 py-2 text-sm font-bold rounded-lg bg-[#0ea5e9] text-white transition";
+        }
+
+        async function fetchData() {
+            const customerId = document.getElementById('customerFilter').value;
+            const dates = document.getElementById('dateRange').value.split(" to ");
+            let start = dates[0] || '';
+            let end = dates[1] || start;
+
+            const url = `{% url 'api_ledger_report_data' %}?customer_id=${customerId}&start=${start}&end=${end}`;
+            
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                // تحديث بيانات الشاشة (UI)
+                document.getElementById('ui-acc-name').innerText = data.account.name;
+                document.getElementById('ui-acc-code').innerText = data.account.code;
+                document.getElementById('ui-acc-group').innerText = data.account.group;
+                document.getElementById('ui-acc-open').innerText = data.account.opening_balance.toFixed(2);
+                document.getElementById('ui-acc-cur').innerText = data.account.current_balance.toFixed(2);
+                
+                document.getElementById('ui-sum-start').innerText = data.summary.start;
+                document.getElementById('ui-sum-end').innerText = data.summary.end;
+                document.getElementById('ui-sum-deb').innerText = data.summary.total_debits.toFixed(2);
+                document.getElementById('ui-sum-cred').innerText = data.summary.total_credits.toFixed(2);
+
+                // رسم الجدول
+                const tbody = document.getElementById('ledgerTbody');
+                if(data.transactions.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-slate-500 font-bold">No transactions found. | لا يوجد حركات.</td></tr>`;
+                } else {
+                    tbody.innerHTML = data.transactions.map(t => `
+                        <tr class="hover:bg-slate-50 transition text-slate-700">
+                            <td class="px-6 py-4 font-mono text-xs">${t.date}</td>
+                            <td class="px-6 py-4 font-bold text-slate-800">${t.ref}</td>
+                            <td class="px-6 py-4">${t.particulars}</td>
+                            <td class="px-6 py-4 text-xs text-slate-500">${t.description}</td>
+                            <td class="px-6 py-4 text-right font-mono text-xs ${t.debit > 0 ? 'text-red-600 font-bold' : ''}">${t.debit > 0 ? t.debit.toFixed(2) : '-'}</td>
+                            <td class="px-6 py-4 text-right font-mono text-xs ${t.credit > 0 ? 'text-green-600 font-bold' : ''}">${t.credit > 0 ? t.credit.toFixed(2) : '-'}</td>
+                            <td class="px-6 py-4 text-right font-mono text-xs font-bold text-slate-900">${t.balance.toFixed(2)}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                // تحديث بيانات الطباعة (PENDING ORDERS INVOICE) [cite: 6, 7, 8, 9, 10, 11]
+                const now = new Date();
+                document.getElementById('p-print-date').innerText = now.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+                document.getElementById('p-period').innerText = `${data.summary.start} - ${data.summary.end}`;
+                
+                document.getElementById('p-cust-phone1').innerText = data.account.phone;
+                document.getElementById('p-cust-phone2').innerText = data.account.phone;
+                document.getElementById('p-file-no').innerText = data.account.file_no;
+                document.getElementById('p-address').innerText = data.account.address;
+                document.getElementById('p-account').innerText = `${data.account.code} (QAR ${data.account.current_balance.toFixed(2)})`;
+
+                const ptbody = document.getElementById('printInvoiceTbody');
+                if(data.print_invoice.items.length === 0) {
+                    ptbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center font-bold">No pending items to print.</td></tr>`;
+                } else {
+                    ptbody.innerHTML = data.print_invoice.items.map((i, index) => `
+                        <tr>
+                            <td class="font-bold">${i.order_total !== "" ? i.order_no : ""}</td>
+                            <td>${i.order_total !== "" ? i.date : ""}</td>
+                            <td>${i.item_name}</td>
+                            <td>${i.service}</td>
+                            <td class="text-center">${i.qty}</td>
+                            <td class="text-right">QAR ${i.unit_price.toFixed(2)}</td>
+                            <td class="text-right font-bold">QAR ${i.item_total.toFixed(2)}</td>
+                            <td class="text-right font-bold">${i.order_total !== "" ? 'QAR ' + i.order_total.toFixed(2) : ""}</td>
+                            <td class="text-right">${i.discount}</td>
+                        </tr>
+                    `).join('');
+                }
+                
+                document.getElementById('p-tot-items').innerText = data.print_invoice.total_qty;
+                document.getElementById('p-subtotal').innerText = `QAR ${data.print_invoice.grand_total.toFixed(2)}`;
+                document.getElementById('p-grand-total').innerText = `QAR ${data.print_invoice.grand_total.toFixed(2)}`;
+
+                // رسم الشارت (Chart.js)
+                renderChart(data.chart);
+
+            } catch(e) { console.error(e); }
+        }
+
+        function renderChart(chartData) {
+            const ctx = document.getElementById('ledgerChart').getContext('2d');
+            if(myChart) myChart.destroy();
+            
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Balance (الرصيد)',
+                        data: chartData.data,
+                        borderColor: '#8b5cf6', // لون بنفسجي أنيق مطابق للصورة
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#8b5cf6',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.1 // خط شبه مستقيم زي الصورة
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { border: {display: false}, grid: {color: '#f1f5f9', borderDash: [4, 4]} },
+                        x: { border: {display: false}, grid: {color: '#f1f5f9', borderDash: [4, 4]} }
+                    }
+                }
+            });
+        }
+
+        // دالة التصدير للإكسل (مستقلة)
+        function exportCSV() {
+            const customerId = document.getElementById('customerFilter').value;
+            const dates = document.getElementById('dateRange').value.split(" to ");
+            let start = dates[0] || '';
+            let end = dates[1] || start;
+            window.location.href = `{% url 'export_ledger_excel' %}?customer_id=${customerId}&start=${start}&end=${end}`;
+        }
+
+        // تشغيل جلب البيانات تلقائياً بمجرد اكتمال تحميل الصفحة (مستقلة وتشتغل لحالها)
+        document.addEventListener("DOMContentLoaded", () => {
+            // تأخير بسيط جداً لضمان أن التقويم قام بتعبئة التواريخ
+            setTimeout(() => {
+                fetchData();
+            }, 150);
+        });
+    </script>
+</body>
+</html>

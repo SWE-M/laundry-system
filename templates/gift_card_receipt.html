@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Almarona Gift Card</title>
+    <style>
+        @page { margin: 0; size: 80mm auto; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            width: 72mm; 
+            margin: 0 auto; 
+            padding: 5mm; 
+            font-size: 14px; 
+            color: #000;
+            text-align: center;
+        }
+        .logo { width: 80px; height: auto; margin-bottom: 10px; }
+        .title { font-size: 20px; font-weight: 900; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 15px; }
+        
+        .info-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; text-align: left; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
+        
+        .card-number-box { background: #000; color: #fff; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .card-number { font-size: 28px; font-weight: 900; letter-spacing: 5px; }
+        
+        .value-box { font-size: 24px; font-weight: 900; margin: 15px 0; }
+        .barcode-container { margin-top: 20px; display: flex; justify-content: center; }
+        .footer-text { font-size: 11px; font-weight: bold; margin-top: 15px; border-top: 1px dashed #000; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <img src=>
+    <div class="title">GIFT CARD / بطاقة هدية</div>
+
+    <div class="info-box">
+        <div class="info-row"><span>Name / الاسم:</span> <span id="display-name">---</span></div>
+        <div class="info-row"><span>File / الملف:</span> <span id="display-file">---</span></div>
+    </div>
+
+    <p style="font-weight: bold; margin-bottom: 5px;">CARD NUMBER / رقم البطاقة</p>
+    <div class="card-number-box">
+        <div class="card-number" id="display-card-num">00000</div>
+    </div>
+
+    <div class="value-box">
+        VALUE: <span id="display-value">0.00</span> QAR
+    </div>
+
+    <div class="footer-text">
+        يُرجى إبراز هذه البطاقة عند الدفع لاستخدام الرصيد.
+        <br>
+        Please present this card at checkout to redeem.
+    </div>
+
+    <div class="barcode-container">
+        <svg id="barcode"></svg>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <script>
+        window.onload = function() {
+            const dataStr = localStorage.getItem('lastGiftCard');
+            if(!dataStr) { document.body.innerHTML = "No data found"; return; }
+            
+            const data = JSON.parse(dataStr);
+            document.getElementById('display-name').innerText = data.name;
+            document.getElementById('display-file').innerText = data.file;
+            document.getElementById('display-card-num').innerText = data.cardNum;
+            document.getElementById('display-value').innerText = data.balance;
+
+            JsBarcode("#barcode", data.cardNum, {
+                format: "CODE128", width: 2, height: 50, displayValue: false, margin: 0
+            });
+
+            localStorage.removeItem('lastGiftCard');
+            setTimeout(() => { window.print(); window.close(); }, 500);
+        };
+    </script>
+</body>
+</html>

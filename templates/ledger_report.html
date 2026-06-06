@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دفتر الأستاذ - مغسلة المرونة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .ledger-table th { @apply p-4 text-slate-500 font-bold border-b border-gray-100 text-sm; }
+        .ledger-table td { @apply p-4 border-b border-slate-50 text-sm font-medium text-slate-700; }
+
+        @media print {
+            header, .filter-section, .nav-buttons, button, .no-print { display: none !important; }
+            body { background-color: white !important; margin: 0; padding: 0; }
+            main { max-width: 100% !important; padding: 0 !important; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+            .print-header h1 { font-size: 28pt; font-weight: 900; }
+            .ledger-table th { background-color: #f1f5f9 !important; border: 1px solid #ddd !important; -webkit-print-color-adjust: exact; }
+            .ledger-table td { border: 1px solid #eee !important; padding: 8px !important; }
+            .summary-box { display: grid !important; grid-template-columns: 1fr 1fr; gap: 20px; border: 1px solid #eee; padding: 15px; }
+        }
+        .print-header { display: none; }
+    </style>
+</head>
+<body class="min-h-screen pb-10">
+
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <a href="/admin-dashboard/" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2 text-sm">
+                <span>⬅️</span> عودة للرئيسية
+            </a>
+            <h2 class="text-xl font-black text-gray-800 border-r-2 border-gray-300 pr-4">Ledger Report (دفتر الأستاذ)</h2>
+        </div>
+        <div class="flex gap-2 nav-buttons">
+            <button onclick="window.location.reload()" class="bg-white border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-slate-50">🔄 Refresh</button>
+            <button class="bg-white border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-slate-50">📥 Download CSV</button>
+            <button onclick="window.print()" class="bg-white border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-slate-50">🖨️ Print Report</button>
+        </div>
+    </header>
+
+    <main class="max-w-[1400px] mx-auto p-6 space-y-6">
+        <div class="print-header">
+            <h1>AL MARONA LAUNDRY</h1>
+            <h2>Cash Account Ledger Report</h2>
+            <p class="font-bold text-sm">Period: 2026-01-01 to 2026-03-09</p>
+        </div>
+        
+        <div class="filter-section flex gap-4 items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm"> ```
+            <div class="w-64">
+                <select id="accountSelector" onchange="fetchLedgerData()" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-blue-400">
+                    <option value="">اختر الحساب...</option>
+                    </select>
+            </div>
+            <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                <span class="text-gray-400">📅</span>
+                <input type="date" id="startDate" onchange="fetchLedgerData()" class="bg-transparent text-sm outline-none font-bold">
+                <span class="text-gray-300 px-2">-</span>
+                <input type="date" id="endDate" onchange="fetchLedgerData()" class="bg-transparent text-sm outline-none font-bold">
+            </div>
+        </div>
+
+        <div class="summary-box bg-white rounded-2xl border border-slate-200 shadow-sm p-8 relative overflow-hidden"> ```
+            <div class="flex justify-between items-start relative z-10">
+                <div class="space-y-2">
+                    <p class="text-xs font-bold text-slate-400 uppercase">Account Code: <span id="view-code" class="text-slate-600">---</span></p>
+                    <p class="text-xs font-bold text-slate-400 uppercase">Account Group: <span id="view-group" class="text-slate-600">---</span></p>
+                </div>
+                <div class="text-center">
+                    <h1 id="view-account-name" class="text-3xl font-black text-slate-800">اختر حساباً لعرض التقرير</h1>
+                </div>
+                <div class="text-left space-y-1">
+                    <p class="text-xs font-bold text-slate-400">Opening Balance: <span class="text-slate-800 font-black">QAR <span id="view-opening">0.00</span></span></p>
+                    <p class="text-xs font-bold text-slate-400">Opening Balance Date: <span id="view-opening-date" class="text-slate-600 font-bold">Not set</span></p>
+                    <p class="text-sm font-bold text-slate-800 mt-2">Current Balance: <span class="text-blue-600 font-black text-lg">QAR <span id="view-current">0.00</span></span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-1 bg-slate-100 p-1 rounded-lg w-fit">
+            <button class="bg-blue-600 text-white px-4 py-1.5 rounded-md text-xs font-bold shadow-sm">Table View</button>
+            <button class="text-slate-500 px-4 py-1.5 rounded-md text-xs font-bold hover:bg-slate-200 transition">Chart View</button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="bg-blue-50/50 p-4 border-b border-blue-100 flex justify-between items-center">
+                <div class="flex gap-6">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Period Start: <span id="sum-start" class="text-slate-800 font-black">---</span></p>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Period End: <span id="sum-end" class="text-slate-800 font-black">---</span></p>
+                </div>
+                <div class="flex gap-6">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Debits: <span class="text-emerald-600 font-black">QAR <span id="sum-debits">0.00</span></span></p>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Credits: <span class="text-rose-500 font-black">QAR <span id="sum-credits">0.00</span></span></p>
+                </div>
+            </div>
+
+            <table class="w-full text-right ledger-table">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="text-right">Date</th>
+                        <th class="text-right">Reference</th>
+                        <th class="text-right">Particulars</th>
+                        <th class="text-right">Description</th>
+                        <th class="text-left">Debit</th>
+                        <th class="text-left">Credit</th>
+                        <th class="text-left">Balance</th>
+                    </tr>
+                </thead>
+                <tbody id="ledger-body">
+                    <tr><td colspan="7" class="p-12 text-center text-slate-400 font-bold">يرجى اختيار حساب وتحديد الفترة لعرض القيود المالية.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        // 🌟 دالة جلب قائمة الحسابات لتعبئة الـ Select 🌟
+        async function loadAccounts() {
+            const res = await fetch('/api/accounts/financial-accounts/');
+            const data = await res.json();
+            const accounts = Array.isArray(data) ? data : (data.results || []);
+            const select = document.getElementById('accountSelector');
+            accounts.forEach(acc => {
+                select.innerHTML += `<option value="${acc.id}">${acc.name}</option>`;
+            });
+        }
+
+        // 🌟 دالة جلب بيانات دفتر الأستاذ 🌟
+        async function fetchLedgerData() {
+            const accId = document.getElementById('accountSelector').value;
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            // تحديث ترويسة الطباعة الرسمية
+                        document.querySelector('.print-header h2').innerText = (data.account_name || "Account") + " Ledger Report";
+                        document.getElementById('print-period').innerText = `Period: ${start} to ${end}`;
+
+            if (!accId) return;
+
+            // تحديث واجهة العناوين (توضيحي حتى يتم الربط بالـ API الحقيقي)
+            const tbody = document.getElementById('ledger-body');
+            tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-blue-500 font-bold animate-pulse">جاري سحب القيود المالية... ⏳</td></tr>`;
+
+            try {
+                // ملاحظة للمهندس: الرابط يفترض وجود API للدفتر يرسل تفاصيل القيود
+                const res = await fetch(`/api/accounts/ledger-report/?account_id=${accId}&start=${start}&end=${end}`);
+                const data = await res.json();
+                
+                // تحديث الهيدر بناءً على الحساب المختار
+                document.getElementById('view-account-name').innerText = data.account_name || "Account Report";
+                document.getElementById('view-current').innerText = parseFloat(data.current_balance || 0).toFixed(2);
+                document.getElementById('sum-debits').innerText = parseFloat(data.total_debits || 0).toFixed(2);
+                document.getElementById('sum-credits').innerText = parseFloat(data.total_credits || 0).toFixed(2);
+                document.getElementById('sum-start').innerText = start || '2026-01-01';
+                document.getElementById('sum-end').innerText = end || '2026-03-09';
+
+                // رسم القيود في الجدول
+                if (!data.entries || data.entries.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-400 font-bold">لا توجد حركات مالية لهذا الحساب في هذه الفترة.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = data.entries.map(e => `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td>${e.date}</td>
+                        <td class="font-bold text-blue-600">${e.reference}</td>
+                        <td class="text-xs">${e.particulars}</td>
+                        <td class="text-xs text-slate-400">${e.description}</td>
+                        <td class="text-left font-bold text-emerald-600">${e.debit > 0 ? e.debit.toFixed(2) : '-'}</td>
+                        <td class="text-left font-bold text-rose-500">${e.credit > 0 ? e.credit.toFixed(2) : '-'}</td>
+                        <td class="text-left font-black text-slate-800">${e.balance.toFixed(2)}</td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error("Ledger Error:", error);
+                // محاكاة لغرض العرض إذا لم يكن الـ API جاهزاً بعد
+                tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-400 font-bold italic">نموذج عرض: تواصل مع السيرفر لربط بيانات الحركات المالية الحقيقية.</td></tr>`;
+            }
+        }
+
+        window.onload = () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('endDate').value = today;
+            document.getElementById('startDate').value = '2026-01-01';
+            loadAccounts();
+        };
+    </script>
+</body>
+</html>

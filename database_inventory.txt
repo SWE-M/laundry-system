@@ -1,0 +1,139 @@
+قائمة الأصناف المستوردة (الإجمالي: 137)
+==================================================
+1. None | ثوب أبيض
+2. None | ثوب ملون
+3. None | شماغ / غترة
+4. None | بشت
+5. None | عباية
+6. None | فستان سهرة
+7. None | بلوزة
+8. None | بطانية نفرين
+9. None | سجاد وسط
+10. None | جاكيت جلد
+11. Abaya | 
+12. Apron | 
+13. Bath Mat | 
+14. Bath Towel | 
+15. Bath Towel (Large) | فوطة
+16. Bath Towel (Small) | فوطة
+17. Bathrobe | روب
+18. Bed Cover (Double) | غطاءسریر
+19. Bed Cover (Single) | غطاءسریر
+20. Bedsheet | شرشف
+21. Bedsheet (Double) | شرشف
+22. Bedsheet (Single) | شرشف
+23. Bedspread (Double) | شرشف
+24. Bedspread Single | شرشف
+25. Besht | بشت
+26. Besht Winter | بشت
+27. Blanket (Children) | بطانية
+28. Blanket (Double) | بطانية
+29. Blanket (Single) | بطانية
+30. Blanket Big | بطانية
+31. Blanket Wool | بطانية
+32. Blouse | بلوزة
+33. Boiler Suit/ Coveralls | بدلة
+34. Bra | صدرية
+35. Cap | قبعات
+36. Carpet | سجادة
+37. Chair Cover | غطاء
+38. Children Abaya | اطفال
+39. Children Clothes | ملابس
+40. Children Dress | فستان
+41. Children Gutra | غترة
+42. Children Jacket | سترة
+43. Children Shirt | قميص
+44. Children Shorts | اطفال
+45. Children Skirt | تنورة
+46. Children Suit | اطفال
+47. Children Suit (3 pcs) | اطفال
+48. Children Sweater/Pullover | بلوفر
+49. Children T-Shirt | اطفال
+50. Children Thobe | ثوب
+51. Children Trouser/ Pants | بنطلون
+52. Coat | معطف
+53. Curtains (Large) | ستائر
+54. Curtains (Medium) | ستائر
+55. Daraa/Galabieh | دراعة
+56. Daraa/Galabieh two piece | دراعة
+57. Doctors Coat | بالطو
+58. Doormat | حصيرة
+59. Dress (Normal) | فستان
+60. Dress (Short) | فستان
+61. Dungaree/Overall | مريول
+62. Duvet (Children) | ملحف
+63. Duvet (Double) | ملحف
+64. Duvet (Single) | ملحف
+65. Duvet Cover (Double) | غطاء
+66. Duvet Cover (Single) | غطاء
+67. Evening Dress | فساتين
+68. Fancy Dress | فستان
+69. Ghafiya | قحفية
+70. Gutra (Wool) | غترة
+71. Gutrah | غترة
+72. Hand Gloves | كفوف
+73. Hand Towel | فوطة
+74. Hand Towel Big | فوطة
+75. Handkerchief | منديل
+76. Hijab/Scarf | حجاب
+77. Hijab/Scarf (Wool) | حجاب
+78. Jacket | جاكيت
+79. Jeans | جينز
+80. Jeans jacket | جاكيت
+81. Kurta Pyjama (Set) | كورتا
+82. Lungi/Wizar | وزار
+83. Napkin | مندیل
+84. Neck Tie | ربطة
+85. Nightgown | ثوب
+86. Officer Uniform Cap | قبعة
+87. Officer Uniform Shirt | قميص
+88. Officer Uniform Trouser/Pants | بنطلون
+89. Officer/Military Uniform | بدلة
+90. Overcoat | معطف
+91. Overcoat Wool | معطف
+92. Pajamas | لباس
+93. Pillow (Large) | وسادة
+94. Pillow (Small) | وسادة
+95. Pillow Case | غطاء
+96. Police Uniform | زي
+97. Prayer Mat | سجادة
+98. Punjabi | بنجابي
+99. Pyjama Trouser | بنطلون
+100. Quilt Large | لحاف
+101. Quilt Medium | لحاف
+102. Quilt Small | لحاف
+103. Safari Suit | بدلة
+104. Saree | ساري
+105. Sarwal Thobe | سروال
+106. School Uniform | زي
+107. Shawl | شال
+108. Shimagh | شماغ
+109. Shirt | قميص
+110. Shorts | شورت
+111. Silk Blouse | بلوزة
+112. Skirt (Normal) | تنورة
+113. Skirt (Pleated) | تنورة
+114. Socks | جوارب
+115. Sofa Cover (Large) | غطاء
+116. Sofa Cover (Medium) | غطاء
+117. Sofa Cover (Small) | غطاء
+118. Suit Jacket | جاكيت
+119. Sweater/Pullover | بلوفر
+120. T-shirt | تي
+121. Table Cloth (Large) | غطاء
+122. Table Cloth (Medium) | غطاء
+123. Table Cloth (Small) | غطاء
+124. Thobe | ثوب
+125. Thobe | دشداشا
+126. Thobe (winter) | ثوب
+127. Three-piece Suit | بدلة
+128. Towel (Large) | منشفة
+129. Towel (Small) | منشفة
+130. Tracksuit | بدلة
+131. Trousers/pants | بنطلون
+132. Two-piece Suit | بدلة
+133. Undershirt | فانيلا
+134. Underwear/Brief | ملابس
+135. Vest | سديري
+136. Waistcoat | صدیري
+137. Winter Jacket | جاكیت

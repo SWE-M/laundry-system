@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <title>Laundry Orders Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
+    <style>
+        body { font-family: 'Inter', 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 🌟 تخصيص شكل التقويم ليطابق الصورة بالضبط 🌟 */
+        .daterangepicker { font-family: 'Inter', sans-serif !important; border: 1px solid #e2e8f0 !important; border-radius: 0.75rem !important; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1) !important; padding: 0 !important; }
+        .daterangepicker .ranges li { font-weight: 600; color: #475569; border-radius: 0.5rem; margin: 4px 8px; padding: 8px 12px; }
+        .daterangepicker .ranges li:hover, .daterangepicker .ranges li.active { background-color: #f0f9ff; color: #0ea5e9; }
+        .daterangepicker td.active, .daterangepicker td.active:hover { background-color: #0ea5e9 !important; border-color: #0ea5e9 !important; border-radius: 0.5rem; }
+        .daterangepicker .drp-buttons .btn { font-weight: bold; border-radius: 0.5rem; padding: 6px 16px; }
+        .daterangepicker .drp-buttons .btn-primary { background-color: #7dd3fc !important; border-color: #7dd3fc !important; color: white !important; }
+        .daterangepicker .drp-buttons .btn-primary:hover { background-color: #38bdf8 !important; border-color: #38bdf8 !important; }
+
+        /* 🖨️ إعدادات الطباعة الاحترافية (تطابق الصورة 2) 🖨️ */
+        @media print {
+            body > *:not(#printArea) { display: none !important; }
+            body { background-color: white; }
+            #printArea {
+                display: block !important; 
+                position: absolute; left: 0; top: 0; width: 100%;
+                background: white; padding: 0; margin: 0;
+            }
+            .print-table th, .print-table td { border: 2px solid #000 !important; padding: 6px 8px; }
+            .print-header-border { border-bottom: 3px solid #000 !important; padding-bottom: 4px; }
+            @page { size: A4; margin: 15mm; }
+        }
+    </style>
+</head>
+<body class="text-[#0f172a] h-screen overflow-hidden flex flex-col">
+
+    <div class="flex-1 overflow-y-auto p-8 scrollbar-hide">
+        
+        <div class="flex justify-between items-center mb-8 gap-6">
+            <h1 class="text-2xl font-black text-[#0f172a] whitespace-nowrap" data-i18n="pageTitle">Laundry Orders Report</h1>
+            
+            <div class="flex items-center gap-3 flex-1 justify-end">
+                <button onclick="toggleLanguage()" class="bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition flex items-center gap-2">
+                    🌐 <span id="lang-btn-text">عربي</span>
+                </button>
+
+                <div class="relative w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">📅</span>
+                    <input type="text" id="reportDateRange" class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:border-blue-500 outline-none cursor-pointer bg-white font-medium" readonly>
+                </div>
+
+                <div class="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2.5 bg-white text-sm w-48 relative">
+                    <select id="catFilter" class="w-full font-semibold outline-none bg-transparent cursor-pointer text-gray-700">
+                        <option value="all">All Categories</option>
+                        <option value="aldobi">Aldobi</option>
+                        <option value="cleano">Cleano</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+
+                <div class="relative w-48">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+                    <input type="text" id="searchFilter" data-i18n-placeholder="search" placeholder="Search orders..." class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:border-blue-500 outline-none">
+                </div>
+
+                <div class="h-8 w-px bg-gray-300 mx-1"></div>
+
+                <button type="button" onclick="exportCSV()" class="border border-gray-300 bg-white text-gray-700 px-5 py-2.5 rounded-lg text-sm font-black flex items-center gap-2 hover:bg-gray-50 transition shadow-sm">
+                    📥 Export CSV
+                </button>
+                <button type="button" onclick="printReport()" class="border border-gray-300 bg-white text-gray-700 px-5 py-2.5 rounded-lg text-sm font-black flex items-center gap-2 hover:bg-gray-50 transition shadow-sm">
+                    🖨️ Print Report
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-6 mb-8">
+            <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm relative">
+                <p class="text-sm font-bold text-gray-500 mb-2">Total Revenue <span class="absolute right-4 top-4 text-gray-400">💲</span></p>
+                <h3 class="text-3xl font-black text-gray-800" id="kpi-revenue">0.00</h3>
+                <p class="text-xs text-gray-400 mt-2 font-medium"><span id="kpi-orders">0</span> orders</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm relative">
+                <p class="text-sm font-bold text-gray-500 mb-2">Daily Average <span class="absolute right-4 top-4 text-gray-400">📈</span></p>
+                <h3 class="text-3xl font-black text-gray-800" id="kpi-daily">0.00</h3>
+                <p class="text-xs text-gray-400 mt-2 font-medium">per day</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm relative">
+                <p class="text-sm font-bold text-gray-500 mb-2">Express Orders <span class="absolute right-4 top-4 text-gray-400">⚡</span></p>
+                <h3 class="text-3xl font-black text-gray-800" id="kpi-express">0</h3>
+                <p class="text-xs text-gray-400 mt-2 font-medium"><span id="kpi-express-pct">0</span>% of total orders</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm relative">
+                <p class="text-sm font-bold text-gray-500 mb-2">Total Items <span class="absolute right-4 top-4 text-gray-400">👕</span></p>
+                <h3 class="text-3xl font-black text-gray-800" id="kpi-items">0</h3>
+                <p class="text-xs text-gray-400 mt-2 font-medium">processed items</p>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-8 p-6">
+            <div class="relative h-72 w-full">
+                <canvas id="reportChart"></canvas>
+            </div>
+            <div class="flex gap-4 items-center justify-center mt-4 text-xs text-gray-500 font-bold">
+                <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-[#0ea5e9] rounded"></span> Revenue (QAR)</div>
+                <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-[#10b981] rounded"></span> Orders</div>
+                <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-[#f59e0b] rounded"></span> Express Items</div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-gray-100 flex justify-between items-center text-xs font-bold text-gray-500">
+                <span>Page 1 of 1 • <span id="table-count">0</span> orders</span>
+            </div>
+            <table class="w-full text-sm text-right">
+                <thead class="bg-[#f0f9ff] text-gray-600 font-bold border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left">Date</th>
+                        <th class="px-6 py-4 text-left">Order #</th>
+                        <th class="px-6 py-4 text-left">Customer</th>
+                        <th class="px-6 py-4 text-center">Items</th>
+                        <th class="px-6 py-4 text-right">Amount</th>
+                        <th class="px-6 py-4 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTbody" class="divide-y divide-gray-100">
+                    <tr><td colspan="6" class="p-16 text-center text-gray-500">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="printArea" class="hidden text-black font-sans bg-white">
+        
+        <div class="flex justify-between items-start border-b-2 border-black pb-2 mb-3">
+            <div class="text-left flex flex-col gap-0">
+                <img src="/static/images/logo.png" alt="Al Marona Logo" class="h-10 object-contain mb-1 w-max">
+                <h1 class="text-lg font-black text-black uppercase tracking-wide">AL MARONA LAUNDRY</h1>
+                <h2 class="text-base font-black text-black">مغسلة المرونة</h2>
+                <p class="text-[11px] text-black font-bold mt-0.5">Al Duhail, Doha, Qatar</p>
+                <p class="text-[11px] text-black font-bold">Tel: +974 5188 8455</p>
+                <p class="text-[11px] text-black font-bold">C.R. No.: 201365</p>
+            </div>
+            
+            <div class="text-right text-[9px] font-bold text-gray-500 flex flex-col items-end gap-0.5 mt-2">
+                <span id="print-top-date">---</span>
+                <span>مغسلة المرونة | Al Marona Laundry</span>
+            </div>
+        </div>
+
+        <div class="text-center mb-4 mt-1">
+            <h2 class="text-lg font-black text-black tracking-wide decoration-2 underline underline-offset-4">Laundry Orders Report</h2>
+            <p class="text-[11px] text-gray-600 mt-1 font-bold" id="print-date-range">---</p>
+        </div>
+
+        <h3 class="text-lg font-black mb-3 text-black">Summary Overview</h3>
+        <div class="grid grid-cols-2 gap-12 mb-8">
+            <div>
+                <h4 class="font-bold text-gray-700 print-header-border mb-2 text-sm">Financial Performance</h4>
+                <div class="flex justify-between py-1.5 border-b border-gray-300 text-sm">
+                    <span class="text-gray-600">Total Revenue</span><span class="font-black text-green-700" id="p-rev">QAR 0.00</span>
+                </div>
+                <div class="flex justify-between py-1.5 border-b border-gray-300 text-sm">
+                    <span class="text-gray-600">Daily Average</span><span class="font-black" id="p-avg">QAR 0.00</span>
+                </div>
+                <div class="flex justify-between py-1.5 border-b border-gray-300 text-sm">
+                    <span class="text-gray-600">Average Order Value</span><span class="font-black" id="p-aov">QAR 0.00</span>
+                </div>
+                <div class="flex justify-between py-2 border-b-2 border-black text-sm font-black mt-1">
+                    <span>Total Orders</span><span id="p-ord">0</span>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-700 print-header-border mb-2 text-sm">Operational Insights</h4>
+                <div class="flex justify-between py-1.5 border-b border-gray-300 text-sm">
+                    <span class="text-gray-600">Items Processed</span><span class="font-black" id="p-itm">0 items</span>
+                </div>
+                <div class="flex justify-between py-1.5 border-b border-gray-300 text-sm">
+                    <span class="text-gray-600">Express Orders</span><span class="font-black" id="p-exp">0 (0.0%)</span>
+                </div>
+                <div class="flex justify-between py-1.5 border-b border-gray-300 text-sm">
+                    <span class="text-gray-600">Completed Orders</span><span class="font-black" id="p-comp">0 (0.0%)</span>
+                </div>
+                <div class="flex justify-between py-2 border-b-2 border-black text-sm font-black mt-1">
+                    <span>Avg Items/Order</span><span id="p-aitm">0.0</span>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-black mb-3 text-black">Order Details</h3>
+        <table class="w-full text-xs text-left border-collapse print-table mb-8">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="font-black w-24 text-left">Date</th>
+                    <th class="font-black w-24 text-left">Order #</th>
+                    <th class="font-black text-left">Customer</th>
+                    <th class="font-black w-16 text-center">Items</th>
+                    <th class="font-black w-28 text-right">Amount</th>
+                    <th class="font-black w-20 text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody id="printTbody">
+                </tbody>
+            <tfoot class="font-black bg-gray-50">
+                <tr>
+                    <td colspan="4" class="text-left py-2 px-2 border-2 border-black">Total</td>
+                    <td class="text-right py-2 px-2 border-2 border-black" id="p-table-total">QAR 0.00</td>
+                    <td class="border-2 border-black"></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="border-t border-gray-400 pt-4 text-xs text-gray-600 flex justify-between">
+            <span id="print-footer-date">Generated on: ---</span>
+            <span class="font-medium mr-32">For Internal Use Only</span>
+            <span></span>
+        </div>
+    </div>
+
+    <script>
+        let myChart = null;
+        let startDate = moment().startOf('month').format('YYYY-MM-DD');
+        let endDate = moment().endOf('month').format('YYYY-MM-DD');
+
+        // 1. تفعيل التقويم الفخم (DateRangePicker)
+        $(function() {
+            $('#reportDateRange').daterangepicker({
+                startDate: moment().startOf('month'),
+                endDate: moment().endOf('month'),
+                ranges: {
+                   'Today': [moment(), moment()],
+                   'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                   'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                   'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                   'This Month': [moment().startOf('month'), moment().endOf('month')],
+                   'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                   'Year to Date': [moment().startOf('year'), moment()]
+                },
+                locale: { format: 'MMM D, YYYY' }
+            }, function(start, end, label) {
+                startDate = start.format('YYYY-MM-DD');
+                endDate = end.format('YYYY-MM-DD');
+                document.getElementById('print-date-range').innerText = start.format('DD Mar YYYY') + ' - ' + end.format('DD Mar YYYY');
+                fetchReportData();
+            });
+        });
+
+        document.getElementById('catFilter').addEventListener('change', fetchReportData);
+        document.getElementById('searchFilter').addEventListener('keyup', (e) => {
+            if(e.key === 'Enter') fetchReportData();
+        });
+
+       // 3. جلب البيانات من السيرفر (باستخدام الرابط الذكي 🌟)
+        async function fetchReportData() {
+            const cat = document.getElementById('catFilter').value;
+            const search = document.getElementById('searchFilter').value;
+            
+            // 💡 التعديل هنا: خلينا دجانغو يجيب الرابط الصحيح أياً كان مكانه
+            const baseUrl = "{% url 'api_orders_report_data' %}";
+            const url = `${baseUrl}?start=${startDate}&end=${endDate}&category=${cat}&search=${search}`;
+            
+            const tbody = document.getElementById('reportTbody');
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) {
+                    const errText = await res.text();
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-600 font-bold bg-red-50 border border-red-200">❌ السيرفر يرفض الطلب (Error ${res.status}):<br><span class="text-xs text-gray-500 font-normal mt-2 block" dir="ltr">${errText.substring(0, 300)}</span></td></tr>`;
+                    return;
+                }
+                const data = await res.json();
+                updateUI(data);
+            } catch(e) { 
+                tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-600 font-bold bg-red-50 border border-red-200">🔌 فشل الاتصال بالسيرفر!</td></tr>`;
+                console.error('Error fetching data', e); 
+            }
+        }
+        // 3. تحديث الشاشة والطباعة
+        function updateUI(data) {
+            // -- أ. تحديث البطاقات --
+            document.getElementById('kpi-revenue').innerText = data.kpis.total_revenue;
+            document.getElementById('kpi-orders').innerText = data.kpis.total_orders;
+            document.getElementById('kpi-daily').innerText = data.kpis.daily_average;
+            document.getElementById('kpi-express').innerText = data.kpis.express_orders;
+            document.getElementById('kpi-express-pct').innerText = data.kpis.express_percentage;
+            document.getElementById('kpi-items').innerText = data.kpis.total_items;
+
+            // -- ب. تحديث جدول الشاشة --
+            const tbody = document.getElementById('reportTbody');
+            document.getElementById('table-count').innerText = data.table.length;
+            if(data.table.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-16 text-center text-gray-500 font-bold">No orders found for this period.</td></tr>`;
+            } else {
+                tbody.innerHTML = data.table.map(r => `
+                    <tr class="hover:bg-gray-50 border-b border-gray-100 transition">
+                        <td class="px-6 py-4 font-medium text-gray-800 text-left">${r.date}</td>
+                        <td class="px-6 py-4 font-bold text-gray-800 text-left">${r.order_no}</td>
+                        <td class="px-6 py-4 font-bold text-gray-800 text-left">${r.customer}</td>
+                        <td class="px-6 py-4 font-medium text-center">${r.items}</td>
+                        <td class="px-6 py-4 font-black text-gray-900 text-right">${parseFloat(r.amount).toFixed(2)}</td>
+                        <td class="px-6 py-4 text-center font-bold text-xs text-gray-600 uppercase">${r.status}</td>
+                    </tr>
+                `).join('');
+            }
+
+            // -- ج. تحديث شاشة الطباعة (A4) --
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'}) + ' ' + now.toLocaleDateString('en-GB');
+            document.getElementById('print-top-date').innerText = timeStr;
+            document.getElementById('print-footer-date').innerText = `Generated on: ${now.toLocaleString('en-GB', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})} by Admin`;
+            
+            // الحسابات الإضافية للطباعة
+            let aov = data.kpis.total_orders > 0 ? (data.kpis.total_revenue / data.kpis.total_orders).toFixed(2) : 0;
+            let avgItems = data.kpis.total_orders > 0 ? (data.kpis.total_items / data.kpis.total_orders).toFixed(1) : 0;
+            let completedCount = data.table.filter(o => o.status === 'COMPLETED' || o.status === 'مكتمل').length;
+            let compPct = data.kpis.total_orders > 0 ? ((completedCount / data.kpis.total_orders) * 100).toFixed(1) : 0;
+
+            document.getElementById('p-rev').innerText = `QAR ${parseFloat(data.kpis.total_revenue).toFixed(2)}`;
+            document.getElementById('p-avg').innerText = `QAR ${parseFloat(data.kpis.daily_average).toFixed(2)}`;
+            document.getElementById('p-aov').innerText = `QAR ${aov}`;
+            document.getElementById('p-ord').innerText = data.kpis.total_orders;
+            
+            document.getElementById('p-itm').innerText = `${data.kpis.total_items} items`;
+            document.getElementById('p-exp').innerText = `${data.kpis.express_orders} (${data.kpis.express_percentage}%)`;
+            document.getElementById('p-comp').innerText = `${completedCount} (${compPct}%)`;
+            document.getElementById('p-aitm').innerText = avgItems;
+            
+            document.getElementById('p-table-total').innerText = `QAR ${parseFloat(data.kpis.total_revenue).toFixed(2)}`;
+            
+            document.getElementById('printTbody').innerHTML = data.table.map(r => `
+                <tr>
+                    <td class="p-2 border-2 border-black text-left">${r.date}</td>
+                    <td class="p-2 border-2 border-black font-bold text-left">${r.order_no}</td>
+                    <td class="p-2 border-2 border-black text-left">${r.customer}</td>
+                    <td class="p-2 border-2 border-black text-center">${r.items}</td>
+                    <td class="p-2 border-2 border-black text-right font-bold">${parseFloat(r.amount).toFixed(2)}</td>
+                    <td class="p-2 border-2 border-black text-center font-bold text-[10px] uppercase">${r.status}</td>
+                </tr>
+            `).join('');
+
+            // -- د. رسم الشارت --
+            renderChart(data.chart);
+        }
+
+        // 4. رسم المخطط البياني (مطابق للصورة الجديدة 100%)
+        function renderChart(chartData) {
+            const ctx = document.getElementById('reportChart').getContext('2d');
+            if(myChart) myChart.destroy();
+            
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [
+                        { label: 'Revenue (QAR)', data: chartData.revenue, borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', tension: 0.3, fill: true, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 6 },
+                        { label: 'Orders', data: chartData.orders, borderColor: '#10b981', tension: 0.3, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 6 },
+                        { label: 'Express Items', data: chartData.items, borderColor: '#f59e0b', tension: 0.3, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 6 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    // 🌟 تفعيل ظهور المربع وخط التتبع عند المرور بالماوس (Hover) 🌟
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: { 
+                        legend: { display: false },
+                        // 🌟 تصميم المربع الأبيض الفخم (Tooltip) 🌟
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#64748b',
+                            bodyColor: '#334155',
+                            borderColor: '#e2e8f0',
+                            borderWidth: 1,
+                            padding: 12,
+                            boxPadding: 6,
+                            usePointStyle: true,
+                            titleFont: { size: 13, family: 'Inter' },
+                            bodyFont: { size: 13, family: 'Inter', weight: 'bold' },
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label} : ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            border: {display: false}, 
+                            grid: {color: '#e2e8f0', borderDash: [4, 4]},
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: { 
+                            border: {display: false}, 
+                            grid: {color: '#e2e8f0', borderDash: [4, 4], display: true}, // الخطوط المتقطعة الطولية
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+        // 5. أوامر الطباعة والتصدير
+        function printReport() {
+            window.print();
+        }
+
+        // 6. تصدير ملف الإكسل (باستخدام الرابط الذكي 🌟)
+        function exportCSV() {
+            const cat = document.getElementById('catFilter').value;
+            const search = document.getElementById('searchFilter').value;
+            
+            // 💡 التعديل هنا: جلب رابط الإكسل الصحيح
+            const baseUrl = "{% url 'export_orders_csv' %}";
+            window.location.href = `${baseUrl}?start=${startDate}&end=${endDate}&category=${cat}&search=${search}`;
+        }
+
+        window.onload = () => {
+            document.getElementById('print-date-range').innerText = moment().startOf('month').format('DD Mar YYYY') + ' - ' + moment().endOf('month').format('DD Mar YYYY');
+            fetchReportData();
+        };
+
+        // دالة تغيير اللغة (مختصرة)
+        let currentLang = 'en';
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'ar' : 'en';
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('lang-btn-text').innerText = currentLang === 'en' ? 'عربي' : 'English';
+            // يمكنك إضافة الترجمات لاحقاً هنا إذا أردت
+        }
+    </script>
+</body>
+</html>

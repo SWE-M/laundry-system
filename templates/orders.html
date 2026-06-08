@@ -891,7 +891,7 @@ if (discountPct > 0) {
             }
             let cleanPhone = phone.replace(/\D/g, '');
             if(cleanPhone.length === 8) cleanPhone = '974' + cleanPhone; 
-            let message = encodeURIComponent(`مرحباً، طلبك رقم ${String(orderId).padStart(4, '0')} جاهز للاستلام من مغسلة نوفا بلس .\nHello, your order ${String(orderId).padStart(4, '0')} is ready for collection at Almarona Laundry.`);
+            let message = encodeURIComponent(`مرحباً، طلبك رقم ${String(orderId).padStart(4, '0')} جاهز للاستلام من مغسلة نوفا بلس .\nHello, your order ${String(orderId).padStart(4, '0')} is ready for collection at NOVA PLUS LAUNDRY .`);
             window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
         }
 

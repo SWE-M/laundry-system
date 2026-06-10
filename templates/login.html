@@ -34,7 +34,7 @@
         }
     </style>
 </head>
-<body class="h-screen w-full flex items-center justify-center relative">
+<body class="h-screen w-full flex flex-col items-center justify-center relative p-4">
 
     <div class="bubbles">
         <div class="bubble b1"></div><div class="bubble b2"></div><div class="bubble b3"></div>
@@ -53,7 +53,23 @@
         </g>
     </svg>
 
-    <div class="glass-card rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition duration-500 hover:scale-[1.02]">
+    <!-- 💡 الجزء الخاص بالتذكير المالي المضاف بشكل متناسق فوق بطاقة الدخول -->
+    <div class="w-full max-w-md mb-4 p-4 bg-sky-50/95 border-l-4 border-sky-500 rounded-2xl shadow-xl z-10 text-right backdrop-blur-sm" dir="rtl">
+        <div class="flex items-start gap-3">
+            <div class="text-sky-600 font-black text-lg mt-0.5">💡</div>
+            <div class="flex-1">
+                <p class="text-xs font-bold text-sky-800 leading-relaxed mb-1">
+                    تذكير من <span class="font-black text-sky-900">مطور نظام مغسلة نوفا بلس</span>: الرجاء التكرم بتسديد المستحقات المالية المتبقية للنظام. شاكرين لكم تعاونكم.
+                </p>
+                <p class="text-[11px] font-semibold text-gray-500 text-left" dir="ltr">
+                    Reminder from <span class="font-bold text-gray-700">NOVA PLUS LAUNDRY System Developer</span>: Please settle the remaining financial dues. Thank you.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔒 بطاقة تسجيل الدخول الأصلية -->
+    <div class="glass-card rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition duration-500 hover:scale-[1.01]">
         <div class="p-8 text-center relative">
             <div class="w-20 h-20 bg-gradient-to-tr from-blue-500 to-cyan-400 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg border-4 border-white">
                 <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
@@ -68,7 +84,7 @@
                 <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-3 mb-5 rounded text-sm font-bold text-center animate-pulse">
                     {{ message }}
                 </div>
-                {% endfor %}
+                                {% endfor %}
             {% endif %}
 
             <form method="POST" action="{% url 'login' %}" class="space-y-5 relative z-10">
